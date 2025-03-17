@@ -1,6 +1,6 @@
 # Development Environment Setup
 
-> **TODO**: Update with specific SDK version requirements once finalized.
+> `TODO`: Update with specific SDK version requirements once finalized.
 
 ## Required Tools
 1. **Core Development Tools**

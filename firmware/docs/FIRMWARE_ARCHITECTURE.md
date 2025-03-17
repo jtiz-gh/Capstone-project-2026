@@ -1,6 +1,6 @@
 # Firmware Architecture
 
-> **TODO**: Update this template with actual firmware architecture once design is finalized.
+> `TODO`: Update this template with actual firmware architecture once design is finalized.
 
 ## Overview
 Firmware for the wireless ECU data collection module, running on Raspberry Pi Pico. The system interfaces with EVolocity Control Units (ECUs) via USB CDC ACM or UART, and transmits data wirelessly to the central system.

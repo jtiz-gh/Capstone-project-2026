@@ -1,6 +1,6 @@
 # Wireless Communication Module
 
-> **TODO**: Update with specific module choice and implementation details once finalized.
+> `TODO`: Update with specific module choice and implementation details once finalized.
 
 ## Requirements
 
