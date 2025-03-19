@@ -29,6 +29,10 @@ venv/
 env/
 ENV/
 
+# next.js
+/.next/
+/out/
+
 # Node.js
 node_modules/
 npm-debug.log*
