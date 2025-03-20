@@ -132,7 +132,7 @@ Example hardware changelog entry:
 Write clear, concise commit messages following the Conventional Commits specification combined with our discipline-based tagging:
 
 ```
-<type> [Discipline/Component]: Brief description
+:gitmoji: <type> [Discipline/Component]: Brief description
 
 [optional body]
 
@@ -177,32 +177,28 @@ Where `<type>` is one of:
 
 ### Examples:
 ```
-feat [Software/UI]: Add user authentication system
+✨ feat [Software/UI]: Add user authentication system
 
 - Implement JWT-based authentication with secure password hashing.
 - Add login and registration endpoints.
 ```
 
-```
-fix [Firmware/Sensors]: Correct temperature reading overflow
+🐛 fix [Firmware/Sensors]: Correct temperature reading overflow
 
 Fix integer overflow in readings above 100°C.
 ```
 
-```
-design [Hardware/PCB]: Add power regulation circuit
+📐 design [Hardware/PCB]: Add power regulation circuit
 
 - Added LM317 voltage regulator
 - Included filtering capacitors
 - Added thermal relief to ground plane
 ```
 
-```
-docs [Software]: Add API endpoint documentation
+📝 docs [Software]: Add API endpoint documentation
 ```
 
-```
-docs: Update repository README
+📝 docs: Update repository README
 ```
 
 ### Combined Usage Examples (for multiple commits on the same branch):
@@ -211,35 +207,35 @@ docs: Update repository README
 ```
 Branch: feature/user-authentication
 Commits:
-- feat [Software/API]: Add JWT authentication endpoints
-- feat [Software/UI]: Create login form
-- test [Software]: Add authentication unit tests
-- docs [Software]: Document authentication flow
+- ✨ feat [Software/API]: Add JWT authentication endpoints
+- ✨ feat [Software/UI]: Create login form
+- ✅ test [Software]: Add authentication unit tests
+- 📝 docs [Software]: Document authentication flow
 ```
 
 #### Firmware Bug Fix Example:
 ```
 Branch: bugfix/sensor-readings
 Commits:
-- fix [Firmware/Sensors]: Correct temperature overflow
-- test [Firmware]: Add overflow test cases
-- style [Firmware]: Format sensor module
-- docs [Firmware]: Update sensor documentation
+- 🐛 fix [Firmware/Sensors]: Correct temperature overflow
+- ✅ test [Firmware]: Add overflow test cases
+- 💄 style [Firmware]: Format sensor module
+- 📝 docs [Firmware]: Update sensor documentation
 ```
 
 #### Hardware Design Example:
 ```
 Branch: hardware/pcb/v1.2
 Commits:
-- design [Hardware/PCB]: Add power regulation
-- routing [Hardware/PCB]: Optimize power traces
-- footprint [Hardware/PCB]: Update USB connector
-- docs [Hardware]: Update schematic documentation
+- 📐 design [Hardware/PCB]: Add power regulation
+- ⚡ routing [Hardware/PCB]: Optimize power traces
+- 🔍 footprint [Hardware/PCB]: Update USB connector
+- 📝 docs [Hardware]: Update schematic documentation
 ```
 
 For breaking changes, add an exclamation mark before the colon:
 ```
-feat! [Software/API]: Change authentication token format
+✨ feat! [Software/API]: Change authentication token format
 
 BREAKING CHANGE: New token format is not backward compatible
 ```
