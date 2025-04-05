@@ -45,7 +45,7 @@ export default function Page() {
 		<div>
 			<p className="font-bold">Add a team</p>
 
-			<div className="flex flex-col w-80">
+			<div className="flex w-80 flex-col">
 				<Form {...form}>
 					<form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8">
 						<FormField
@@ -69,22 +69,15 @@ export default function Page() {
 									<DropdownMenu>
 										<DropdownMenuTrigger asChild>
 											<Button variant="outline">
-												{field.value == ""
-													? "Choose a vehicle class"
-													: field.value}
+												{field.value == "" ? "Choose a vehicle class" : field.value}
 											</Button>
 										</DropdownMenuTrigger>
 										<DropdownMenuContent className="w-56">
-											<DropdownMenuRadioGroup
-												value={field.value}
-												onValueChange={field.onChange}
-											>
+											<DropdownMenuRadioGroup value={field.value} onValueChange={field.onChange}>
 												<DropdownMenuRadioItem value="Standard">
 													Standard (350W)
 												</DropdownMenuRadioItem>
-												<DropdownMenuRadioItem value="Open">
-													Open (&lt;2kW)
-												</DropdownMenuRadioItem>
+												<DropdownMenuRadioItem value="Open">Open (&lt;2kW)</DropdownMenuRadioItem>
 											</DropdownMenuRadioGroup>
 										</DropdownMenuContent>
 									</DropdownMenu>
@@ -101,16 +94,11 @@ export default function Page() {
 									<DropdownMenu>
 										<DropdownMenuTrigger asChild>
 											<Button variant="outline">
-												{field.value == ""
-													? "Choose a vehicle type"
-													: field.value}
+												{field.value == "" ? "Choose a vehicle type" : field.value}
 											</Button>
 										</DropdownMenuTrigger>
 										<DropdownMenuContent className="w-56">
-											<DropdownMenuRadioGroup
-												value={field.value}
-												onValueChange={field.onChange}
-											>
+											<DropdownMenuRadioGroup value={field.value} onValueChange={field.onChange}>
 												<DropdownMenuRadioItem value="Bike">
 													Bike (&lt;=2 Wheels)
 												</DropdownMenuRadioItem>
@@ -135,9 +123,7 @@ export default function Page() {
 			<div>
 				{teams.map((team, index) => (
 					<Link key={index} href={`/teams/${encodeURIComponent(team.name)}`}>
-						<p className="py-1 text-blue-500 hover:underline cursor-pointer">
-							{team.name}
-						</p>
+						<p className="cursor-pointer py-1 text-blue-500 hover:underline">{team.name}</p>
 					</Link>
 				))}
 			</div>

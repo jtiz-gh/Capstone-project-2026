@@ -1,53 +1,54 @@
 {
 	"npm.packageManager": "pnpm",
 	"editor.defaultFormatter": "esbenp.prettier-vscode",
+	"prettier.useEditorConfig": false,
+	"editor.formatOnSave": true,
+	"editor.formatOnSaveMode": "file",
+	"editor.formatOnPaste": true,
+	"editor.insertSpaces": false,
+	"editor.codeActionsOnSave": {
+		"source.fixAll": "always",
+		"source.organizeImports": "always"
+	},
 	"[typescript]": {
-		"editor.defaultFormatter": "vscode.typescript-language-features",
-		"editor.formatOnSave": true,
-		"editor.codeActionsOnSave": {
-			"source.fixAll.eslint": "explicit"
-		}
+		"editor.defaultFormatter": "esbenp.prettier-vscode",
+		"editor.tabSize": 4
 	},
 	"[typescriptreact]": {
-		"editor.defaultFormatter": "vscode.typescript-language-features",
-		"editor.formatOnSave": true,
-		"editor.codeActionsOnSave": {
-			"source.fixAll.eslint": "explicit"
-		}
+		"editor.defaultFormatter": "esbenp.prettier-vscode",
+		"editor.tabSize": 2
 	},
 	"[javascript]": {
 		"editor.defaultFormatter": "esbenp.prettier-vscode",
-		"editor.formatOnSave": true,
-		"editor.codeActionsOnSave": {
-			"source.fixAll.eslint": "explicit"
-		}
+		"editor.tabSize": 4
+	},
+	"[javascriptreact]": {
+		"editor.defaultFormatter": "esbenp.prettier-vscode",
+		"editor.tabSize": 2
 	},
 	"[json]": {
 		"editor.defaultFormatter": "esbenp.prettier-vscode",
-		"editor.formatOnSave": true
+		"editor.tabSize": 4
 	},
 	"[jsonc]": {
 		"editor.defaultFormatter": "esbenp.prettier-vscode",
-		"editor.formatOnSave": true
+		"editor.tabSize": 2
 	},
-	"editor.formatOnSaveMode": "file",
 	"typescript.tsdk": "node_modules/typescript/lib",
-	"[javascript][typescript][typescriptreact]": {
-		"editor.codeActionsOnSave": {
-			"source.fixAll.eslint": "explicit"
-		}
-	},
 	"files.exclude": {
 		"next-env.d.ts": true,
 		"node_modules": true,
+		".idea": true,
 		".vscode": true,
 		".next": true,
 		".gitignore": true,
 		".prettierignore": true,
 		".prettierrc.json": true,
-		"eslint.config.mjs": true,
+		// "eslint.config.mjs": true,
 		"next.config.ts": true,
 		"pnpm-lock.yaml": true,
 		"postcss.config.mjs": true,
+		// ".lintstagedrc.js": true,
+		".prettierrc": true
 	}
 }
