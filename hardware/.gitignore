@@ -8,3 +8,7 @@ Desktop.ini
 *.log
 *.raw
 *.net
+
+#PCB Temp file
+History/
+__Previews/
