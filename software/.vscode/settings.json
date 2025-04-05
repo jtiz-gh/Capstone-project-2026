@@ -1,15 +1,17 @@
 {
 	"npm.packageManager": "pnpm",
 	"editor.defaultFormatter": "esbenp.prettier-vscode",
-	"prettier.useEditorConfig": false,
+	// "prettier.useEditorConfig": false,
 	"editor.formatOnSave": true,
 	"editor.formatOnSaveMode": "file",
 	"editor.formatOnPaste": true,
-	"editor.insertSpaces": false,
+	// "editor.insertSpaces": false,
 	"editor.codeActionsOnSave": {
 		"source.fixAll": "always",
 		"source.organizeImports": "always"
 	},
+	"prettier.requireConfig": true,
+	"prettier.configPath": ".prettierrc",
 	"[typescript]": {
 		"editor.defaultFormatter": "esbenp.prettier-vscode",
 		"editor.tabSize": 4
@@ -32,7 +34,7 @@
 	},
 	"[jsonc]": {
 		"editor.defaultFormatter": "esbenp.prettier-vscode",
-		"editor.tabSize": 2
+		"editor.tabSize": 4
 	},
 	"typescript.tsdk": "node_modules/typescript/lib",
 	"files.exclude": {
@@ -43,12 +45,11 @@
 		".next": true,
 		".gitignore": true,
 		".prettierignore": true,
-		".prettierrc.json": true,
+		// ".prettierrc": true,
 		// "eslint.config.mjs": true,
 		"next.config.ts": true,
 		"pnpm-lock.yaml": true,
-		"postcss.config.mjs": true,
+		"postcss.config.mjs": true
 		// ".lintstagedrc.js": true,
-		".prettierrc": true
 	}
 }

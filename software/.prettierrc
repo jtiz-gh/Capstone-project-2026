@@ -1,11 +1,11 @@
 {
 	"tabWidth": 2,
 	"useTabs": true,
-	"editor.defaultFormatter": "esbenp.prettier-vscode",
-	"notebook.defaultFormatter": "esbenp.prettier-vscode",
 	"printWidth": 100,
 	"trailingComma": "es5",
 	"arrowParens": "always",
 	"bracketSpacing": true,
+	"semi": false,
+	"singleQuote": false,
 	"plugins": ["prettier-plugin-tailwindcss"]
 }

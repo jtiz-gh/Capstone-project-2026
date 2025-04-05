@@ -4,8 +4,8 @@ import {
 	NavigationMenuLink,
 	NavigationMenuList,
 	navigationMenuTriggerStyle,
-} from "@/components/ui/navigation-menu";
-import Link from "next/link";
+} from "@/components/ui/navigation-menu"
+import Link from "next/link"
 
 export default function Navbar() {
 	return (
@@ -41,5 +41,5 @@ export default function Navbar() {
 				</NavigationMenuList>
 			</NavigationMenu>
 		</div>
-	);
+	)
 }

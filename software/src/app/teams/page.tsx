@@ -1,26 +1,26 @@
-"use client";
+"use client"
 
-import Link from "next/link";
-import { z } from "zod";
-import { zodResolver } from "@hookform/resolvers/zod";
-import { useForm } from "react-hook-form";
-import { Button } from "@/components/ui/button";
+import Link from "next/link"
+import { z } from "zod"
+import { zodResolver } from "@hookform/resolvers/zod"
+import { useForm } from "react-hook-form"
+import { Button } from "@/components/ui/button"
 import {
 	DropdownMenu,
 	DropdownMenuContent,
 	DropdownMenuRadioGroup,
 	DropdownMenuRadioItem,
 	DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
-import { Form, FormControl, FormField, FormItem, FormMessage } from "@/components/ui/form";
-import { Input } from "@/components/ui/input";
+} from "@/components/ui/dropdown-menu"
+import { Form, FormControl, FormField, FormItem, FormMessage } from "@/components/ui/form"
+import { Input } from "@/components/ui/input"
 
 // Placeholder rules for schema
 const formSchema = z.object({
 	name: z.string().min(1).max(50),
 	vehicleClass: z.string().nonempty("Please select a vehicle class"),
 	vehicleType: z.string().nonempty("Please select a vehicle type"),
-});
+})
 
 export default function Page() {
 	const form = useForm<z.infer<typeof formSchema>>({
@@ -30,16 +30,16 @@ export default function Page() {
 			vehicleClass: "",
 			vehicleType: "",
 		},
-	});
+	})
 	function onSubmit(values: z.infer<typeof formSchema>) {
-		console.log(values);
+		console.log(values)
 	}
 
 	// Placeholder teams
 	const teams = [
 		{ name: "Team 1", vehicleClass: "Open", vehicleType: "Kart" },
 		{ name: "Team 2", vehicleClass: "Open", vehicleType: "Bike" },
-	];
+	]
 
 	return (
 		<div>
@@ -128,5 +128,5 @@ export default function Page() {
 				))}
 			</div>
 		</div>
-	);
+	)
 }
