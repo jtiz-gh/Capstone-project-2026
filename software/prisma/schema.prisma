@@ -1,0 +1,111 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
+// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
+
+generator client {
+  provider = "prisma-client-js"
+  //output = "./"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model Event {
+  id             Int      @id @default(autoincrement())
+  eventType      String
+  date           DateTime
+  eventName      String
+  eventStartTime DateTime
+  rankings       Ranking[]
+  records        Record[]
+  raceStartTime      DateTime
+}
+
+model Competition {
+  id              Int      @id @default(autoincrement())
+  vehicleClass    String
+  competitionDate DateTime
+  records         Record[]
+}
+
+
+model Ranking {
+  id          Int      @id @default(autoincrement())
+  rank        Int
+  teamId      Int
+  team        Team     @relation(fields: [teamId], references: [id])
+  eventId     Int
+  event       Event     @relation(fields: [eventId], references: [id])
+}
+
+model Team {
+  id           Int          @id @default(autoincrement())
+  teamName     String
+  organisation String
+  devices      Device[]
+  rankings     Ranking[]
+}
+
+model Device {
+  id           Int           @id @default(autoincrement())
+  serialNo     Int          @unique
+  vehicleType  String
+  vehicleClass String
+  teamId       Int          
+  team         Team         @relation(fields: [teamId], references: [id])
+  config       DeviceConfig?
+  records      Record[]
+  sensorData   SensorData[]
+  deviceStatus DeviceStatus?
+  @@index([teamId])
+}
+
+model DeviceConfig {
+  id          Int      @id @default(autoincrement())
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  configName  String?
+  settings    Json
+  deviceId    Int      @unique
+  device      Device   @relation(fields: [deviceId], references: [id])
+}
+
+model Record {
+  id        Int      @id @default(autoincrement())
+  avgCurrent   Float?
+  avgVoltage   Float?
+  energy            Float?
+  eventId   Int
+  event     Event   @relation(fields: [eventId], references: [id])
+  deviceId  Int
+  device    Device  @relation(fields: [deviceId], references: [id])
+  competitionId Int
+  competition Competition @relation(fields: [competitionId], references: [id])
+  sensorData   SensorData[]
+  stopTime     DateTime?
+
+}
+
+model SensorData {
+  timestamp         Decimal
+  recordId          Int @id @default(autoincrement())
+  record            Record    @relation(fields: [recordId], references: [id])
+  deviceId          Int
+  device            Device   @relation(fields: [deviceId], references: [id])
+  sessionId            Int
+  voltage          Float?
+  current          Float?
+}
+
+model DeviceStatus{
+  deviceId Int @id
+  device Device @relation(fields: [deviceId], references: [id])
+  internalTemperature Float?
+  flashMemoryUsage Float?
+  voltage Float?
+  current Float?
+}

@@ -1,0 +1,14 @@
+# OS
+.DS_Store
+Thumbs.db
+.directory
+Desktop.ini
+
+# LTSpice
+*.log
+*.raw
+*.net
+
+#PCB Temp file
+History/
+__Previews/
