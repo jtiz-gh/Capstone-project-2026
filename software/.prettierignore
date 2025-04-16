@@ -14,7 +14,9 @@ test-results
 junit.xml
 docs
 public
+package-lock.json
 .gitignore
 pnpm-lock.yaml
 README.md
 CHANGELOG.md
+next-env.d.ts
