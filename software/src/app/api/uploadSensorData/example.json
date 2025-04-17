@@ -1,16 +1,16 @@
 {
-    "serialNo": 123456,
-    "seesionId": 1,
-    "readings": [
-      {
-        "timestamp": 0,
-        "voltage": 12.5,
-        "current": 3.2
-      },
-      {
-        "timestamp": 1, 
-        "voltage": 12.3,
-        "current": 3.4
-      }
-    ]
-  }
+  "serialNo": 123456,
+  "seesionId": 1,
+  "readings": [
+    {
+      "timestamp": 0,
+      "voltage": 12.5,
+      "current": 3.2
+    },
+    {
+      "timestamp": 1,
+      "voltage": 12.3,
+      "current": 3.4
+    }
+  ]
+}

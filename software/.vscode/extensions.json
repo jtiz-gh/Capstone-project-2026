@@ -4,6 +4,7 @@
 		"esbenp.prettier-vscode",
 		"bradlc.vscode-tailwindcss",
 		"christian-kohler.path-intellisense",
-		"ms-vscode.vscode-typescript-next"
+		"ms-vscode.vscode-typescript-next",
+		"usernamehw.errorlens"
 	]
 }
