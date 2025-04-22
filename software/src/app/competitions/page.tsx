@@ -29,38 +29,8 @@ import { ScrollArea } from "@/components/ui/scroll-area"
 import { Separator } from "@/components/ui/separator"
 import { AlertCircle, ArrowLeft, Trophy, Users, Activity, Clock } from "lucide-react"
 import Link from "next/link"
-
-// Define types
-type Team = {
-  id: string
-  name: string
-  vehicleClass: "Open" | "Standard"
-  vehicleType: "Bike" | "Kart"
-}
-
-type EventType = "Gymkhana" | "Drag Race" | "Endurance & Efficiency"
-type Event = {
-  id: string
-  type: EventType
-  completed: boolean
-  hasData: boolean
-}
-
-type Result = {
-  teamId: string
-  eventId: string
-  position: number
-  time?: number
-  score?: number
-}
-
-type Competition = {
-  id: string
-  name: string
-  events: Event[]
-  teams: string[]
-  results: Result[]
-}
+import type { Team, Competition, EventType } from "@/types/teams"
+import { TeamSelector } from "@/app/teams/team-selector"
 
 // Sample data
 // TODO: Need to get team and event data from backend
@@ -75,6 +45,9 @@ const sampleTeams: Team[] = [
 const eventTypes: EventType[] = ["Gymkhana", "Drag Race", "Endurance & Efficiency"]
 
 export default function CompetitionsPage() {
+  // State for teams
+  const [teams, setTeams] = useState<Team[]>(sampleTeams)
+
   // State for competitions
   const [competitions, setCompetitions] = useState<Competition[]>([
     {
@@ -168,6 +141,16 @@ export default function CompetitionsPage() {
     }
   }
 
+  // Handle adding a new team
+  const handleAddTeam = (teamData: Omit<Team, "id">) => {
+    const newTeam: Team = {
+      id: Date.now().toString(),
+      ...teamData,
+    }
+    setTeams([...teams, newTeam])
+    setSelectedTeams([...selectedTeams, newTeam.id])
+  }
+
   // Handle marking an event as completed and connecting ECUs
   // TODO: Need to actually connect to ECUs
   const handleConnectECUs = (competitionId: string, eventId: string) => {
@@ -223,7 +206,7 @@ export default function CompetitionsPage() {
 
   // Get team name by ID
   const getTeamName = (teamId: string) => {
-    const team = sampleTeams.find((team) => team.id === teamId)
+    const team = teams.find((team) => team.id === teamId)
     return team ? team.name : "Unknown Team"
   }
 
@@ -240,6 +223,11 @@ export default function CompetitionsPage() {
       .sort((a, b) => a.position - b.position)
   }
 
+  // Get teams for a specific competition
+  const getCompetitionTeams = (competition: Competition) => {
+    return teams.filter((team) => competition.teams.includes(team.id))
+  }
+
   // View for competition details
   const renderCompetitionDetails = () => {
     if (!selectedCompetition) return null
@@ -248,7 +236,11 @@ export default function CompetitionsPage() {
       <div className="space-y-6">
         <div className="flex items-center justify-between">
           <h2 className="text-2xl font-bold">{selectedCompetition.name}</h2>
-          <Button variant="outline" onClick={() => setSelectedCompetition(null)}>
+          <Button
+            variant="outline"
+            className="hover:cursor-pointer"
+            onClick={() => setSelectedCompetition(null)}
+          >
             Back to List
           </Button>
         </div>
@@ -282,6 +274,7 @@ export default function CompetitionsPage() {
                         {!event.completed ? (
                           <Button
                             size="sm"
+                            className="hover:cursor-pointer"
                             onClick={() => handleConnectECUs(selectedCompetition.id, event.id)}
                           >
                             Connect ECUs
@@ -290,6 +283,7 @@ export default function CompetitionsPage() {
                           <Button
                             size="sm"
                             variant="outline"
+                            className="hover:cursor-pointer"
                             onClick={() => setSelectedEventId(event.id)}
                           >
                             View Results
@@ -360,7 +354,7 @@ export default function CompetitionsPage() {
                 </TableHeader>
                 <TableBody>
                   {getEventResults(selectedCompetition, selectedEventId).map((result) => {
-                    const team = sampleTeams.find((t) => t.id === result.teamId)
+                    const team = teams.find((t) => t.id === result.teamId)
                     if (!team) return null
 
                     return (
@@ -399,7 +393,7 @@ export default function CompetitionsPage() {
       <main className="row-start-2 flex w-full max-w-4xl flex-col gap-8">
         <div className="flex items-center gap-4">
           <Link href="/">
-            <Button variant="ghost" size="icon">
+            <Button variant="ghost" size="icon" className="hover:cursor-pointer">
               <ArrowLeft className="h-5 w-5" />
             </Button>
           </Link>
@@ -411,8 +405,12 @@ export default function CompetitionsPage() {
         ) : (
           <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
             <TabsList className="grid w-full grid-cols-2">
-              <TabsTrigger value="view">View Competitions</TabsTrigger>
-              <TabsTrigger value="create">Create Competition</TabsTrigger>
+              <TabsTrigger value="view" className="hover:cursor-pointer">
+                View Competitions
+              </TabsTrigger>
+              <TabsTrigger value="create" className="hover:cursor-pointer">
+                Create Competition
+              </TabsTrigger>
             </TabsList>
 
             <TabsContent value="view" className="mt-6">
@@ -470,7 +468,7 @@ export default function CompetitionsPage() {
                       </CardContent>
                       <CardFooter>
                         <Button
-                          className="w-full"
+                          className="w-full hover:cursor-pointer"
                           onClick={() => setSelectedCompetition(competition)}
                         >
                           View Details
@@ -518,6 +516,7 @@ export default function CompetitionsPage() {
                           <div key={event} className="flex items-center space-x-2">
                             <Checkbox
                               id={`event-${event}`}
+                              className="hover:cursor-pointer"
                               checked={selectedEvents.includes(event)}
                               onCheckedChange={() => toggleEvent(event)}
                             />
@@ -529,35 +528,16 @@ export default function CompetitionsPage() {
                       </div>
                     </div>
 
-                    <div className="space-y-3">
-                      <Label className="mb-2 block">
-                        Select Teams
-                        {selectedTeams.length === 0 && (
-                          <span className="ml-2 flex items-center gap-1 text-sm text-red-500">
-                            <AlertCircle className="h-3 w-3" />
-                            At least 1 team required
-                          </span>
-                        )}
-                      </Label>
-                      <div className="grid gap-2 sm:grid-cols-2">
-                        {sampleTeams.map((team) => (
-                          <div key={team.id} className="flex items-center space-x-2">
-                            <Checkbox
-                              id={`team-${team.id}`}
-                              checked={selectedTeams.includes(team.id)}
-                              onCheckedChange={() => toggleTeam(team.id)}
-                            />
-                            <Label htmlFor={`team-${team.id}`} className="cursor-pointer">
-                              {team.name} ({team.vehicleClass} - {team.vehicleType})
-                            </Label>
-                          </div>
-                        ))}
-                      </div>
-                    </div>
+                    <TeamSelector
+                      teams={teams}
+                      selectedTeams={selectedTeams}
+                      onTeamToggle={toggleTeam}
+                      onAddTeam={handleAddTeam}
+                    />
 
                     <Button
                       type="submit"
-                      className="w-full"
+                      className="w-full hover:cursor-pointer"
                       disabled={
                         !competitionName.trim() ||
                         selectedEvents.length < 3 ||

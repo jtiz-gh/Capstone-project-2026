@@ -1,5 +1,6 @@
 import { Button } from "@/components/ui/button"
 import Image from "next/image"
+import Link from "next/link"
 
 export default function Home() {
   return (
@@ -8,26 +9,30 @@ export default function Home() {
         <h1 className="w-full text-center text-[30px] font-bold">EVolocity</h1>
 
         <div className="grid w-full max-w-md grid-cols-2 gap-4">
-          <Button
-            variant="outline"
-            className="flex aspect-square h-40 w-full flex-col items-center justify-center gap-2 text-lg"
-          >
-            <span>Teams</span>
-            <Image aria-hidden src="/teams_icon.svg" alt="Teams icon" width={40} height={40} />
-          </Button>
-          <Button
-            variant="outline"
-            className="flex aspect-square h-40 w-full flex-col items-center justify-center gap-2 text-lg"
-          >
-            <span>Competitions</span>
-            <Image
-              aria-hidden
-              src="/competitions_icon.svg"
-              alt="Teams icon"
-              width={40}
-              height={40}
-            />
-          </Button>
+          <Link href="/teams">
+            <Button
+              variant="outline"
+              className="flex aspect-square h-40 w-full flex-col items-center justify-center gap-2 text-lg hover:cursor-pointer"
+            >
+              <span>Teams</span>
+              <Image aria-hidden src="/teams_icon.svg" alt="Teams icon" width={40} height={40} />
+            </Button>
+          </Link>
+          <Link href="/competitions">
+            <Button
+              variant="outline"
+              className="flex aspect-square h-40 w-full flex-col items-center justify-center gap-2 text-lg hover:cursor-pointer"
+            >
+              <span>Competitions</span>
+              <Image
+                aria-hidden
+                src="/competitions_icon.svg"
+                alt="Teams icon"
+                width={40}
+                height={40}
+              />
+            </Button>
+          </Link>
           <Button variant="outline" className="col-span-2 w-full text-lg">
             Event Types
           </Button>
