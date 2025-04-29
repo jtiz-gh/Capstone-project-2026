@@ -33,9 +33,11 @@ export default function Home() {
               />
             </Button>
           </Link>
-          <Button variant="outline" className="col-span-2 w-full text-lg">
-            Event Types
-          </Button>
+          <Link href="/event-types" className="col-span-2">
+            <Button variant="outline" className="col-span-2 w-full text-lg">
+              Event Types
+            </Button>
+          </Link>
         </div>
       </main>
     </div>

@@ -5,7 +5,10 @@ export type Team = {
   vehicleType: "Bike" | "Kart"
 }
 
-export type EventType = "Gymkhana" | "Drag Race" | "Endurance & Efficiency"
+export type EventType = {
+  id: string
+  name: string
+}
 
 export type Event = {
   id: string
