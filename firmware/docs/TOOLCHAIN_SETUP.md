@@ -5,17 +5,16 @@
 ## Required Tools
 1. **Core Development Tools**
    - [Raspberry Pi Pico SDK](https://github.com/raspberrypi/pico-sdk)
-   - [CMake](https://cmake.org/) (3.13 or newer)
-   - C/C++ compiler (arm-none-eabi-gcc)
    - Python 3.x (for build scripts)
    - Git
 
 2. **Optional but Recommended**
    - [Visual Studio Code](https://code.visualstudio.com/)
-   - [Picoprobe](https://github.com/raspberrypi/picoprobe) (for debugging)
-   - [OpenOCD](https://openocd.org/) (for debugging)
+   - [Thonny IDE](https://thonny.org/) (for Python development)
 
 ## Installation Steps
+
+Follow [Get Started Guide](https://projects.raspberrypi.org/en/projects/get-started-pico-w/1)
 
 ### Windows Setup
 1. Install [ARM GNU Toolchain](https://developer.arm.com/tools-and-software/open-source-software/developer-tools/gnu-toolchain/gnu-rm/downloads)
