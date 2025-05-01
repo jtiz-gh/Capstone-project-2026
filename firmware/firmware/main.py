@@ -1,69 +1,56 @@
-import network
-import socket
-from time import sleep
 from picozero import pico_led
-import rp2
-import sys
+from wlan import init_wlan, try_connect_to_wlan, WLAN
+from networking import try_discover_server_ip, is_server_online, post_json_data
+from flash_storage import update_config, read_config
 
-ssid = "Test"
-password = "aaaaaab1"
+wlan: WLAN | None = None
 
-def connect_to_wifi():
-    wlan = network.WLAN(network.STA_IF)
-    wlan.active(True)
-    wlan.connect(ssid, password)
-    while not wlan.isconnected():
-        if rp2.bootsel_button() == 1:
-            sys.exit()
-        print("Waiting for connection...")
-        pico_led.on()
-        sleep(0.5)
+
+def init():
+    """Initializes the Pico's components."""
+    # pylint: disable=global-statement
+    global wlan
+
+    wlan = init_wlan()
+
+
+# Check if the script is being run directly or imported
+if __name__ == "__main__":
+    print("Starting main program...")
+
+    init()
+
+    pico_ip_address = try_connect_to_wlan(wlan, 10000)
+    server_ip_address = None
+
+    if pico_ip_address:
+        # Try using the last known server IP
+        config = read_config()
+        last_server_ip = config.get("last_server_ip")
+
+        if last_server_ip:
+            print(f"Found stored server IP: {last_server_ip}. Testing connection...")
+            if is_server_online(last_server_ip):
+                print("Stored server IP is valid.")
+                server_ip_address = last_server_ip
+            else:
+                print("Stored server IP is not reachable.")
+
+        # If no valid stored IP, try discovery
+        if server_ip_address is None:
+            print("Attempting server discovery...")
+            server_ip_address = try_discover_server_ip(10000)
+
+    if server_ip_address is None:
+        print("Failed to discover server IP address.")
         pico_led.off()
-        sleep(0.5)
-    ip = wlan.ifconfig()[0]
+    else:
+        print(f"Main server IP address is {server_ip_address}")
 
-    print(f"Connected to Wi-Fi, our IP address is: {ip}")
-    pico_led.on()
-    return ip
+        # Store the discovered IP address in flash
+        update_config("last_server_ip", server_ip_address)
+        pico_led.on()
 
-
-ip = connect_to_wifi()
-
-# --- UDP Broadcast Receiver / Responder ---
-UDP_PORT = 5555
-
-# To store an IP address
-UDP_RECV_BUFFER_SIZE = 32
-
-sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
-sock.setblocking(False)
-
-sock.bind(("0.0.0.0", UDP_PORT))
-print(f"Listening on 0.0.0.0:{UDP_PORT} for UDP broadcasts...")
-
-ip_address = ""
-
-while True:
-    pico_led.on()
-    sleep(0.15)
-    pico_led.off()
-    sleep(0.15)
-
-    try:
-        result = sock.recvfrom(UDP_RECV_BUFFER_SIZE)
-        if len(result) != 2:
-            print(result)
-            continue
-
-        data, addr = result
-        print(f"Received {data!r} from {addr[0]}:{addr[1]}")
-
-        # Echo response
-        sock.sendto(data, addr)
-        break
-    except Exception as e:
-        print("Socket error:", e)
-        sleep(1)
-
-pico_led.on()
+        # Send a POST request to the server
+        data_to_send = {"message": "Pico connected", "ip": pico_ip_address}
+        success, status = post_json_data(server_ip_address, data_to_send)
