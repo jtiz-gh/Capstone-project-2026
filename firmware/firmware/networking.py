@@ -34,7 +34,7 @@ def post_json_data(server_ip, data):
     headers = {"Content-Type": "application/json"}
 
     try:
-        response = urequests.post(url, headers=headers, data=json.dumps(data))
+        response = urequests.post(url, headers=headers, data=json.dumps(data), timeout=1)
         print(
             f"POST to {url}, Status: {response.status_code}, Response: {response.text}"
         )
