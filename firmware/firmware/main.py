@@ -1,24 +1,17 @@
 from picozero import pico_led
-from wlan import init_wlan, try_connect_to_wlan, WLAN
+from wlan import init_wlan, try_connect_to_wlan
 from networking import try_discover_server_ip, is_server_online, post_json_data
 from flash_storage import update_config, read_config
+from adc_driver import adc_init, read_adc_burst
 
-wlan: WLAN | None = None
+wlan = init_wlan()
 
 
-def init():
-    """Initializes the Pico's components."""
-    # pylint: disable=global-statement
-    global wlan
-
-    wlan = init_wlan()
-
+adc_voltage, adc_current = adc_init()
 
 # Check if the script is being run directly or imported
 if __name__ == "__main__":
     print("Starting main program...")
-
-    init()
 
     pico_ip_address = try_connect_to_wlan(wlan, 10000)
     server_ip_address = None
@@ -54,3 +47,24 @@ if __name__ == "__main__":
         # Send a POST request to the server
         data_to_send = {"message": "Pico connected", "ip": pico_ip_address}
         success, status = post_json_data(server_ip_address, data_to_send)
+
+    # Main loop
+    while True:
+        # Read ADC values
+        # Pass the ADC instances to the function
+        voltage_readings, current_readings = read_adc_burst(
+            adc_voltage, adc_current, num_readings=10, duration_s=0.1
+        )
+
+        if voltage_readings is not None and current_readings is not None:
+            # Process the readings (placeholder for actual logic)
+            print(f"Voltage readings: {voltage_readings}")
+            print(f"Current readings: {current_readings}")
+
+            # POST the data to the server
+            data_to_send = {
+                "voltage": voltage_readings,
+                "current": current_readings,
+            }
+
+            success, status = post_json_data(server_ip_address, data_to_send)

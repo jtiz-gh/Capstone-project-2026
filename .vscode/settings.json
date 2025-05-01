@@ -15,5 +15,6 @@
     "python.analysis.extraPaths": [
         "~/.micropico-stubs/included"
     ],
+    "pylint.enabled": false,
     "micropico.syncFolder": "firmware/firmware"
 }
