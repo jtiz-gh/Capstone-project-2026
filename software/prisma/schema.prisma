@@ -91,14 +91,15 @@ model Record {
 }
 
 model SensorData {
-  timestamp         Decimal
-  recordId          Int @id @default(autoincrement())
-  record            Record    @relation(fields: [recordId], references: [id])
-  deviceId          Int
-  device            Device   @relation(fields: [deviceId], references: [id])
-  sessionId            Int
-  voltage          Float?
-  current          Float?
+  id        Int     @id @default(autoincrement()) 
+  timestamp Decimal
+  recordId  Int
+  record    Record  @relation(fields: [recordId], references: [id])
+  deviceId  Int
+  device    Device  @relation(fields: [deviceId], references: [id])
+  sessionId Int
+  voltage   Float?
+  current   Float?
 }
 
 model DeviceStatus{
