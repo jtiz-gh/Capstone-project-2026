@@ -5,18 +5,9 @@ const http = require('http');
 const UDP_BROADCAST_PORT = 5555;
 const UDP_LISTEN_PORT = 8888;
 const HTTP_SERVER_PORT = 8000;
-const BROADCAST_INTERVAL_MS = 1000;
+const BROADCAST_INTERVAL_MS = 500;
 
-const localIps = findLocalIpAddresses();
-
-if (!localIps || localIps.length === 0) {
-	console.error('No valid local IP addresses found. Exiting.');
-	process.exit(1);
-}
-
-console.log(`Using local IP addresses: ${localIps.join(', ')}`);
-
-setupUdpBroadcast(localIps);
+setupUdpBroadcast();
 setupHttpServer();
 
 function findLocalIpAddresses() {
@@ -25,7 +16,6 @@ function findLocalIpAddresses() {
 	for (const iface of Object.values(interfaces)) {
 		for (const details of iface) {
 			if (details.family === 'IPv4' && !details.internal && details.mac !== '00:00:00:00:00:00') {
-				console.log('Found network interface:', details);
 				addresses.push(details.address);
 			}
 		}
@@ -33,16 +23,24 @@ function findLocalIpAddresses() {
 	return addresses;
 }
 
-function setupUdpBroadcast(ipAddresses) {
-	const message = Buffer.from(ipAddresses.join(','));
+function setupUdpBroadcast() {
 	const socket = dgram.createSocket('udp4');
 
 	socket.on('listening', () => {
 		socket.setBroadcast(true);
 		setInterval(() => {
+			// Recalculate IPs inside the interval
+			const currentIpAddresses = findLocalIpAddresses();
+			if (currentIpAddresses.length === 0) {
+				console.warn('No valid IP addresses found for broadcast.');
+				return;
+			}
+
+			const message = Buffer.from(currentIpAddresses.join(','));
 			socket.send(message, 0, message.length, UDP_BROADCAST_PORT, '255.255.255.255');
 		}, BROADCAST_INTERVAL_MS);
-		console.log(`Sending UDP broadcast of IPs ${ipAddresses.join(', ')} every ${BROADCAST_INTERVAL_MS}ms`);
+
+		console.log(`Sending UDP broadcast of IPs every ${BROADCAST_INTERVAL_MS}ms`);
 	});
 
 	socket.on('message', (message, remote) => {
