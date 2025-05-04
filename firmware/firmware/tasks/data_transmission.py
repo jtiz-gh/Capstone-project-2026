@@ -3,7 +3,8 @@ import drivers.wlan
 import uasyncio as asyncio
 from tasks.data_processing import processed_data, processed_data_lock
 
-TRANSMIT_INTERVAL_MS = 5000
+TRANSMIT_INTERVAL_MS = 2000
+MAX_PACKETS_PER_TRANSMISSION = 20
 
 server_ip = None
 
@@ -35,8 +36,12 @@ async def task():
             data_to_send = []
             async with processed_data_lock:
                 if len(processed_data) > 0:
-                    data_to_send = list(processed_data)
-                    processed_data.clear()
+                    data_to_send = list(processed_data[:MAX_PACKETS_PER_TRANSMISSION])
+
+                    del processed_data[: len(data_to_send)]
+                    print(
+                        f"Taking {len(data_to_send)} packets, {len(processed_data)} remaining in queue"
+                    )
 
             if data_to_send:
                 print(

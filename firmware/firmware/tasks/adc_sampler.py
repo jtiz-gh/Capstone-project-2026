@@ -11,12 +11,13 @@ ADC_CURRENT_PIN = 28
 
 FRAME_SIZE = 2 + 2
 
-BUFFER_MAX_SIZE = FRAME_SIZE * 30
+SAMPLE_PERIOD_MS = 4
 
-SAMPLE_PERIOD_MS = 10
+# We try to clear the buffer every 125 samples
+BUFFER_MAX_MEASUREMENTS = 250
 
 # RingIO needs 1 extra byte
-adc_ring_buffer = RingIO(FRAME_SIZE * BUFFER_MAX_SIZE + 1)
+adc_ring_buffer = RingIO(FRAME_SIZE * BUFFER_MAX_MEASUREMENTS + 1)
 
 adc_voltage = None
 adc_current = None
@@ -28,24 +29,15 @@ buffer_lock = asyncio.Lock()
 # Note: This noqa affects the whole file, it won't be checked for errors
 # ruff: noqa: F821
 @rp2.asm_pio()
-def clock_100hz():
-    # Total cycle = 20 cycles for 100Hz @ 2000Hz clock
-    # High phase: 10 cycles (1 + 9 = 10 cycles)
-    # 1 cycle
-    set(pins, 1)  # type: ignore
-    # 1 + 8 = 9 cycles
-    nop()[8]  # type: ignore
-
-    # Low phase: 10 cycles (1 + 8 + 1 = 10 cycles)
-    label("low_phase")  # type: ignore
-    # 1 cycle
-    set(pins, 0)  # type: ignore
-    # 1 + 7 = 8 cycles
-    nop()[7]  # type: ignore
+def clock_250hz():
+    # Total cycle = 8 cycles for 250Hz @ 2000Hz clock
+    # 1 + 6 = 7 cycles
+    nop()[6]  # type: ignore
     # 1 cycle
     irq(rel(0))  # type: ignore
 
 
+@micropython.native  # type: ignore  # noqa: F821
 def adc_pio_irq_callback(sm):  # Renamed and changed parameter
     global adc_ring_buffer, adc_voltage, adc_current
     if adc_voltage is None or adc_current is None:
@@ -70,7 +62,7 @@ async def init():
     adc_voltage = machine.ADC(ADC_VOLTAGE_PIN)
     adc_current = machine.ADC(ADC_CURRENT_PIN)
 
-    sm = rp2.StateMachine(0, clock_100hz, freq=2000)  # type: ignore
+    sm = rp2.StateMachine(0, clock_250hz, freq=2000)  # type: ignore
     rp2.PIO(0).irq(adc_pio_irq_callback)
     sm.active(1)
 
@@ -90,7 +82,7 @@ async def task():
             voltage_raw, current_raw = struct.unpack("<HH", frame_data)
 
             async with buffer_lock:
-                if len(adc_buffer) >= BUFFER_MAX_SIZE:
+                if len(adc_buffer) >= BUFFER_MAX_MEASUREMENTS:
                     adc_buffer.pop(0)
 
                 adc_buffer.append((voltage_raw, current_raw))

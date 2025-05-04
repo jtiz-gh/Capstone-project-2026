@@ -7,8 +7,9 @@ from tasks.adc_sampler import SAMPLE_PERIOD_MS, adc_buffer, buffer_lock
 processed_data = []
 processed_data_lock = asyncio.Lock()
 
-PROCESS_INTERVAL_MS = 750
-CHUNK_SIZE = 100  # Process in fixed chunks of 100 samples
+PROCESS_INTERVAL_MS = 300
+PACKET_INTERVAL_MS = 500
+CHUNK_SIZE = int(PACKET_INTERVAL_MS / SAMPLE_PERIOD_MS)
 
 # Calibration coefficients (replace with actual calibration values)
 # These would typically be determined through calibration procedures
@@ -30,16 +31,19 @@ async def init():
     pass
 
 
+@micropython.native  # type: ignore  # noqa: F821
 def apply_calibration(raw_value, scale, offset):
     """Apply calibration to raw ADC values."""
     return (raw_value * scale) + offset
 
 
+@micropython.native  # type: ignore  # noqa: F821
 def calculate_power(voltage, current):
     """Calculate instantaneous power."""
     return voltage * current
 
 
+@micropython.native  # type: ignore  # noqa: F821
 def calculate_energy(power_samples):
     """Calculate energy using Simpson's rule for numerical integration.
 
@@ -99,10 +103,8 @@ async def task():
             if len(adc_buffer) > 0:
                 current_adc_data = list(adc_buffer)
                 adc_buffer.clear()
-
-        # Skip if there's no new data
-        if not current_adc_data:
-            continue
+            else:
+                continue
 
         accumulated_samples.extend(current_adc_data)
 
