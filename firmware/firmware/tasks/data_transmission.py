@@ -1,26 +1,9 @@
-# TODO: Persist values to flash to protect against power loss.
-# In main loop:
-# - Check for new data
-#   - Check if Wi-Fi is connected
-#   - If not connected, store current values to flash
-#   - If connected, check if server IP is available.
-#     - If old data exists, store current data to flash and upload old data
-#     - If no old data exists, upload current data and store to flash if upload fails
-#
-# - Check for old data on flash
-#   - If old data exists, check if Wi-Fi is connected
-#     - If not connected, wait for Wi-Fi to connect
-#     - If connected, check if server IP is available
-#       - If server IP is available, try uploading data
-#         - If upload fails, store data to flash
-#         - If upload succeeds, delete data from flash
-
 import drivers.networking
 import drivers.wlan
 import uasyncio as asyncio
-from tasks.adc_sampler import adc_buffer, buffer_lock
+from tasks.data_processing import processed_data, processed_data_lock
 
-SEND_INTERVAL_S = 5
+TRANSMIT_INTERVAL_MS = 5000
 
 server_ip = None
 
@@ -30,7 +13,7 @@ async def init():
 
 
 async def task():
-    """Handles Wi-Fi connection, server discovery, and sending buffered ADC data."""
+    """Handles Wi-Fi connection, server discovery, and sending processed data."""
     global server_ip
     print("Data Sender task started.")
 
@@ -39,7 +22,7 @@ async def task():
         wifi_ip = await drivers.wlan.connect_wifi(timeout_ms=10000)
         if not wifi_ip:
             print("Wi-Fi connection failed. Retrying later...")
-            await asyncio.sleep(SEND_INTERVAL_S)
+            await asyncio.sleep_ms(TRANSMIT_INTERVAL_MS)
             continue
 
         # Check if server IP is still valid, or needs rediscovery
@@ -48,36 +31,25 @@ async def task():
         if verified_server_ip:
             server_ip = verified_server_ip
 
-            # Create a copy of the buffer to send and clear the original
+            # Create a copy of the processed data to send and clear the original
             data_to_send = []
-            async with buffer_lock:
-                print(adc_buffer)
-                if len(adc_buffer) > 0:
-                    data_to_send = list(adc_buffer)
-                    adc_buffer.clear()
+            async with processed_data_lock:
+                if len(processed_data) > 0:
+                    data_to_send = list(processed_data)
+                    processed_data.clear()
 
             if data_to_send:
                 print(
-                    f"Attempting to send {len(data_to_send)} samples to {server_ip}..."
+                    f"Attempting to send {len(data_to_send)} processed data packets to {server_ip}..."
                 )
-                readings_json = []
-                for voltage_raw, current_raw in data_to_send:
-                    voltage = (voltage_raw / 65535) * 3.3
-                    current = (current_raw / 65535) * 3.3
-                    readings_json.append(
-                        {
-                            "v": round(voltage, 4),
-                            "c": round(current, 4),
-                        }
-                    )
 
                 payload = {
                     "id": drivers.wlan.get_mac_address(),
-                    # Increment session_id every time the Pico is power cycled
+                    # TODO: Increment session_id every time the Pico is power cycled
                     "session_id": 1,
-                    # Increment packet_id for each batch of readings sent
+                    # TODO: Increment packet_id for each batch of readings sent
                     "packet_id": 1,
-                    "readings": readings_json,
+                    "processed_data": data_to_send,
                 }
                 success, status = drivers.networking.post_json_data(server_ip, payload)
 
@@ -105,4 +77,4 @@ async def task():
             print("No verified server IP available. Waiting...")
             server_ip = None
 
-        await asyncio.sleep(SEND_INTERVAL_S)
+        await asyncio.sleep_ms(TRANSMIT_INTERVAL_MS)

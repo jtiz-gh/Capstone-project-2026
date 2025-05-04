@@ -1,21 +1,26 @@
-import uasyncio as asyncio
-import network
-from drivers.picozero import pico_led
+import sys
 
+import network
 import tasks.adc_sampler
+import tasks.data_processing
 import tasks.data_transmission
+import uasyncio as asyncio
+from drivers.picozero import pico_led
 
 async def main():
     print("Initialising drivers...")
     await tasks.data_transmission.init()
     await tasks.adc_sampler.init()
+    await tasks.data_processing.init()
 
     print("Creating tasks...")
     sampler_task = asyncio.create_task(tasks.adc_sampler.task())
+    processor_task = asyncio.create_task(tasks.data_processing.task())
     sender_task = asyncio.create_task(tasks.data_transmission.task())
 
     print("Running tasks...")
-    await asyncio.gather(sampler_task, sender_task)
+    await asyncio.gather(sampler_task, processor_task, sender_task)
+
 
 if __name__ == "__main__":
     print("Starting main application...")
@@ -25,6 +30,7 @@ if __name__ == "__main__":
         print("Program stopped by user.")
     except Exception as e:
         print(f"An error occurred: {e}")
+        sys.print_exception(e)
     finally:
         print("Performing cleanup...")
         try:

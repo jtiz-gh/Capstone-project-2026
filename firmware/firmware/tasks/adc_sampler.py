@@ -13,6 +13,8 @@ FRAME_SIZE = 2 + 2
 
 BUFFER_MAX_SIZE = FRAME_SIZE * 30
 
+SAMPLE_PERIOD_MS = 10
+
 # RingIO needs 1 extra byte
 adc_ring_buffer = RingIO(FRAME_SIZE * BUFFER_MAX_SIZE + 1)
 
@@ -81,7 +83,7 @@ async def task():
     sreader = asyncio.StreamReader(adc_ring_buffer)
 
     while True:
-        await asyncio.sleep_ms(5)
+        await asyncio.sleep_ms(int(SAMPLE_PERIOD_MS / 2))
 
         try:
             frame_data = await sreader.readexactly(FRAME_SIZE)
