@@ -1,7 +1,8 @@
 import drivers.networking
 import drivers.wlan
 import uasyncio as asyncio
-from tasks.data_processing import processed_data, processed_data_lock
+from tasks.data_processing import PROCESSED_FRAME_SIZE, processed_ring_buffer
+from util.packer import unpack_processed_float_data
 
 TRANSMIT_INTERVAL_MS = 2000
 MAX_PACKETS_PER_TRANSMISSION = 20
@@ -10,7 +11,7 @@ server_ip = None
 
 
 async def init():
-    await drivers.wlan.connect_wifi()
+    pass
 
 
 async def task():
@@ -18,12 +19,15 @@ async def task():
     global server_ip
     print("Data Sender task started.")
 
+    sreader = asyncio.StreamReader(processed_ring_buffer)
+
     while True:
+        await asyncio.sleep_ms(0)
+
         # Ensure Wi-Fi is connected
         wifi_ip = await drivers.wlan.connect_wifi(timeout_ms=10000)
         if not wifi_ip:
             print("Wi-Fi connection failed. Retrying later...")
-            await asyncio.sleep_ms(TRANSMIT_INTERVAL_MS)
             continue
 
         # Check if server IP is still valid, or needs rediscovery
@@ -32,16 +36,34 @@ async def task():
         if verified_server_ip:
             server_ip = verified_server_ip
 
-            # Create a copy of the processed data to send and clear the original
             data_to_send = []
-            async with processed_data_lock:
-                if len(processed_data) > 0:
-                    data_to_send = list(processed_data[:MAX_PACKETS_PER_TRANSMISSION])
+            try:
+                frame_data = await sreader.readexactly(PROCESSED_FRAME_SIZE)
 
-                    del processed_data[: len(data_to_send)]
-                    print(
-                        f"Taking {len(data_to_send)} packets, {len(processed_data)} remaining in queue"
-                    )
+                (
+                    avg_voltage,
+                    avg_current,
+                    avg_power,
+                    peak_voltage,
+                    peak_current,
+                    peak_power,
+                    energy,
+                ) = unpack_processed_float_data(frame_data)
+
+                data_to_send.append(
+                    {
+                        "timestamp": 0,
+                        "avg_voltage": avg_voltage,
+                        "avg_current": avg_current,
+                        "avg_power": avg_power,
+                        "peak_voltage": peak_voltage,
+                        "peak_current": peak_current,
+                        "peak_power": peak_power,
+                        "energy": energy,
+                    }
+                )
+            except EOFError:
+                pass
 
             if data_to_send:
                 print(
@@ -81,5 +103,3 @@ async def task():
             # get_server_ip returned None
             print("No verified server IP available. Waiting...")
             server_ip = None
-
-        await asyncio.sleep_ms(TRANSMIT_INTERVAL_MS)

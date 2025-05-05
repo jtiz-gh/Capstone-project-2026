@@ -1,8 +1,8 @@
 import asyncio
 from time import ticks_diff, ticks_ms
 
-from network import STA_IF, WLAN
 from drivers.picozero import pico_led
+from network import STA_IF, WLAN
 
 # Configuration
 WIFI_SSID = "Test"

@@ -1,13 +1,14 @@
 import time
 
 import uasyncio as asyncio
-from tasks.adc_sampler import SAMPLE_PERIOD_MS, adc_buffer, buffer_lock
+from drivers.adc_sampler import (
+    MEASUREMENT_FRAME_SIZE,
+    SAMPLE_PERIOD_MS,
+    adc_ring_buffer,
+)
+from micropython import RingIO
+from util.packer import pack_processed_float_data, unpack_voltage_current_measurement
 
-# Processed data buffer
-processed_data = []
-processed_data_lock = asyncio.Lock()
-
-PROCESS_INTERVAL_MS = 300
 PACKET_INTERVAL_MS = 500
 CHUNK_SIZE = int(PACKET_INTERVAL_MS / SAMPLE_PERIOD_MS)
 
@@ -18,10 +19,16 @@ CURRENT_SCALE = 3.3 / 65535
 VOLTAGE_OFFSET = 0
 CURRENT_OFFSET = 0
 
-# Buffer for accumulating samples until we have enough to process
-accumulated_samples = []
+PROCESSED_FRAME_SIZE = (
+    4 * 6
+) + 4  # 6 float values (avg + peak current/voltage/power) + energy
+PROCESSED_BUFFER_MAX_DATA = 30
+# Processed data buffer
+processed_ring_buffer = RingIO(PROCESSED_FRAME_SIZE * PROCESSED_BUFFER_MAX_DATA + 1)
+processed_ring_buffer_data = bytearray(PROCESSED_FRAME_SIZE)
 
-start_time = time.ticks_ms()
+# Buffer for accumulating samples until we have enough to process
+accumulated_measurements = []
 
 
 async def init():
@@ -31,13 +38,13 @@ async def init():
     pass
 
 
-@micropython.native  # type: ignore  # noqa: F821
+@micropython.viper  # type: ignore  # noqa: F821
 def apply_calibration(raw_value, scale, offset):
     """Apply calibration to raw ADC values."""
     return (raw_value * scale) + offset
 
 
-@micropython.native  # type: ignore  # noqa: F821
+@micropython.viper  # type: ignore  # noqa: F821
 def calculate_power(voltage, current):
     """Calculate instantaneous power."""
     return voltage * current
@@ -89,33 +96,38 @@ def calculate_energy(power_samples):
         return result
 
 
+# TODO: Attempt to use Viper to speed up this function
 async def task():
     """Process data from the ADC buffer."""
-    global processed_data, accumulated_samples
+    global processed_ring_buffer, processed_ring_buffer_data, accumulated_measurements
     print("Data Processing task started.")
 
+    sreader = asyncio.StreamReader(adc_ring_buffer)
+
     while True:
-        await asyncio.sleep_ms(PROCESS_INTERVAL_MS)
+        await asyncio.sleep_ms(0)
 
-        # Copy the ADC buffer and clear it
-        current_adc_data = []
-        async with buffer_lock:
-            if len(adc_buffer) > 0:
-                current_adc_data = list(adc_buffer)
-                adc_buffer.clear()
-            else:
-                continue
+        # Read from ADC until we have at least CHUNK_SIZE samples
+        while len(accumulated_measurements) < CHUNK_SIZE:
+            try:
+                frame_data = await sreader.readexactly(MEASUREMENT_FRAME_SIZE)
+                voltage_raw, current_raw = unpack_voltage_current_measurement(
+                    frame_data
+                )
 
-        accumulated_samples.extend(current_adc_data)
+                accumulated_measurements.append((voltage_raw, current_raw))
+            except EOFError:
+                pass
 
-        # Process in chunks of CHUNK_SIZE samples
-        while len(accumulated_samples) >= CHUNK_SIZE:
-            samples_to_process = accumulated_samples[:CHUNK_SIZE]
-            accumulated_samples = accumulated_samples[CHUNK_SIZE:]
+        # Process in chunks of CHUNK_SIZE samples until we have less than CHUNK_SIZE samples left
+        while len(accumulated_measurements) >= CHUNK_SIZE:
+            samples_to_process = accumulated_measurements[:CHUNK_SIZE]
+            accumulated_measurements = accumulated_measurements[CHUNK_SIZE:]
 
-            voltages = []
-            currents = []
-            power_samples = []
+            # Preallocate lists for performance
+            voltages = [0] * CHUNK_SIZE
+            currents = [0] * CHUNK_SIZE
+            power_samples = [0] * CHUNK_SIZE
 
             for voltage_raw, current_raw in samples_to_process:
                 voltage = apply_calibration(voltage_raw, VOLTAGE_SCALE, VOLTAGE_OFFSET)
@@ -142,32 +154,22 @@ async def task():
 
             energy = calculate_energy(power_samples)
 
-            # Create processed data packet
-            processed_packet = {
-                # Time since program start in ms
-                "timestamp": time.ticks_ms() - start_time,
-                # Average values
-                "avg_voltage": round(avg_voltage, 4),
-                "avg_current": round(avg_current, 4),
-                "avg_power": round(avg_power, 4),
-                # Peak values
-                "peak_power": round(peak_power, 4),
-                "peak_voltage": round(peak_voltage, 4),
-                "peak_current": round(peak_current, 4),
-                # Energy
-                "energy": round(energy, 4),
-            }
+            # Pack processed data packet
+            pack_processed_float_data(
+                processed_ring_buffer_data,
+                avg_voltage,
+                avg_current,
+                avg_power,
+                peak_voltage,
+                peak_current,
+                peak_power,
+                energy,
+            )
 
-            async with processed_data_lock:
-                processed_data.append(processed_packet)
+            processed_ring_buffer.write(processed_ring_buffer_data)
 
             print(f"Processed {CHUNK_SIZE} samples.")
             print(
                 f"Avg V: {avg_voltage:.4f}, Avg I: {avg_current:.4f}, Peak P: {peak_power:.4f}W, "
                 f"Peak V: {peak_voltage:.4f}, Peak I: {peak_current:.4f}, Energy: {energy:.4f}J"
-            )
-
-        if accumulated_samples:
-            print(
-                f"Waiting for more samples: {len(accumulated_samples)}/{CHUNK_SIZE} accumulated"
             )

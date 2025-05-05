@@ -1,25 +1,28 @@
 import sys
 
+import drivers.adc_sampler
+import drivers.wlan
 import network
-import tasks.adc_sampler
 import tasks.data_processing
 import tasks.data_transmission
 import uasyncio as asyncio
 from drivers.picozero import pico_led
 
+
 async def main():
     print("Initialising drivers...")
+    await drivers.adc_sampler.init()
+    await drivers.wlan.connect_wifi()
+
     await tasks.data_transmission.init()
-    await tasks.adc_sampler.init()
     await tasks.data_processing.init()
 
     print("Creating tasks...")
-    sampler_task = asyncio.create_task(tasks.adc_sampler.task())
     processor_task = asyncio.create_task(tasks.data_processing.task())
     sender_task = asyncio.create_task(tasks.data_transmission.task())
 
     print("Running tasks...")
-    await asyncio.gather(sampler_task, processor_task, sender_task)
+    await asyncio.gather(processor_task, sender_task)
 
 
 if __name__ == "__main__":
