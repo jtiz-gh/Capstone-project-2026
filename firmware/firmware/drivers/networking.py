@@ -36,7 +36,10 @@ def post_json_data(server_ip, data):
 
     try:
         response = urequests.post(
-            url, headers=headers, data=json.dumps(data), timeout=1
+            url,
+            headers=headers,
+            data=json.dumps(data, separators=(",", ":")),
+            timeout=1,
         )
         print(
             f"POST to {url}, Status: {response.status_code}, Response: {response.text}"
@@ -130,7 +133,7 @@ def try_discover_server_ip(timeout_ms=10000):
     return None  # Explicitly return None if no server found
 
 
-async def get_server_ip(current_ip=None, discovery_timeout_ms=5000):
+async def get_server_ip(current_ip=None, discovery_timeout_ms=1000):
     """
     Gets a verified server IP. Checks current IP first, then attempts discovery.
 

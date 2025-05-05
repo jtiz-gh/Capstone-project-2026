@@ -41,6 +41,10 @@ def get_mac_address():
         print(f"Error getting MAC address: {e}")
         return None
 
+def is_connected():
+    """Checks if the device is connected to Wi-Fi."""
+    wlan = _get_wlan()
+    return wlan.isconnected()
 
 async def connect_wifi(timeout_ms=5000):
     """Connects to the configured Wi-Fi network."""

@@ -1,10 +1,15 @@
 import struct
+
 import micropython
+
+PROCESSED_DATA_FMT = "<" + "LLL" + "fff" + "fff" + "f"  # 1 uint32 + 7 float values
+PROCESSED_FRAME_SIZE = struct.calcsize(PROCESSED_DATA_FMT)  # 36 bytes
 
 
 # ruff: noqa: F821
 @micropython.viper  # type: ignore
 def pack_voltage_current_measurement(buffer, voltage: uint, current: uint):  # type: ignore
+    # Avoid using struct for packing to reduce overhead
     b: ptr16 = ptr16(buffer)  # type: ignore
 
     # Pack voltage (first uint16)
@@ -30,6 +35,9 @@ def unpack_voltage_current_measurement(buffer):  # type: ignore
 @micropython.viper  # type: ignore
 def pack_processed_float_data(
     buffer,
+    timestamp,
+    session_id,
+    measurement_id,
     avg_voltage,
     avg_current,
     avg_power,
@@ -38,48 +46,13 @@ def pack_processed_float_data(
     peak_power,
     energy,
 ):
-    b: ptr32 = ptr32(buffer)  # type: ignore
-
-    # The loop has been unwound to avoid the overhead of a loop with an unknown number of iterations.
-    # The code is very ugly, but it is faster than using a loop.
-
-    # for i in range(0, len(arguments)):
-    #     # Pack each argument as a float (4 bytes)
-    #     packed_data: bytes = struct.pack("f", arguments[i])
-    #     b[i * 4 + 2 : (i + 1) * 4 + 2] = packed_data
-
-    # Pack avg_voltage (first float)
-    packed_data: int = struct.unpack("<I", struct.pack("f", avg_voltage))[0]
-    b[0] = int(packed_data)
-
-    # Pack avg_current (second float)
-    packed_data: int = struct.unpack("<I", struct.pack("f", avg_current))[0]
-    b[1] = int(packed_data)
-
-    # Pack avg_power (third float)
-    packed_data: int = struct.unpack("<I", struct.pack("f", avg_power))[0]
-    b[2] = int(packed_data)
-
-    # Pack peak_voltage (forth float)
-    packed_data: int = struct.unpack("<I", struct.pack("f", peak_voltage))[0]
-    b[3] = int(packed_data)
-
-    # Pack peak_current (fifth float)
-    packed_data: int = struct.unpack("<I", struct.pack("f", peak_current))[0]
-    b[4] = int(packed_data)
-
-    # Pack peak_power (sixth float)
-    packed_data: int = struct.unpack("<I", struct.pack("f", peak_power))[0]
-    b[5] = int(packed_data)
-
-    # Pack energy (seventh float)
-    packed_data: int = struct.unpack("<I", struct.pack("f", energy))[0]
-    b[6] = int(packed_data)
-
-
-@micropython.viper  # type: ignore
-def unpack_processed_float_data(buffer):
-    (
+    struct.pack_into(
+        PROCESSED_DATA_FMT,
+        buffer,
+        0,
+        timestamp,
+        session_id,
+        measurement_id,
         avg_voltage,
         avg_current,
         avg_power,
@@ -87,9 +60,28 @@ def unpack_processed_float_data(buffer):
         peak_current,
         peak_power,
         energy,
-    ) = struct.unpack("<fffffff", buffer)
+    )
+
+
+@micropython.viper  # type: ignore
+def unpack_processed_float_data(buffer):
+    (
+        timestamp,
+        session_id,
+        measurement_id,
+        avg_voltage,
+        avg_current,
+        avg_power,
+        peak_voltage,
+        peak_current,
+        peak_power,
+        energy,
+    ) = struct.unpack(PROCESSED_DATA_FMT, buffer)
 
     return (
+        timestamp,
+        session_id,
+        measurement_id,
         avg_voltage,
         avg_current,
         avg_power,

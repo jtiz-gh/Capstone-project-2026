@@ -1,5 +1,6 @@
 import time
 
+import drivers.flash_storage
 import uasyncio as asyncio
 from drivers.adc_sampler import (
     MEASUREMENT_FRAME_SIZE,
@@ -7,28 +8,33 @@ from drivers.adc_sampler import (
     adc_ring_buffer,
 )
 from micropython import RingIO
-from util.packer import pack_processed_float_data, unpack_voltage_current_measurement
+from util.packer import (
+    PROCESSED_FRAME_SIZE,
+    pack_processed_float_data,
+    unpack_voltage_current_measurement,
+)
 
 PACKET_INTERVAL_MS = 500
 CHUNK_SIZE = int(PACKET_INTERVAL_MS / SAMPLE_PERIOD_MS)
 
-# Calibration coefficients (replace with actual calibration values)
-# These would typically be determined through calibration procedures
+# TODO: Calibration coefficients (replace with actual calibration values)
 VOLTAGE_SCALE = 3.3 / 65535
 CURRENT_SCALE = 3.3 / 65535
 VOLTAGE_OFFSET = 0
 CURRENT_OFFSET = 0
 
-PROCESSED_FRAME_SIZE = (
-    4 * 6
-) + 4  # 6 float values (avg + peak current/voltage/power) + energy
-PROCESSED_BUFFER_MAX_DATA = 30
+PROCESSED_BUFFER_MAX_DATA = 60
 # Processed data buffer
 processed_ring_buffer = RingIO(PROCESSED_FRAME_SIZE * PROCESSED_BUFFER_MAX_DATA + 1)
 processed_ring_buffer_data = bytearray(PROCESSED_FRAME_SIZE)
 
 # Buffer for accumulating samples until we have enough to process
 accumulated_measurements = []
+
+start_time = time.ticks_ms()
+
+session_id: int = drivers.flash_storage.get_next_session_id()
+measurement_id: int = 0
 
 
 async def init():
@@ -99,7 +105,12 @@ def calculate_energy(power_samples):
 # TODO: Attempt to use Viper to speed up this function
 async def task():
     """Process data from the ADC buffer."""
-    global processed_ring_buffer, processed_ring_buffer_data, accumulated_measurements
+    global \
+        processed_ring_buffer, \
+        processed_ring_buffer_data, \
+        accumulated_measurements, \
+        measurement_id
+
     print("Data Processing task started.")
 
     sreader = asyncio.StreamReader(adc_ring_buffer)
@@ -156,7 +167,13 @@ async def task():
 
             # Pack processed data packet
             pack_processed_float_data(
+                # Buffer
                 processed_ring_buffer_data,
+                # Metadata
+                time.ticks_ms() - start_time,
+                session_id,
+                measurement_id,
+                # Data
                 avg_voltage,
                 avg_current,
                 avg_power,
@@ -165,6 +182,8 @@ async def task():
                 peak_power,
                 energy,
             )
+
+            measurement_id += 1
 
             processed_ring_buffer.write(processed_ring_buffer_data)
 
