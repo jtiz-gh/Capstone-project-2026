@@ -44,8 +44,6 @@ export async function POST(request: Request) {
     const newDevice = await prisma.device.create({
       data: {
         serialNo,
-        vehicleType,
-        vehicleClass,
         teamId,
       },
     })
