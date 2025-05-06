@@ -90,3 +90,32 @@ def unpack_processed_float_data(buffer):
         peak_power,
         energy,
     )
+
+
+def unpack_processed_float_data_to_dict(frame_data):
+    """Unpacks binary frame data and returns it as a dictionary."""
+    (
+        timestamp,
+        session_id,
+        measurement_id,
+        avg_voltage,
+        avg_current,
+        avg_power,
+        peak_voltage,
+        peak_current,
+        peak_power,
+        energy,
+    ) = unpack_processed_float_data(frame_data)
+
+    return {
+        "timestamp": timestamp,
+        "session_id": session_id,
+        "measurement_id": measurement_id,
+        "avg_voltage": avg_voltage,
+        "avg_current": avg_current,
+        "avg_power": avg_power,
+        "peak_voltage": peak_voltage,
+        "peak_current": peak_current,
+        "peak_power": peak_power,
+        "energy": energy,
+    }
