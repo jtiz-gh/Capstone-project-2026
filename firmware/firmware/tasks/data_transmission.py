@@ -1,18 +1,19 @@
+import gc
 import time
 
 import drivers.flash_storage
 import drivers.networking
 import drivers.wlan
 import uasyncio as asyncio
+from lib.packer import unpack_processed_float_data
 from tasks.data_processing import PROCESSED_FRAME_SIZE, processed_ring_buffer
-from util.packer import unpack_processed_float_data
 
 TRANSMIT_INTERVAL_MS = 2000
 # Number of items to batch together when connected to the server and streaming.
 # Should be minimised to reduce the chance of data loss in the event of a power loss.
 STREAMING_BATCH_SIZE = 10
 # Number of items to batch together when clearing a backlog of previously measured data.
-BACKLOG_BATCH_SIZE = 20
+BACKLOG_BATCH_SIZE = 40
 # Cooldown period between connection attempts (in seconds)
 WIFI_CONNECT_COOLDOWN_SEC = 10
 
@@ -98,18 +99,20 @@ async def task():
     global server_ip, last_wifi_connect_attempt
     print("Data Sender task started.")
 
-    sreader = asyncio.StreamReader(processed_ring_buffer)
     frame_buffer = []
 
     while True:
         await asyncio.sleep_ms(0)
 
         try:
-            frame_data = await sreader.readexactly(PROCESSED_FRAME_SIZE)
+            if should_process_backlog():
+                await process_backlog()
+
+            new_frame_data = bytearray(await processed_ring_buffer.get())
 
             if drivers.wlan.is_connected() and server_ip:
                 # Connected: Add to buffer and process if batch is full
-                frame_buffer.append(frame_data)
+                frame_buffer.append(new_frame_data)
 
                 # Check if there's a backlog
                 if drivers.flash_storage.measurement_backlog_size() > 0:
@@ -117,7 +120,9 @@ async def task():
                     print(f"Adding {len(frame_buffer)} frames to measurement backlog.")
                     drivers.flash_storage.write_measurements(frame_buffer)
                     frame_buffer = []
-                    await process_backlog()
+
+                    if should_process_backlog():
+                        await process_backlog()
                 else:
                     # Try stream to server once we have enough data
                     if len(frame_buffer) >= STREAMING_BATCH_SIZE:
@@ -130,7 +135,7 @@ async def task():
             else:
                 # Not connected: Store immediately, don't buffer
                 print("No Wi-Fi connection. Storing data immediately to flash.")
-                drivers.flash_storage.write_measurements([frame_data])
+                drivers.flash_storage.write_measurements([new_frame_data])
 
                 # Try to establish Wi-Fi connection for next iteration
                 current_time = time.time()
@@ -146,7 +151,7 @@ async def task():
                     if wifi_ip:
                         print(f"Wi-Fi connected with IP: {wifi_ip}")
 
-                    if not server_ip:
+                    if drivers.wlan.is_connected() and not server_ip:
                         # Try to discover server
                         new_server_ip = await drivers.networking.get_server_ip(None)
                         if new_server_ip:
@@ -163,28 +168,27 @@ async def task():
             pass
 
 
+def should_process_backlog():
+    """Check if backlog processing should be done."""
+    measurement_backlog_size = drivers.flash_storage.measurement_backlog_size()
+    return processed_ring_buffer.empty() and measurement_backlog_size > 0
+
+
 async def process_backlog():
     """Process and upload backlog data from the single measurements file."""
     measurement_backlog_size = drivers.flash_storage.measurement_backlog_size()
     frames_available = measurement_backlog_size // PROCESSED_FRAME_SIZE
 
-    if frames_available == 0:
-        return
-
     print(f"Processing backlog with {frames_available} measurements.")
-
-    # Set time limit of 5 seconds
-    start_time = time.time()
-    max_processing_time = 5  # seconds
 
     # Process in batches to avoid memory issues
     frames_processed = 0
     while frames_processed < frames_available:
-        # Check if we've exceeded our time limit
-        if time.time() - start_time >= max_processing_time:
-            print(
-                f"Processed {frames_processed} frames before timing out after {max_processing_time}s"
-            )
+        await asyncio.sleep_ms(0)
+
+        # Check if there are any new frames on the buffer
+        if not processed_ring_buffer.empty():
+            print("New frames available in the buffer, skipping backlog processing.")
             return
 
         # Calculate batch size for this iteration
@@ -198,7 +202,12 @@ async def process_backlog():
             break
 
         # Try to upload the batch
-        if await upload_data(frame_data_batch):
+        result = await upload_data(frame_data_batch)
+
+        # Force garbage collection to free up memory
+        gc.collect()
+
+        if result:
             # Delete successfully uploaded measurements
             drivers.flash_storage.delete_measurements(len(frame_data_batch))
             frames_processed += len(frame_data_batch)

@@ -1,7 +1,7 @@
 import rp2
 from machine import ADC
 from micropython import RingIO
-from util.packer import pack_voltage_current_measurement
+from lib.packer import pack_voltage_current_measurement
 
 # TODO: Replace with actual ADC pins
 ADC_VOLTAGE_PIN = 27

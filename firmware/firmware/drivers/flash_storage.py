@@ -2,7 +2,7 @@ import json
 import os
 
 import drivers.wlan
-from util.packer import PROCESSED_FRAME_SIZE
+from lib.packer import PROCESSED_FRAME_SIZE
 
 CONFIG_FILENAME = "config.json"
 MEASUREMENT_FILENAME = "measurements.dat"

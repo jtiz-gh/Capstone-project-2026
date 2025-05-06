@@ -7,8 +7,8 @@ from drivers.adc_sampler import (
     SAMPLE_PERIOD_MS,
     adc_ring_buffer,
 )
-from micropython import RingIO
-from util.packer import (
+from lib.ringbuf_queue import RingbufQueue
+from lib.packer import (
     PROCESSED_FRAME_SIZE,
     pack_processed_float_data,
     unpack_voltage_current_measurement,
@@ -25,7 +25,7 @@ CURRENT_OFFSET = 0
 
 PROCESSED_BUFFER_MAX_DATA = 60
 # Processed data buffer
-processed_ring_buffer = RingIO(PROCESSED_FRAME_SIZE * PROCESSED_BUFFER_MAX_DATA + 1)
+processed_ring_buffer = RingbufQueue(PROCESSED_BUFFER_MAX_DATA)
 processed_ring_buffer_data = bytearray(PROCESSED_FRAME_SIZE)
 
 # Buffer for accumulating samples until we have enough to process
@@ -185,7 +185,7 @@ async def task():
 
             measurement_id += 1
 
-            processed_ring_buffer.write(processed_ring_buffer_data)
+            await processed_ring_buffer.put(processed_ring_buffer_data)
 
             print(f"Processed {CHUNK_SIZE} samples.")
             print(

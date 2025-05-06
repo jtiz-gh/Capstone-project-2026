@@ -1,3 +1,4 @@
+import gc
 import sys
 
 import drivers.adc_sampler
@@ -11,6 +12,8 @@ from drivers.picozero import pico_led
 
 async def main():
     print("Initialising drivers...")
+    gc.enable()
+
     await drivers.adc_sampler.init()
     await drivers.wlan.connect_wifi()
 
