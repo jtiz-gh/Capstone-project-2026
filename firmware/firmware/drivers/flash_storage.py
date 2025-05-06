@@ -2,6 +2,7 @@ import json
 import os
 
 import drivers.wlan
+from constants import BACKLOG_BATCH_SIZE
 from lib.packer import PROCESSED_FRAME_SIZE
 
 CONFIG_FILENAME = "config.json"
@@ -140,6 +141,37 @@ def read_measurements(count: int) -> list[bytes]:
         return result
 
 
+def stream_file_data(filename, chunk_size=None):
+    """Generator function that streams data from a file in chunks."""
+
+    if chunk_size is None:
+        chunk_size = PROCESSED_FRAME_SIZE
+
+    # Limit the total amount of data to BACKLOG_BATCH_SIZE frames
+    max_bytes = BACKLOG_BATCH_SIZE * PROCESSED_FRAME_SIZE
+    bytes_read = 0
+
+    try:
+        with open(filename, "rb") as f:
+            while bytes_read < max_bytes:
+                # Calculate remaining bytes within our limit
+                remaining = max_bytes - bytes_read
+                # Read the smaller of chunk_size or remaining bytes
+                read_size = min(chunk_size, remaining)
+
+                chunk = f.read(read_size)
+                if not chunk:
+                    break
+
+                bytes_read += len(chunk)
+                yield chunk
+
+        print(f"Streamed {bytes_read} bytes from file '{filename}'")
+    except OSError as e:
+        print(f"Error streaming data from file '{filename}': {e}")
+        return
+
+
 def delete_measurements(count: int) -> bool:
     """Deletes a specified number of measurements from the start of the file."""
     try:
@@ -182,9 +214,10 @@ def delete_measurements(count: int) -> bool:
 
 
 def measurement_backlog_size() -> int:
-    """Checks if there are any measurements in the backlog."""
+    """Returns the size of the measurement backlog file in bytes."""
     try:
         # .st_size [6] returns the size of the file in bytes
-        return os.stat(MEASUREMENT_FILENAME)[6]
+        file_size = os.stat(MEASUREMENT_FILENAME)[6]
+        return file_size
     except OSError:
-        return False
+        return 0

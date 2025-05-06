@@ -1,21 +1,16 @@
-import gc
 import time
 
 import drivers.flash_storage
 import drivers.wlan
 import lib.http
 import uasyncio as asyncio
+from constants import (
+    BACKLOG_BATCH_SIZE,
+    SERVER_CONNECT_COOLDOWN_SEC,
+    STREAMING_BATCH_SIZE,
+)
 from lib.packer import PROCESSED_FRAME_SIZE
 from tasks.data_processing import processed_queue
-
-TRANSMIT_INTERVAL_MS = 2000
-# Number of items to batch together when connected to the server and streaming.
-# Should be minimised to reduce the chance of data loss in the event of a power loss.
-STREAMING_BATCH_SIZE = 10
-# Number of items to batch together when clearing a backlog of previously measured data.
-BACKLOG_BATCH_SIZE = 20
-# Cooldown period between connection attempts (in seconds)
-SERVER_CONNECT_COOLDOWN_SEC = 10
 
 last_wifi_connect_attempt = 0  # Timestamp of the last connection attempt
 
@@ -40,7 +35,7 @@ async def task():
             frame_buffer.append(new_frame_data)
 
             while (
-                not processed_queue.empty() and len(frame_buffer) < BACKLOG_BATCH_SIZE
+                not processed_queue.empty() and len(frame_buffer) < STREAMING_BATCH_SIZE
             ):
                 new_frame_data = bytearray(await processed_queue.get())
                 frame_buffer.append(new_frame_data)
@@ -106,50 +101,27 @@ def should_process_backlog():
 
 
 async def process_backlog():
-    """Process and upload backlog data from the single measurements file."""
-    measurement_backlog_size = drivers.flash_storage.measurement_backlog_size()
-    frames_available = measurement_backlog_size // PROCESSED_FRAME_SIZE
+    """Process and upload backlog data from the measurements file using streaming."""
+    backlog_size = drivers.flash_storage.measurement_backlog_size()
+    frames_available = backlog_size // PROCESSED_FRAME_SIZE
+    frames_to_process = min(frames_available, BACKLOG_BATCH_SIZE)
 
-    print(f"Processing backlog with {frames_available} measurements.")
+    print(f"Processing backlog with {frames_available} measurements using streaming.")
 
-    # Process in batches to avoid memory issues
-    frames_processed = 0
-    while frames_processed < frames_available:
-        # Check if there are any new frames on the buffer
-        if not processed_queue.empty():
-            print("New frames available in the buffer, skipping backlog processing.")
-            return
+    # Check if there are any new frames on the buffer
+    if not processed_queue.empty():
+        print("New frames available in the buffer, skipping backlog processing.")
+        return
 
-        # Calculate batch size for this iteration
-        batch_size = min(BACKLOG_BATCH_SIZE, frames_available - frames_processed)
+    # Stream directly from the file to the server
+    result = await lib.http.upload_file_streaming(
+        drivers.flash_storage.MEASUREMENT_FILENAME,
+        frames_to_process,
+    )
 
-        # Read a batch of measurements from the start of the file
-        frame_data_batch = drivers.flash_storage.read_measurements(batch_size)
-
-        if not frame_data_batch:
-            # No data read or error occurred
-            break
-
-        # Force garbage collection to free up memory
-        await asyncio.sleep_ms(0)
-        gc.collect()
-        await asyncio.sleep_ms(0)
-
-        # Try to upload the batch
-        result = await lib.http.upload_data(frame_data_batch)
-
-        # Force garbage collection to free up memory
-        await asyncio.sleep_ms(0)
-        gc.collect()
-        await asyncio.sleep_ms(0)
-
-        if result:
-            # Delete successfully uploaded measurements
-            drivers.flash_storage.delete_measurements(len(frame_data_batch))
-            frames_processed += len(frame_data_batch)
-            print(
-                f"Backlog batch with {len(frame_data_batch)} frames sent successfully."
-            )
-        else:
-            print("Failed to send backlog batch. Will retry later.")
-            break
+    if result:
+        # Delete successfully uploaded measurements
+        print(f"Backlog sending successful, deleting {frames_to_process} frames.")
+        drivers.flash_storage.delete_measurements(frames_to_process)
+    else:
+        print("Failed to stream backlog. Will retry later.")

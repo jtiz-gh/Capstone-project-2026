@@ -1,8 +1,7 @@
-import json
-
 import drivers.flash_storage
-from lib.aiohttp import ClientSession
-from lib.packer import unpack_processed_float_data_to_dict
+from constants import BACKLOG_BATCH_SIZE
+from lib.async_urequests import async_urequests
+from lib.packer import PROCESSED_FRAME_SIZE
 from lib.udp import udp_discover_server
 
 SERVER_PORT = 8000
@@ -18,14 +17,14 @@ async def is_server_online(server_ip):
     ping_url = f"http://{server_ip}:{SERVER_PORT}/ping"
 
     try:
-        async with ClientSession() as session:
-            async with session.get(ping_url, headers={}) as response:
-                is_online = response.status == 200
-                if is_online:
-                    print("Server is online.")
-                else:
-                    print(f"Server ping failed with status: {response.status}")
-                return is_online
+        response = await async_urequests.get(ping_url)
+        is_online = response.status_code == 200
+        if is_online:
+            print("Server is online.")
+        else:
+            print(f"Server ping failed with status: {response.status_code}")
+        await response.close()
+        return is_online
     except Exception as e:
         print(f"Error pinging server {server_ip}: {e}")
         return False
@@ -38,22 +37,16 @@ async def upload_data(frame_data_list: list[bytes]):
     if not frame_data_list:
         return True
 
-    processed_data_list = []
+    processed_data_buffer = bytearray(PROCESSED_FRAME_SIZE * len(frame_data_list))
 
     # Unpack all the binary data
     for frame_data in frame_data_list:
-        processed_data = unpack_processed_float_data_to_dict(frame_data)
-        processed_data_list.append(processed_data)
+        processed_data_buffer.extend(frame_data)
 
-    payload = {
-        "id": drivers.flash_storage.get_pico_id(),
-        "processed_data": processed_data_list,
-    }
-
-    success, status = await post_json_data(server_ip, payload)
+    success, status = await post_binary_data(server_ip, processed_data_buffer)
 
     if success:
-        print(f"Data batch sent (Status: {status}, Count: {len(processed_data_list)}).")
+        print(f"Data batch sent (Status: {status}, Count: {len(frame_data_list)}).")
         return True
     else:
         print(f"Failed to send data batch (Reason: {status}).")
@@ -71,18 +64,100 @@ async def upload_data(frame_data_list: list[bytes]):
         return False
 
 
-async def post_json_data(server_ip, data):
+async def upload_file_streaming(file_path, total_frames):
+    """Uploads a file using streaming to avoid loading the entire file into memory."""
+    global server_ip
+
+    if not server_ip:
+        return False
+
+    url = f"http://{server_ip}:{SERVER_PORT}/data"
+    content_length = total_frames * PROCESSED_FRAME_SIZE
+    
+    print(f"Streaming upload of {total_frames} frames ({content_length} bytes) from {file_path}")
+    
+    try:
+        from drivers.flash_storage import stream_file_data
+        
+        headers = {
+            "Content-Type": "application/octet-stream",
+            "Content-Length": str(content_length),
+            "Pico-ID": drivers.flash_storage.get_pico_id(),
+        }
+        
+        # Prepare HTTP request
+        proto, dummy, host, path = url.split("/", 3)
+        if ":" in host:
+            host, port = host.split(":")
+            port = int(port)
+        else:
+            port = 80
+            
+        import uasyncio as asyncio
+        reader, writer = await asyncio.open_connection(host, port)
+        
+        # Build and send HTTP request headers
+        request = f"POST /{path} HTTP/1.1\r\nHost: {host}\r\n"
+        for header, value in headers.items():
+            request += f"{header}: {value}\r\n"
+        request += "\r\n"
+        
+        await writer.awrite(request.encode('latin-1'))
+        
+        # Stream file data in chunks
+        bytes_sent = 0
+        for chunk in stream_file_data(file_path, total_frames * PROCESSED_FRAME_SIZE):
+            await writer.awrite(chunk)
+            bytes_sent += len(chunk)
+            if bytes_sent >= content_length:
+                break
+                
+        # Read response
+        response_line = await reader.readline()
+        if not response_line:
+            await writer.aclose()
+            return False
+            
+        parts = response_line.decode('latin-1').split()
+        if len(parts) < 3:
+            await writer.aclose()
+            return False
+            
+        status = int(parts[1])
+        
+        # Skip headers
+        while True:
+            line = await reader.readline()
+            if not line or line == b"\r\n":
+                break
+                
+        # Close the connection
+        await writer.aclose()
+        
+        print(f"Streaming upload completed with status: {status}")
+        return status == 200
+        
+    except Exception as e:
+        print(f"Error in streaming upload: {e}")
+        return False
+
+
+async def post_binary_data(server_ip, data):
     """Sends a POST request with JSON data to the specified server IP and port."""
     url = f"http://{server_ip}:{SERVER_PORT}/data"
-    headers = {"Content-Type": "application/json"}
+    headers = {
+        "Content-Type": "application/octet-stream",
+        "Pico-ID": drivers.flash_storage.get_pico_id(),
+    }
 
     try:
-        async with ClientSession() as session:
-            async with session.post(url, headers=headers, json=data) as response:
-                print(
-                    f"POST to {url}, Status: {response.status}, Response: {await response.text()}"
-                )
-                return True, response.status
+        response = await async_urequests.post(url, headers=headers, data=bytes(data))
+        print(
+            f"POST to {url}, Status: {response.status_code}, Response: {await response.text()}"
+        )
+        status_code = response.status_code
+        await response.close()
+        return True, status_code
     except OSError as e:
         print(f"Error posting data to {url}: {e}")
         return False, str(e)

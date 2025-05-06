@@ -7,6 +7,9 @@ const UDP_LISTEN_PORT = 8888;
 const HTTP_SERVER_PORT = 8000;
 const BROADCAST_INTERVAL_MS = 250;
 
+// Binary data format constants
+const PROCESSED_DATA_FMT = "LLLfffffffff"; // 3 uint32 + 8 float values
+
 setupUdpBroadcast();
 setupHttpServer();
 
@@ -21,6 +24,36 @@ function findLocalIpAddresses() {
 		}
 	}
 	return addresses;
+}
+
+function unpackProcessedFloatDataToDict(frameData) {
+	// Inline unpacking of binary data
+	// Read 3 uint32 values (4 bytes each)
+	const timestamp = frameData.readUInt32LE(0);
+	const session_id = frameData.readUInt32LE(4);
+	const measurement_id = frameData.readUInt32LE(8);
+
+	// Read 8 float values (4 bytes each)
+	const avg_voltage = frameData.readFloatLE(12);
+	const avg_current = frameData.readFloatLE(16);
+	const avg_power = frameData.readFloatLE(20);
+	const peak_voltage = frameData.readFloatLE(24);
+	const peak_current = frameData.readFloatLE(28);
+	const peak_power = frameData.readFloatLE(32);
+	const energy = frameData.readFloatLE(36);
+
+	return {
+		timestamp: timestamp,
+		session_id: session_id,
+		measurement_id: measurement_id,
+		avg_voltage: avg_voltage.toFixed(4),
+		avg_current: avg_current.toFixed(4),
+		avg_power: avg_power.toFixed(4),
+		peak_voltage: peak_voltage.toFixed(4),
+		peak_current: peak_current.toFixed(4),
+		peak_power: peak_power.toFixed(4),
+		energy: energy.toFixed(4)
+	};
 }
 
 function setupUdpBroadcast() {
@@ -82,21 +115,42 @@ function setupHttpServer() {
 }
 
 function handleDataRequest(req, res) {
-	let body = '';
+	let data = [];
+
 	req.on('data', chunk => {
-		body += chunk.toString();
+		data.push(chunk);
 	});
+
 	req.on('end', () => {
-		console.log('Received POST /data body:', body);
+		const buffer = Buffer.concat(data);
+		console.log('Received POST /data body length:', buffer.length);
+		const decodedPackets = [];
+		let offset = 0;
+
 		try {
-			const jsonData = JSON.parse(body);
-			console.log('Parsed JSON data:', jsonData);
-			res.writeHead(200, { 'Content-Type': 'application/json' });
-			res.end(JSON.stringify({ status: 'success' }));
-		} catch (error) {
-			console.error('Error parsing JSON:', error);
-			res.writeHead(400, { 'Content-Type': 'application/json' });
-			res.end(JSON.stringify({ status: 'error', message: 'Invalid JSON format' }));
+			// Check if the buffer length is a multiple of 40 bytes
+			while (offset + 40 <= buffer.length) {
+				const packetBuffer = buffer.subarray(offset, offset + 40);
+				const decodedData = unpackProcessedFloatDataToDict(packetBuffer);
+				decodedPackets.push(decodedData);
+				offset += 40;
+			}
+
+			if (decodedPackets.length > 0) {
+				console.log('Parsed binary data (all packets):', decodedPackets);
+				console.log(`Successfully decoded ${decodedPackets.length} packets.`);
+
+				res.writeHead(200, { 'Content-Type': 'application/json' });
+				res.end(JSON.stringify({ status: 'success', processed: decodedPackets.length }));
+				return;
+			} else {
+				console.log('Buffer too small for any complete binary format packet, or no packets found. Received:', buffer.length, 'bytes');
+			}
+		} catch (binaryError) {
+			console.error('Error parsing binary data:', binaryError);
 		}
+
+		res.writeHead(400, { 'Content-Type': 'application/json' });
+		res.end(JSON.stringify({ status: 'error', message: 'Invalid data format or no complete packets found' }));
 	});
 }

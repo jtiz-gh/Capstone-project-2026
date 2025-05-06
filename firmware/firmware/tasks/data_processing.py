@@ -40,7 +40,7 @@ async def init():
         process_data_thread, (adc_queue, timestamp_queue, processed_queue)
     )
 
-# TODO: Attempt to use Viper to speed up this function
+
 def process_data_thread(adc_queue, timestamp_queue, processed_queue):
     """Process data from the ADC buffer in a separate thread."""
 
@@ -51,13 +51,14 @@ def process_data_thread(adc_queue, timestamp_queue, processed_queue):
 
     while True:
         # Check if we have data in the ADC queue
-        if adc_queue.qsize() > 0:
+        if not adc_queue.empty():
             try:
                 # Get the measurement from the queue
                 frame_data = adc_queue.get_sync(block=False)
                 voltage_raw, current_raw = unpack_voltage_current_measurement(
                     frame_data
                 )
+
                 accumulated_measurements.append((voltage_raw, current_raw))
             except IndexError:
                 # Queue was empty
