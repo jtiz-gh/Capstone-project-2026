@@ -16,5 +16,25 @@
         "~/.micropico-stubs/included"
     ],
     "pylint.enabled": false,
-    "micropico.syncFolder": "firmware/firmware"
+    "micropico.syncFolder": "firmware/firmware",
+    "cSpell.words": [
+        "Cooldown",
+        "DGRAM",
+        "ECONNABORTED",
+        "ECONNREFUSED",
+        "ECONNRESET",
+        "EHOSTUNREACH",
+        "ETIMEDOUT",
+        "evget",
+        "evput",
+        "Hinch",
+        "isconnected",
+        "picozero",
+        "REUSEADDR",
+        "sreader",
+        "uasyncio",
+        "urequests",
+        "WIFI",
+        "WLAN"
+    ]
 }

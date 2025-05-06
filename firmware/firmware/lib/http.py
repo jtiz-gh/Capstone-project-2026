@@ -1,7 +1,7 @@
 import json
 
 import drivers.flash_storage
-import urequests
+from lib.aiohttp import ClientSession
 from lib.packer import unpack_processed_float_data_to_dict
 from lib.udp import udp_discover_server
 
@@ -10,7 +10,7 @@ SERVER_PORT = 8000
 server_ip: str | None = None
 
 
-def is_server_online(server_ip):
+async def is_server_online(server_ip):
     """Checks if the server is reachable and responding to pings."""
     if server_ip is None:
         return False
@@ -18,14 +18,14 @@ def is_server_online(server_ip):
     ping_url = f"http://{server_ip}:{SERVER_PORT}/ping"
 
     try:
-        response = urequests.get(ping_url, timeout=5)
-        is_online = response.status_code == 200
-        if is_online:
-            print("Server is online.")
-        else:
-            print(f"Server ping failed with status: {response.status_code}")
-        response.close()
-        return is_online
+        async with ClientSession() as session:
+            async with session.get(ping_url, headers={}) as response:
+                is_online = response.status == 200
+                if is_online:
+                    print("Server is online.")
+                else:
+                    print(f"Server ping failed with status: {response.status}")
+                return is_online
     except Exception as e:
         print(f"Error pinging server {server_ip}: {e}")
         return False
@@ -50,7 +50,7 @@ async def upload_data(frame_data_list: list[bytes]):
         "processed_data": processed_data_list,
     }
 
-    success, status = post_json_data(server_ip, payload)
+    success, status = await post_json_data(server_ip, payload)
 
     if success:
         print(f"Data batch sent (Status: {status}, Count: {len(processed_data_list)}).")
@@ -71,23 +71,18 @@ async def upload_data(frame_data_list: list[bytes]):
         return False
 
 
-def post_json_data(server_ip, data):
+async def post_json_data(server_ip, data):
     """Sends a POST request with JSON data to the specified server IP and port."""
     url = f"http://{server_ip}:{SERVER_PORT}/data"
     headers = {"Content-Type": "application/json"}
 
     try:
-        response = urequests.post(
-            url,
-            headers=headers,
-            data=json.dumps(data, separators=(",", ":")),
-            timeout=1,
-        )
-        print(
-            f"POST to {url}, Status: {response.status_code}, Response: {response.text}"
-        )
-        response.close()
-        return True, response.status_code
+        async with ClientSession() as session:
+            async with session.post(url, headers=headers, json=data) as response:
+                print(
+                    f"POST to {url}, Status: {response.status}, Response: {await response.text()}"
+                )
+                return True, response.status
     except OSError as e:
         print(f"Error posting data to {url}: {e}")
         return False, str(e)

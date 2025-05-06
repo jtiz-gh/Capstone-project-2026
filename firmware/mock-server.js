@@ -92,7 +92,7 @@ function handleDataRequest(req, res) {
 			const jsonData = JSON.parse(body);
 			console.log('Parsed JSON data:', jsonData);
 			res.writeHead(200, { 'Content-Type': 'application/json' });
-			res.end(JSON.stringify({ status: 'success', receivedData: jsonData }));
+			res.end(JSON.stringify({ status: 'success' }));
 		} catch (error) {
 			console.error('Error parsing JSON:', error);
 			res.writeHead(400, { 'Content-Type': 'application/json' });

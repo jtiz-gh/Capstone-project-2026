@@ -3,23 +3,25 @@ import time
 import drivers.flash_storage
 import uasyncio as asyncio
 from drivers.adc_sampler import (
+    CHUNK_SIZE,
     MEASUREMENT_FRAME_SIZE,
     SAMPLE_PERIOD_MS,
+    TIMESTAMP_FRAME_SIZE,
     adc_ring_buffer,
+    timestamp_ring_buffer,
 )
 from lib.calculations import calculate_energy, find_peak
 from lib.calibration import calculate_power, calibrate_current, calibrate_voltage
 from lib.packer import (
     PROCESSED_FRAME_SIZE,
     pack_processed_float_data,
+    unpack_timestamp,
     unpack_voltage_current_measurement,
 )
 from lib.ringbuf_queue import RingbufQueue
 
-PACKET_INTERVAL_MS = 500
-CHUNK_SIZE = int(PACKET_INTERVAL_MS / SAMPLE_PERIOD_MS)
-
-PROCESSED_BUFFER_MAX_DATA = 60
+# Should be the same as STREAMING_BATCH_SIZE
+PROCESSED_BUFFER_MAX_DATA = 10
 # Processed data buffer
 processed_ring_buffer = RingbufQueue(PROCESSED_BUFFER_MAX_DATA)
 processed_ring_buffer_data = bytearray(PROCESSED_FRAME_SIZE)
@@ -27,10 +29,10 @@ processed_ring_buffer_data = bytearray(PROCESSED_FRAME_SIZE)
 # Buffer for accumulating samples until we have enough to process
 accumulated_measurements = []
 
-start_time = time.ticks_ms()
-
 session_id: int = drivers.flash_storage.get_next_session_id()
 measurement_id: int = 0
+
+start_time = time.ticks_ms()
 
 
 async def init():
@@ -49,6 +51,8 @@ async def task():
     print("Data Processing task started.")
 
     sreader = asyncio.StreamReader(adc_ring_buffer)
+    timestamp_reader = asyncio.StreamReader(timestamp_ring_buffer)
+    timestamp_buffer = bytearray(TIMESTAMP_FRAME_SIZE)
 
     while True:
         # Read from ADC until we have at least CHUNK_SIZE samples
@@ -65,6 +69,17 @@ async def task():
 
         # Process in chunks of CHUNK_SIZE samples until we have less than CHUNK_SIZE samples left
         while len(accumulated_measurements) >= CHUNK_SIZE:
+            # Get timestamp from the timestamp queue
+            try:
+                timestamp_buffer = await timestamp_reader.readexactly(
+                    TIMESTAMP_FRAME_SIZE
+                )
+                timestamp = unpack_timestamp(timestamp_buffer)
+            except EOFError:
+                # If no timestamp is available, use a fallback (less accurate)
+                print("Warning: No timestamp available, using fallback")
+                timestamp = time.ticks_ms() - start_time
+
             samples_to_process = accumulated_measurements[:CHUNK_SIZE]
             accumulated_measurements = accumulated_measurements[CHUNK_SIZE:]
 
@@ -90,12 +105,12 @@ async def task():
             time_interval = float(SAMPLE_PERIOD_MS) / 1000
             energy = calculate_energy(power_samples, time_interval)
 
-            # Pack processed data packet
+            # Pack processed data packet with timestamp from ISR
             pack_processed_float_data(
                 # Buffer
                 processed_ring_buffer_data,
                 # Metadata
-                time.ticks_ms() - start_time,
+                timestamp,
                 session_id,
                 measurement_id,
                 # Data

@@ -5,7 +5,8 @@ import drivers.flash_storage
 import drivers.wlan
 import lib.http
 import uasyncio as asyncio
-from tasks.data_processing import PROCESSED_FRAME_SIZE, processed_ring_buffer
+from lib.packer import PROCESSED_FRAME_SIZE
+from tasks.data_processing import processed_ring_buffer
 
 TRANSMIT_INTERVAL_MS = 2000
 # Number of items to batch together when connected to the server and streaming.
@@ -134,11 +135,18 @@ async def process_backlog():
             # No data read or error occurred
             break
 
+        # Force garbage collection to free up memory
+        await asyncio.sleep_ms(0)
+        gc.collect()
+        await asyncio.sleep_ms(0)
+
         # Try to upload the batch
         result = await lib.http.upload_data(frame_data_batch)
 
         # Force garbage collection to free up memory
+        await asyncio.sleep_ms(0)
         gc.collect()
+        await asyncio.sleep_ms(0)
 
         if result:
             # Delete successfully uploaded measurements
@@ -151,4 +159,4 @@ async def process_backlog():
             print("Failed to send backlog batch. Will retry later.")
             break
 
-        await asyncio.sleep_ms(60)
+        await asyncio.sleep_ms(120)

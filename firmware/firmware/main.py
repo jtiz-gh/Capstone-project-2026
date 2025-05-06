@@ -2,7 +2,6 @@ import gc
 import sys
 
 import drivers.adc_sampler
-import drivers.wlan
 import network
 import tasks.data_processing
 import tasks.data_transmission
@@ -15,7 +14,6 @@ async def main():
     gc.enable()
 
     await drivers.adc_sampler.init()
-    await drivers.wlan.connect_wifi()
 
     await tasks.data_transmission.init()
     await tasks.data_processing.init()

@@ -1,9 +1,16 @@
 import struct
+import time
 
 import micropython
 
 PROCESSED_DATA_FMT = "<" + "LLL" + "fff" + "fff" + "f"  # 1 uint32 + 7 float values
 PROCESSED_FRAME_SIZE = struct.calcsize(PROCESSED_DATA_FMT)  # 36 bytes
+
+# Define timestamp size - 4 bytes for uint32_t timestamp value
+TIMESTAMP_FRAME_SIZE = 4
+
+
+start_time = time.ticks_ms()  # type: ignore
 
 
 # ruff: noqa: F821
@@ -30,6 +37,19 @@ def unpack_voltage_current_measurement(buffer):  # type: ignore
     current = b[1]  # type: ignore
 
     return voltage, current
+
+
+@micropython.viper  # type: ignore
+def pack_timestamp(buffer):  # type: ignore
+    # Pack current timestamp directly (uint32)
+    timestamp: uint = uint(time.ticks_ms()) - uint(start_time)  # type: ignore
+    struct.pack_into("<I", buffer, 0, timestamp)
+
+
+@micropython.viper  # type: ignore
+def unpack_timestamp(buffer):  # type: ignore
+    # Unpack timestamp directly
+    return struct.unpack("<I", buffer)[0]
 
 
 @micropython.viper  # type: ignore
@@ -111,11 +131,11 @@ def unpack_processed_float_data_to_dict(frame_data):
         "timestamp": timestamp,
         "session_id": session_id,
         "measurement_id": measurement_id,
-        "avg_voltage": avg_voltage,
-        "avg_current": avg_current,
-        "avg_power": avg_power,
-        "peak_voltage": peak_voltage,
-        "peak_current": peak_current,
-        "peak_power": peak_power,
-        "energy": energy,
+        "avg_voltage": f"{avg_voltage:.4f}",
+        "avg_current": f"{avg_current:.4f}",
+        "avg_power": f"{avg_power:.4f}",
+        "peak_voltage": f"{peak_voltage:.4f}",
+        "peak_current": f"{peak_current:.4f}",
+        "peak_power": f"{peak_power:.4f}",
+        "energy": f"{energy:.4f}",
     }
