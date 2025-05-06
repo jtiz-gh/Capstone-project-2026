@@ -82,6 +82,7 @@ export default function CompetitionsPage() {
           console.log("Failed to fetch competitions")
         }
         const data = await response.json()
+        console.log(data)
         setCompetitions(data)
       } catch (error) {
         console.error("Error fetching competitions:", error)

@@ -63,7 +63,6 @@ model Device {
   config       DeviceConfig?
   records      Record[]
   sensorData   SensorData[]
-  deviceStatus DeviceStatus?
   @@index([teamId])
 }
 
@@ -100,15 +99,13 @@ model SensorData {
   deviceId  Int
   device    Device  @relation(fields: [deviceId], references: [id])
   sessionId Int
-  voltage   Float?
-  current   Float?
-}
-
-model DeviceStatus{
-  deviceId Int @id
-  device Device @relation(fields: [deviceId], references: [id])
-  internalTemperature Float?
-  flashMemoryUsage Float?
-  voltage Float?
-  current Float?
+  measurementId  Float?
+  avgPower       Float?
+  avgVoltage     Float?
+  avgCurrent     Float?
+  peakPower      Float?
+  peakVoltage    Float?
+  peakCurrent    Float?
+  energy         Float?
+  temperature    Float?
 }

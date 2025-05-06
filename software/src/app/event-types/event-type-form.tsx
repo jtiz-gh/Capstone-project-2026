@@ -8,42 +8,44 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group"
 import { LineChartIcon as ChartLine } from "lucide-react"
-import type { EventType } from "@/types/teams"
+import type { Event } from "@/types/teams"
 
 interface EventTypeFormProps {
-    onSubmit: (team: Omit<EventType, "id">) => void
+    onSubmit: (team: Omit<Event, "id">) => void
     onCancel?: () => void
-    initialEventType?: EventType
+    initialEvent?: Event
     submitLabel?: string
 }
 
 export function EventTypeForm({
     onSubmit,
     onCancel,
-    initialEventType,
+    initialEvent,
     submitLabel = "Add Team",
 }: EventTypeFormProps) {
-    const [eventTypeName, setEventTypeName] = useState("")
+    const [eventName, setEventName] = useState("")
 
     useEffect(() => {
-        if (initialEventType) {
-            setEventTypeName(initialEventType.name)
+        if (initialEvent) {
+            setEventName(initialEvent.eventName)
         }
-    }, [initialEventType])
+    }, [initialEvent])
 
     const handleSubmit = (e: React.FormEvent) => {
         e.preventDefault()
         e.stopPropagation()
 
-        if (!eventTypeName.trim()) return
+        if (!eventName.trim()) return
 
         onSubmit({
-            name: eventTypeName
+            eventName: eventName,
+            eventType: "Dynamic",
+            completed: false
         })
 
         // Reset form if not editing
-        if (!initialEventType) {
-            setEventTypeName("")
+        if (!initialEvent) {
+            setEventName("")
         }
     }
 
@@ -58,8 +60,8 @@ export function EventTypeForm({
                 <Label htmlFor="team-name">Team Name</Label>
                 <Input
                     id="team-name"
-                    value={eventTypeName}
-                    onChange={(e) => setEventTypeName(e.target.value)}
+                    value={eventName}
+                    onChange={(e) => setEventName(e.target.value)}
                     placeholder="Enter team name"
                     required
                 />

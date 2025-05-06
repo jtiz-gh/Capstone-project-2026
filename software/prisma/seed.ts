@@ -1,6 +1,6 @@
 // prisma/seed.ts
 
-import { PrismaClient } from '@prisma/client'
+import { Prisma, PrismaClient } from '@prisma/client'
 const prisma = new PrismaClient()
 
 async function main() {
@@ -60,16 +60,7 @@ async function main() {
     ]
   })
 
-  // 4. Add device statuses
-  await prisma.deviceStatus.createMany({
-    data: [
-      { deviceId: device1.id, internalTemperature: 38.5, flashMemoryUsage: 67.5, voltage: 13.1, current: 2.0 },
-      { deviceId: device2.id, internalTemperature: 41.2, flashMemoryUsage: 72.3, voltage: 12.9, current: 2.1 },
-      { deviceId: device3.id, internalTemperature: 36.7, flashMemoryUsage: 55.1, voltage: 13.5, current: 1.7 },
-    ]
-  })
-
-  // 5. Add events
+  // 4. Add events
   const event1 = await prisma.event.create({
     data: {
       eventType: 'Dynamic',
@@ -101,7 +92,7 @@ async function main() {
   })
 
     
-  // 6. Add a competition
+  // 5. Add a competition
   const comp = await prisma.competition.create({
     data: {
       competitionDate: new Date(),
@@ -123,51 +114,72 @@ async function main() {
     },
   })
 
-  // 7. Create records and sensor data for each device
-  for (const [device, sessionId] of [[device1, 1], [device2, 2], [device3, 3]] as const) {
-    const record = await prisma.record.create({
-      data: {
+// 6. Create records and sensor data for each device
+for (const [device, sessionId] of [[device1, 1], [device2, 2], [device3, 3]] as const) {
+  const record = await prisma.record.create({
+    data: {
+      deviceId: device.id,
+      eventId: event1.id,
+      competitionId: comp.id,
+      avgVoltage: 13 + Math.random(),
+      avgCurrent: 1.8 + Math.random(),
+      energy: 14 + Math.random(),
+      stopTime: new Date(),
+    },
+  })
+
+  await prisma.sensorData.createMany({
+    data: [
+      {
+        timestamp: new Prisma.Decimal(Date.now()), // Decimal timestamp
+        sessionId,
+        recordId: record.id,
         deviceId: device.id,
-        eventId: event1.id,
-        competitionId: comp.id,
+        measurementId: Math.random(),
+        avgPower: Math.random() * 10,
         avgVoltage: 13 + Math.random(),
-        avgCurrent: 1.8 + Math.random(),
-        energy: 14 + Math.random(),
-        stopTime: new Date(),
+        avgCurrent: 1 + Math.random(),
+        peakPower: 20 + Math.random(),
+        peakVoltage: 14 + Math.random(),
+        peakCurrent: 2.5 + Math.random(),
+        energy: 50 + Math.random(),
+        temperature: 22 + Math.random(),
       },
-    })
+      {
+        timestamp: new Prisma.Decimal(Date.now() + 1000),
+        sessionId,
+        recordId: record.id,
+        deviceId: device.id,
+        measurementId: Math.random(),
+        avgPower: Math.random() * 10,
+        avgVoltage: 13 + Math.random(),
+        avgCurrent: 1 + Math.random(),
+        peakPower: 20 + Math.random(),
+        peakVoltage: 14 + Math.random(),
+        peakCurrent: 2.5 + Math.random(),
+        energy: 50 + Math.random(),
+        temperature: 22 + Math.random(),
+      },
+      {
+        timestamp: new Prisma.Decimal(Date.now() + 2000),
+        sessionId,
+        recordId: record.id,
+        deviceId: device.id,
+        measurementId: Math.random(),
+        avgPower: Math.random() * 10,
+        avgVoltage: 13 + Math.random(),
+        avgCurrent: 1 + Math.random(),
+        peakPower: 20 + Math.random(),
+        peakVoltage: 14 + Math.random(),
+        peakCurrent: 2.5 + Math.random(),
+        energy: 50 + Math.random(),
+        temperature: 22 + Math.random(),
+      },
+    ],
+  })
+}
 
-    await prisma.sensorData.createMany({
-      data: [
-        {
-          timestamp: Date.now(),
-          voltage: 13.1 + Math.random(),
-          current: 1.9 + Math.random(),
-          sessionId,
-          recordId: record.id,
-          deviceId: device.id,
-        },
-        {
-          timestamp: Date.now() + 1000,
-          voltage: 13.2 + Math.random(),
-          current: 1.8 + Math.random(),
-          sessionId,
-          recordId: record.id,
-          deviceId: device.id,
-        },
-        {
-          timestamp: Date.now() + 2000,
-          voltage: 13.0 + Math.random(),
-          current: 2.0 + Math.random(),
-          sessionId,
-          recordId: record.id,
-          deviceId: device.id,
-        },
-      ]
-    })
-  }
-
-  // 8. Add rankings
+  // 7. Add rankings
   await prisma.ranking.createMany({
     data: [
       { eventId: event1.id, teamId: team1.id, rank: 1 },
