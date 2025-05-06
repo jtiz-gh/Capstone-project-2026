@@ -69,15 +69,7 @@ async function main() {
     ]
   })
 
-  // 5. Add a competition
-  const comp = await prisma.competition.create({
-    data: {
-      competitionDate: new Date(),
-      competitionName: "Competition 1",
-    },
-  })
-
-  // 6. Add an event
+  // 5. Add an event
   const event = await prisma.event.create({
     data: {
       eventType: 'Endurance',
@@ -85,6 +77,27 @@ async function main() {
       eventName: 'National Finals',
       eventStartTime: new Date(),
       raceStartTime: new Date(),
+    },
+  })
+
+    
+  // 6. Add a competition
+  const comp = await prisma.competition.create({
+    data: {
+      competitionDate: new Date(),
+      competitionName: "Competition 1",
+      teams: {
+        connect: [
+          { id: team1.id },
+          { id: team2.id },
+          { id: team3.id }
+        ]
+      },
+      events: {
+        connect: [
+          { id: event.id }
+        ]
+      }
     },
   })
 

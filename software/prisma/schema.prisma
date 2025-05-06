@@ -23,12 +23,15 @@ model Event {
   rankings       Ranking[]
   records        Record[]
   raceStartTime      DateTime
+  competitions   Competition[] @relation("CompetitionEvents")
 }
 
 model Competition {
   id              Int      @id @default(autoincrement())
   competitionDate DateTime
   competitionName String
+  teams           Team[]     @relation("CompetitionTeams")
+  events          Event[]    @relation("CompetitionEvents")
   records         Record[]
 }
 
@@ -49,6 +52,7 @@ model Team {
   vehicleClass String
   devices      Device[]
   rankings     Ranking[]
+  competitions Competition[] @relation("CompetitionTeams")
 }
 
 model Device {
