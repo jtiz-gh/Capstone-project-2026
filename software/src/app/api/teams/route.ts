@@ -26,16 +26,17 @@ export async function POST(request: Request) {
   try {
     const body = await request.json()
 
-    const { teamName, organisation } = body
+    const { teamName, vehicleClass, vehicleType } = body
 
-    if (!teamName || !organisation) {
-      return NextResponse.json({ error: 'Missing teamName or organisation' }, { status: 400 })
+    if (!teamName || !vehicleClass || !vehicleType) {
+      return NextResponse.json({ error: 'Missing teamName or vehicleClass or vehicleType' }, { status: 400 })
     }
 
     const newTeam = await prisma.team.create({
       data: {
         teamName,
-        organisation,
+        vehicleClass,
+        vehicleType,
       },
     })
 

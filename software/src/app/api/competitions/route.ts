@@ -22,15 +22,15 @@ export async function GET() {
 export async function POST(request: Request) {
   try {
     const body = await request.json()
-    const { vehicleClass, competitionDate } = body
+    const { competitionName, competitionDate } = body
 
-    if (!vehicleClass || !competitionDate) {
-      return NextResponse.json({ error: 'Missing vehicleClass or competitionDate' }, { status: 400 })
+    if (!competitionName || !competitionDate) {
+      return NextResponse.json({ error: 'Missing competitionName or competitionDate' }, { status: 400 })
     }
 
     const newCompetition = await prisma.competition.create({
       data: {
-        vehicleClass,
+        competitionName: competitionName,
         competitionDate: new Date(competitionDate),
       },
     })
