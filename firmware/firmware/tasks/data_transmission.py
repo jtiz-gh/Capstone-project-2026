@@ -6,24 +6,20 @@ import drivers.wlan
 import lib.http
 import uasyncio as asyncio
 from lib.packer import PROCESSED_FRAME_SIZE
-from tasks.data_processing import processed_ring_buffer
+from tasks.data_processing import processed_queue
 
 TRANSMIT_INTERVAL_MS = 2000
 # Number of items to batch together when connected to the server and streaming.
 # Should be minimised to reduce the chance of data loss in the event of a power loss.
 STREAMING_BATCH_SIZE = 10
 # Number of items to batch together when clearing a backlog of previously measured data.
-BACKLOG_BATCH_SIZE = 40
+BACKLOG_BATCH_SIZE = 20
 # Cooldown period between connection attempts (in seconds)
 SERVER_CONNECT_COOLDOWN_SEC = 10
 
 last_wifi_connect_attempt = 0  # Timestamp of the last connection attempt
 
 pico_id: str = drivers.flash_storage.get_pico_id()
-
-
-async def init():
-    pass
 
 
 async def task():
@@ -40,14 +36,13 @@ async def task():
             if should_process_backlog():
                 await process_backlog()
 
-            new_frame_data = bytearray(await processed_ring_buffer.get())
+            new_frame_data = bytearray(await processed_queue.get())
             frame_buffer.append(new_frame_data)
 
             while (
-                not processed_ring_buffer.empty()
-                and len(frame_buffer) < BACKLOG_BATCH_SIZE
+                not processed_queue.empty() and len(frame_buffer) < BACKLOG_BATCH_SIZE
             ):
-                new_frame_data = bytearray(await processed_ring_buffer.get())
+                new_frame_data = bytearray(await processed_queue.get())
                 frame_buffer.append(new_frame_data)
 
             if drivers.wlan.is_connected() and lib.http.has_server_ip():
@@ -105,7 +100,7 @@ def should_process_backlog():
     return (
         drivers.wlan.is_connected()
         and lib.http.has_server_ip()
-        and processed_ring_buffer.empty()
+        and processed_queue.empty()
         and drivers.flash_storage.measurement_backlog_size() > 0
     )
 
@@ -121,7 +116,7 @@ async def process_backlog():
     frames_processed = 0
     while frames_processed < frames_available:
         # Check if there are any new frames on the buffer
-        if not processed_ring_buffer.empty():
+        if not processed_queue.empty():
             print("New frames available in the buffer, skipping backlog processing.")
             return
 
@@ -158,5 +153,3 @@ async def process_backlog():
         else:
             print("Failed to send backlog batch. Will retry later.")
             break
-
-        await asyncio.sleep_ms(120)

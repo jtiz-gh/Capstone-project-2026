@@ -15,15 +15,18 @@ async def main():
 
     await drivers.adc_sampler.init()
 
-    await tasks.data_transmission.init()
+    print("Initializing data processing...")
+    # This will start the data processing thread
     await tasks.data_processing.init()
 
     print("Creating tasks...")
-    processor_task = asyncio.create_task(tasks.data_processing.task())
+    # Data processing now runs in a separate thread initiated in tasks.data_processing.init()
+    # We keep a dummy task for compatibility
     sender_task = asyncio.create_task(tasks.data_transmission.task())
 
     print("Running tasks...")
-    await asyncio.gather(processor_task, sender_task)
+    # The main thread handles ADC reading and data transmission
+    await sender_task
 
 
 if __name__ == "__main__":
