@@ -8,21 +8,24 @@ async function main() {
   const team1 = await prisma.team.create({
     data: {
       teamName: 'Eco Racers',
-      organisation: 'AUT Engineering',
+      vehicleType: 'Kart',
+      vehicleClass: 'Open'
     },
   })
 
   const team2 = await prisma.team.create({
     data: {
       teamName: 'Power Squad',
-      organisation: 'Unitec',
+      vehicleType: 'Kart',
+      vehicleClass: 'Standard'
     },
   })
 
   const team3 = await prisma.team.create({
     data: {
       teamName: 'Volt Velocity',
-      organisation: 'Massey University',
+      vehicleType: 'Bike',
+      vehicleClass: 'Open'
     },
   })
 
@@ -30,8 +33,6 @@ async function main() {
   const device1 = await prisma.device.create({
     data: {
       serialNo: 1001,
-      vehicleType: 'EV Kart',
-      vehicleClass: 'Light',
       teamId: team1.id,
     },
   })
@@ -39,8 +40,6 @@ async function main() {
   const device2 = await prisma.device.create({
     data: {
       serialNo: 1002,
-      vehicleType: 'EV Kart',
-      vehicleClass: 'Heavy',
       teamId: team2.id,
     },
   })
@@ -48,8 +47,6 @@ async function main() {
   const device3 = await prisma.device.create({
     data: {
       serialNo: 1003,
-      vehicleType: 'EV Bike',
-      vehicleClass: 'Light',
       teamId: team3.id,
     },
   })
@@ -75,8 +72,8 @@ async function main() {
   // 5. Add a competition
   const comp = await prisma.competition.create({
     data: {
-      vehicleClass: 'Light',
       competitionDate: new Date(),
+      competitionName: "Competition 1",
     },
   })
 

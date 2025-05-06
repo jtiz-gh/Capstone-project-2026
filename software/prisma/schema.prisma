@@ -27,8 +27,8 @@ model Event {
 
 model Competition {
   id              Int      @id @default(autoincrement())
-  vehicleClass    String
   competitionDate DateTime
+  competitionName String
   records         Record[]
 }
 
@@ -45,7 +45,8 @@ model Ranking {
 model Team {
   id           Int          @id @default(autoincrement())
   teamName     String
-  organisation String
+  vehicleType  String
+  vehicleClass String
   devices      Device[]
   rankings     Ranking[]
 }
@@ -53,8 +54,6 @@ model Team {
 model Device {
   id           Int           @id @default(autoincrement())
   serialNo     Int          @unique
-  vehicleType  String
-  vehicleClass String
   teamId       Int          
   team         Team         @relation(fields: [teamId], references: [id])
   config       DeviceConfig?
@@ -87,7 +86,6 @@ model Record {
   competition Competition @relation(fields: [competitionId], references: [id])
   sensorData   SensorData[]
   stopTime     DateTime?
-
 }
 
 model SensorData {
