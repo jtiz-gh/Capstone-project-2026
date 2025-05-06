@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useEffect, useState } from "react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
@@ -11,48 +11,89 @@ import { TeamList } from "@/app/teams/team-list"
 import { TeamForm } from "@/app/teams/team-form"
 
 export default function TeamsPage() {
-  // Placeholder data for teams until we connect to backend
-  const [teams, setTeams] = useState<Team[]>([
-    { id: "1", name: "Speed Demons", vehicleClass: "Open", vehicleType: "Kart" },
-    { id: "2", name: "Electric Riders", vehicleClass: "Standard", vehicleType: "Bike" },
-  ])
+  const [teams, setTeams] = useState<Team[]>([])
+  const [loading, setLoading] = useState(true)
 
   // State for determining editing vs creating
   const [editingTeam, setEditingTeam] = useState<Team | null>(null)
   const [activeTab, setActiveTab] = useState("view")
 
-  const handleAddTeam = (teamData: Omit<Team, "id">) => {
-    if (editingTeam) {
-      // Update existing team
-      setTeams(
-        teams.map((team) =>
-          team.id === editingTeam.id
-            ? {
-                ...team,
-                ...teamData,
-              }
-            : team
-        )
-      )
-      setEditingTeam(null)
-    } else {
-      // Add new team
-      const newTeam: Team = {
-        id: Date.now().toString(),
-        ...teamData,
+  // Fetch teams on component mount
+  useEffect(() => {
+    const fetchTeams = async () => {
+      try {
+        const response = await fetch("/api/teams")
+        if (response.ok) {
+          const data = await response.json()
+          setTeams(data)
+        } else {
+          console.error("Failed to fetch teams")
+        }
+      } catch (error) {
+        console.error("Error fetching teams:", error)
+      } finally {
+        setLoading(false)
       }
-      setTeams([...teams, newTeam])
     }
 
+    fetchTeams()
+  }, [])
+
+  const handleAddTeam = async (teamData: Omit<Team, "id">) => {
+    try {
+      const response = await fetch("api/teams", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          teamName: teamData.teamName,
+          vehicleClass: teamData.vehicleClass,
+          vehicleType: teamData.vehicleType,
+        }),
+      })
+
+      if (response.ok) {
+        const newTeam = await response.json()
+        setTeams([...teams, newTeam])
+      } else {
+        const errorText = await response.text()
+        console.error("Failed to create team:", response.status, errorText)
+      }
+    } catch (error) {
+      console.error("Error creating team:", error)
+    }
     setActiveTab("view")
   }
 
-  const handleEditTeam = (team: Team) => {
+  const handleEditTeam = async (teamData: Team) => {
+    try {
+      const response = await fetch(`api/teams/${teamData.id}`, {
+        method: "PATCH",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(teamData),
+      })
+      if (response.ok) {
+        const updatedTeam = await response.json()
+        setTeams(teams.map((team) => (team.id === editingTeam!.id ? updatedTeam : team)))
+        setEditingTeam(null)
+      } else {
+        console.error("Failed to update team")
+      }
+    } catch (error) {
+      console.error("Error updating team:", error)
+    }
+    setActiveTab("view")
+  }
+
+  const handleEditingMode = (team: Team) => {
     setEditingTeam(team)
     setActiveTab("add")
   }
 
-  const handleConnectECU = (teamId: string) => {
+  const handleConnectECU = (teamId: number) => {
     // TODO: Actually need to connect to the ECU
     alert(`Connecting to ECU for team ID: ${teamId}`)
   }
@@ -85,7 +126,17 @@ export default function TeamsPage() {
           </TabsList>
 
           <TabsContent value="view" className="mt-6">
-            <TeamList teams={teams} onEditTeam={handleEditTeam} onConnectECU={handleConnectECU} />
+            {loading ? (
+              <div className="flex h-40 items-center justify-center">
+                <p>Loading teams...</p>
+              </div>
+            ) : (
+              <TeamList
+                teams={teams}
+                onEditTeam={handleEditingMode}
+                onConnectECU={handleConnectECU}
+              />
+            )}{" "}
           </TabsContent>
 
           <TabsContent value="add" className="mt-6">
@@ -95,7 +146,8 @@ export default function TeamsPage() {
               </CardHeader>
               <CardContent>
                 <TeamForm
-                  onSubmit={handleAddTeam}
+                  addTeam={handleAddTeam}
+                  editTeam={handleEditTeam}
                   onCancel={editingTeam ? handleCancelEdit : undefined}
                   initialTeam={editingTeam || undefined}
                   submitLabel={editingTeam ? "Update Team" : "Add Team"}

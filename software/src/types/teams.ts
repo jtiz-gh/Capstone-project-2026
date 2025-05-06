@@ -1,6 +1,6 @@
 export type Team = {
-  id: string
-  name: string
+  id: number
+  teamName: string
   vehicleClass: "Open" | "Standard"
   vehicleType: "Bike" | "Kart"
 }

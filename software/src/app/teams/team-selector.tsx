@@ -17,8 +17,8 @@ import { PlusCircle } from "lucide-react"
 
 interface TeamSelectorProps {
   teams: Team[]
-  selectedTeams: string[]
-  onTeamToggle: (teamId: string) => void
+  selectedTeams: number[]
+  onTeamToggle: (teamId: number) => void
   onAddTeam: (team: Omit<Team, "id">) => void
   showAddTeamOption?: boolean
 }
@@ -63,7 +63,7 @@ export function TeamSelector({
               <DialogHeader>
                 <DialogTitle>Add New Team</DialogTitle>
               </DialogHeader>
-              <TeamForm onSubmit={handleAddTeam} />
+              <TeamForm addTeam={handleAddTeam} />
             </DialogContent>
           </Dialog>
         )}
@@ -78,7 +78,7 @@ export function TeamSelector({
               onCheckedChange={() => onTeamToggle(team.id)}
             />
             <Label htmlFor={`team-${team.id}`} className="cursor-pointer">
-              {team.name} ({team.vehicleClass} - {team.vehicleType})
+              {team.teamName} ({team.vehicleClass} - {team.vehicleType})
             </Label>
           </div>
         ))}
