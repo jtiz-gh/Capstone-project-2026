@@ -111,6 +111,27 @@ def write_measurements(data_list: list[bytes]):
     if not data_list:
         return
 
+    total_data_size = sum(len(data) for data in data_list)
+
+    # Check for available storage space before writing
+    try:
+        s = os.statvfs("/")
+        # f_bsize (block size) * f_bavail (number of free blocks for unprivileged users)
+        available_space = s[0] * s[4]
+        print(f"Storage: {available_space} bytes free, writing {total_data_size} bytes")
+        if total_data_size > available_space:
+            print(
+                f"Error: Not enough space to write {total_data_size} bytes. Available: {available_space} bytes."
+            )
+            return
+        else:
+            print(
+                f"{available_space} bytes free. Remaining readings: {available_space // PROCESSED_FRAME_SIZE} frames."
+            )
+    except OSError as e:
+        print(f"Error checking disk space: {e}")
+        return
+
     try:
         # Open file in append mode to add data to the end
         with open(MEASUREMENT_FILENAME, "ab") as f:
