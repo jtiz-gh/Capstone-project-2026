@@ -35,6 +35,12 @@ export function calculateScore(place: number | string, n: number): number {
 
   // Ensure place is a number for calculations
   if (typeof place === "number") {
+
+    // Guard against invalid placements
+    if (place < 1 || place > n) {
+      return 0
+    }
+
     if (place === 1) return 100
     if (place === n) return 25
 
