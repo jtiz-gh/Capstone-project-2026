@@ -26,3 +26,21 @@ export function mergeAndCalculateEnergy(
     }
   })
 }
+
+export function calculateScore(place: number | string, n: number): number {
+  // Check if place is a string ("DNS", "DNF", "DQ")
+  if (typeof place === "string" && (place === "DNS" || place === "DNF" || place === "DQ")) {
+    return 0
+  }
+
+  // Ensure place is a number for calculations
+  if (typeof place === "number") {
+    if (place === 1) return 100
+    if (place === n) return 25
+
+    const interval: number = 75 / (n - 1)
+    return Math.round((n - place) * interval + 25)
+  }
+
+  return 0
+}
