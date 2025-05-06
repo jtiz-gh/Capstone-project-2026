@@ -17,7 +17,7 @@ import { PlusCircle } from "lucide-react"
 
 interface TeamSelectorProps {
   teams: Team[]
-  selectedTeams: number[]
+  selectedTeams: Team[]
   onTeamToggle: (teamId: number) => void
   onAddTeam: (team: Omit<Team, "id">) => void
   showAddTeamOption?: boolean
@@ -74,7 +74,7 @@ export function TeamSelector({
             <Checkbox
               id={`team-${team.id}`}
               className="hover:cursor-pointer"
-              checked={selectedTeams.includes(team.id)}
+              checked={selectedTeams.includes(team)}
               onCheckedChange={() => onTeamToggle(team.id)}
             />
             <Label htmlFor={`team-${team.id}`} className="cursor-pointer">

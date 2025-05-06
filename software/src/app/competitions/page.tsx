@@ -29,58 +29,69 @@ import { ScrollArea } from "@/components/ui/scroll-area"
 import { Separator } from "@/components/ui/separator"
 import { AlertCircle, ArrowLeft, Trophy, Users, Activity, Clock } from "lucide-react"
 import Link from "next/link"
-import type { Team, Competition, EventType } from "@/types/teams"
+import type { Team, Competition, EventType, Event } from "@/types/teams"
 import { TeamSelector } from "@/app/teams/team-selector"
 
-// Sample data
-// TODO: Need to get team and event data from backend
-const sampleTeams: Team[] = [
-  { id: "1", name: "Speed Demons", vehicleClass: "Open", vehicleType: "Kart" },
-  { id: "2", name: "Electric Riders", vehicleClass: "Standard", vehicleType: "Bike" },
-  { id: "3", name: "Voltage Racers", vehicleClass: "Open", vehicleType: "Kart" },
-  { id: "4", name: "Green Lightning", vehicleClass: "Standard", vehicleType: "Bike" },
-  { id: "5", name: "Power Surge", vehicleClass: "Open", vehicleType: "Kart" },
-]
-
-const eventTypes: EventType[] = ["Gymkhana", "Drag Race", "Endurance & Efficiency"]
-
 export default function CompetitionsPage() {
-  // State for teams
-  const [teams, setTeams] = useState<Team[]>(sampleTeams)
-
-  // State for competitions
-  const [competitions, setCompetitions] = useState<Competition[]>([
-    {
-      id: "1",
-      name: "Regional Finals 2023",
-      events: [
-        { id: "e1", type: "Gymkhana", completed: true, hasData: true },
-        { id: "e2", type: "Drag Race", completed: true, hasData: true },
-        { id: "e3", type: "Endurance & Efficiency", completed: false, hasData: false },
-      ],
-      teams: ["1", "2", "3", "4"],
-      results: [
-        { teamId: "1", eventId: "e1", position: 1, time: 45.2 },
-        { teamId: "2", eventId: "e1", position: 2, time: 47.8 },
-        { teamId: "3", eventId: "e1", position: 3, time: 48.5 },
-        { teamId: "4", eventId: "e1", position: 4, time: 52.1 },
-        { teamId: "2", eventId: "e2", position: 1, time: 12.3 },
-        { teamId: "1", eventId: "e2", position: 2, time: 13.1 },
-        { teamId: "4", eventId: "e2", position: 3, time: 14.7 },
-        { teamId: "3", eventId: "e2", position: 4, time: 15.2 },
-      ],
-    },
-  ])
+  const [teams, setTeams] = useState<Team[]>([])
+  const [events, setEvents] = useState<Event[]>([])
+  const [competitions, setCompetitions] = useState<Competition[]>([])
 
   // State for form
   const [competitionName, setCompetitionName] = useState("")
-  const [selectedEvents, setSelectedEvents] = useState<EventType[]>([])
-  const [selectedTeams, setSelectedTeams] = useState<string[]>([])
+  const [selectedEvents, setSelectedEvents] = useState<Event[]>([])
+  const [selectedTeams, setSelectedTeams] = useState<Team[]>([])
 
   // State for viewing competition details
   const [selectedCompetition, setSelectedCompetition] = useState<Competition | null>(null)
   const [activeTab, setActiveTab] = useState("view")
-  const [selectedEventId, setSelectedEventId] = useState<string | null>(null)
+  const [selectedEventId, setSelectedEventId] = useState<number | null>(null)
+
+  // Get initial data
+  useEffect(() => {
+    const fetchTeams = async () => {
+      try {
+        const response = await fetch("/api/teams")
+        if (!response.ok) {
+          console.log("Failed to fetch teams")
+        }
+        const data = await response.json()
+        setTeams(data)
+      } catch (error) {
+        console.error("Error fetching events:", error)
+      }
+    }
+
+    const fetchEvents = async () => {
+      try {
+        const response = await fetch("/api/events")
+        if (!response.ok) {
+          console.log("Failed to fetch events")
+        }
+        const data = await response.json()
+        setEvents(data)
+      } catch (error) {
+        console.error("Error fetching events:", error)
+      }
+    }
+
+    const fetchCompetitions = async () => {
+      try {
+        const response = await fetch("/api/competitions")
+        if (!response.ok) {
+          console.log("Failed to fetch competitions")
+        }
+        const data = await response.json()
+        setCompetitions(data)
+      } catch (error) {
+        console.error("Error fetching competitions:", error)
+      }
+    }
+
+    fetchTeams()
+    fetchEvents()
+    fetchCompetitions()
+  }, [])
 
   // Load selected competition details
   useEffect(() => {
@@ -93,7 +104,7 @@ export default function CompetitionsPage() {
   }, [competitions, selectedCompetition])
 
   // Handle creating a new competition
-  const handleCreateCompetition = (e: React.FormEvent) => {
+  const handleCreateCompetition = async (e: React.FormEvent) => {
     e.preventDefault()
 
     if (!competitionName.trim() || selectedEvents.length < 3 || selectedTeams.length === 0) {
@@ -103,28 +114,38 @@ export default function CompetitionsPage() {
       return
     }
 
-    const newCompetition: Competition = {
-      id: Date.now().toString(),
-      name: competitionName,
-      events: selectedEvents.map((type, index) => ({
-        id: `e${Date.now()}-${index}`,
-        type,
-        completed: false,
-        hasData: false,
-      })),
-      teams: selectedTeams,
-      results: [],
+    try {
+      const response = await fetch("api/competitions", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          competitionName: competitionName,
+          competitionDate: new Date().toISOString(),
+          teamIds: selectedTeams.map((team) => team.id),
+          eventIds: selectedEvents.map((event) => event.id),
+        }),
+      })
+      if (response.ok) {
+        const newCompetition = await response.json()
+        console.log(newCompetition)
+        setCompetitions([...competitions, newCompetition])
+        setCompetitionName("")
+        setSelectedEvents([])
+        setSelectedTeams([])
+        setActiveTab("view")
+      } else {
+        const errorText = await response.text()
+        console.error("Failed to create team:", response.status, errorText)
+      }
+    } catch (error) {
+      console.error("Error creating team:", error)
     }
-
-    setCompetitions([...competitions, newCompetition])
-    setCompetitionName("")
-    setSelectedEvents([])
-    setSelectedTeams([])
-    setActiveTab("view")
   }
 
   // Handle toggling event selection
-  const toggleEvent = (event: EventType) => {
+  const toggleEvent = (event: Event) => {
     if (selectedEvents.includes(event)) {
       setSelectedEvents(selectedEvents.filter((e) => e !== event))
     } else {
@@ -133,87 +154,92 @@ export default function CompetitionsPage() {
   }
 
   // Handle toggling team selection
-  const toggleTeam = (teamId: string) => {
-    if (selectedTeams.includes(teamId)) {
-      setSelectedTeams(selectedTeams.filter((id) => id !== teamId))
+  const toggleTeam = (teamId: number) => {
+    const teamSelected = selectedTeams.some((team) => team.id === teamId)
+
+    if (teamSelected) {
+      setSelectedTeams(selectedTeams.filter((team) => team.id !== teamId))
     } else {
-      setSelectedTeams([...selectedTeams, teamId])
+      const teamToAdd = teams.find((team) => team.id === teamId)
+      if (teamToAdd) {
+        setSelectedTeams([...selectedTeams, teamToAdd])
+      }
     }
   }
 
   // Handle adding a new team
-  const handleAddTeam = (teamData: Omit<Team, "id">) => {
-    const newTeam: Team = {
-      id: Date.now().toString(),
-      ...teamData,
+  const handleAddTeam = async (teamData: Omit<Team, "id">) => {
+    try {
+      const response = await fetch("api/teams", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          teamName: teamData.teamName,
+          vehicleClass: teamData.vehicleClass,
+          vehicleType: teamData.vehicleType,
+        }),
+      })
+
+      if (response.ok) {
+        const newTeam = await response.json()
+        setTeams([...teams, newTeam])
+        setSelectedTeams([...selectedTeams, newTeam])
+      } else {
+        const errorText = await response.text()
+        console.error("Failed to create team:", response.status, errorText)
+      }
+    } catch (error) {
+      console.error("Error creating team:", error)
     }
-    setTeams([...teams, newTeam])
-    setSelectedTeams([...selectedTeams, newTeam.id])
   }
 
   // Handle marking an event as completed and connecting ECUs
   // TODO: Need to actually connect to ECUs
-  const handleConnectECUs = (competitionId: string, eventId: string) => {
-    setCompetitions(
-      competitions.map((competition) => {
-        if (competition.id === competitionId) {
-          // Update the event to be completed and have data
-          const updatedEvents = competition.events.map((event) => {
-            if (event.id === eventId) {
-              return { ...event, completed: true, hasData: true }
-            }
-            return event
-          })
-
-          // Generate mock results if there aren't any for this event
-          let updatedResults = [...competition.results]
-          const hasResultsForEvent = updatedResults.some((result) => result.eventId === eventId)
-
-          if (!hasResultsForEvent) {
-            // Create random results for this event
-            const teamResults = competition.teams.map((teamId) => {
-              const randomTime = Math.floor(Math.random() * 30) + 10 + Math.random()
-              return {
-                teamId,
-                eventId,
-                time: Number.parseFloat(randomTime.toFixed(1)),
-                position: 0, // Will be calculated below
-              }
-            })
-
-            // Sort by time (lower is better) and assign positions
-            teamResults.sort((a, b) => (a.time || 0) - (b.time || 0))
-            teamResults.forEach((result, index) => {
-              result.position = index + 1
-            })
-
-            updatedResults = [...updatedResults, ...teamResults]
-          }
-
-          return {
-            ...competition,
-            events: updatedEvents,
-            results: updatedResults,
-          }
-        }
-        return competition
-      })
-    )
-
-    // Update the selected event ID to show results
-    setSelectedEventId(eventId)
-  }
-
-  // Get team name by ID
-  const getTeamName = (teamId: string) => {
-    const team = teams.find((team) => team.id === teamId)
-    return team ? team.name : "Unknown Team"
-  }
-
-  // Get event name by ID
-  const getEventName = (eventId: string, competition: Competition) => {
-    const event = competition.events.find((event) => event.id === eventId)
-    return event ? event.type : "Unknown Event"
+  const handleConnectECUs = (competitionId: number, eventId: number) => {
+    // setCompetitions(
+    //   competitions.map((competition) => {
+    //     if (competition.id === competitionId) {
+    //       // Update the event to be completed and have data
+    //       const updatedEvents = competition.events.map((event) => {
+    //         if (event.id === eventId) {
+    //           return { ...event, completed: true, hasData: true }
+    //         }
+    //         return event
+    //       })
+    //       // Generate mock results if there aren't any for this event
+    //       let updatedResults = [...competition.results]
+    //       const hasResultsForEvent = updatedResults.some((result) => result.eventId === eventId)
+    //       if (!hasResultsForEvent) {
+    //         // Create random results for this event
+    //         const teamResults = competition.teams.map((teamId) => {
+    //           const randomTime = Math.floor(Math.random() * 30) + 10 + Math.random()
+    //           return {
+    //             teamId,
+    //             eventId,
+    //             time: Number.parseFloat(randomTime.toFixed(1)),
+    //             position: 0, // Will be calculated below
+    //           }
+    //         })
+    //         // Sort by time (lower is better) and assign positions
+    //         teamResults.sort((a, b) => (a.time || 0) - (b.time || 0))
+    //         teamResults.forEach((result, index) => {
+    //           result.position = index + 1
+    //         })
+    //         updatedResults = [...updatedResults, ...teamResults]
+    //       }
+    //       return {
+    //         ...competition,
+    //         events: updatedEvents,
+    //         results: updatedResults,
+    //       }
+    //     }
+    //     return competition
+    //   })
+    // )
+    // // Update the selected event ID to show results
+    // setSelectedEventId(eventId)
   }
 
   // Get results for a specific event
@@ -223,11 +249,6 @@ export default function CompetitionsPage() {
       .sort((a, b) => a.position - b.position)
   }
 
-  // Get teams for a specific competition
-  const getCompetitionTeams = (competition: Competition) => {
-    return teams.filter((team) => competition.teams.includes(team.id))
-  }
-
   // View for competition details
   const renderCompetitionDetails = () => {
     if (!selectedCompetition) return null
@@ -235,7 +256,7 @@ export default function CompetitionsPage() {
     return (
       <div className="space-y-6">
         <div className="flex items-center justify-between">
-          <h2 className="text-2xl font-bold">{selectedCompetition.name}</h2>
+          <h2 className="text-2xl font-bold">{selectedCompetition.competitionName}</h2>
           <Button
             variant="outline"
             className="hover:cursor-pointer"
@@ -261,7 +282,7 @@ export default function CompetitionsPage() {
                     <div key={event.id} className="space-y-2">
                       <div className="flex items-center justify-between">
                         <div className="flex items-center gap-2">
-                          <h3 className="font-medium">{event.type}</h3>
+                          <h3 className="font-medium">{event.eventName}</h3>
                           {event.completed && (
                             <Badge
                               variant="outline"
@@ -309,15 +330,13 @@ export default function CompetitionsPage() {
             <CardContent>
               <ScrollArea className="h-[300px]">
                 <div className="space-y-4">
-                  {selectedCompetition.teams.map((teamId) => {
-                    const team = sampleTeams.find((t) => t.id === teamId)
+                  {selectedCompetition.teams.map((team) => {
                     if (!team) return null
-
                     return (
-                      <div key={teamId} className="space-y-2">
+                      <div key={team.id} className="space-y-2">
                         <div className="flex items-center justify-between">
                           <div>
-                            <h3 className="font-medium">{team.name}</h3>
+                            <h3 className="font-medium">{team.teamName}</h3>
                             <p className="text-sm text-muted-foreground">
                               {team.vehicleClass} Class • {team.vehicleType}
                             </p>
@@ -333,7 +352,7 @@ export default function CompetitionsPage() {
           </Card>
         </div>
 
-        {/* Results Section */}
+        {/* Results Section
         {selectedEventId && (
           <Card>
             <CardHeader>
@@ -383,7 +402,7 @@ export default function CompetitionsPage() {
               </Table>
             </CardContent>
           </Card>
-        )}
+        )} */}
       </div>
     )
   }
@@ -426,9 +445,9 @@ export default function CompetitionsPage() {
                   {competitions.map((competition) => (
                     <Card key={competition.id} className="overflow-hidden">
                       <CardHeader className="pb-3">
-                        <CardTitle>{competition.name}</CardTitle>
+                        <CardTitle>{competition.competitionName}</CardTitle>
                         <CardDescription>
-                          {competition.events.length} events • {competition.teams.length} teams
+                          {competition.events?.length} events • {competition.teams?.length} teams
                         </CardDescription>
                       </CardHeader>
                       <CardContent className="pb-3">
@@ -441,7 +460,7 @@ export default function CompetitionsPage() {
                                 event.completed ? "border-green-200 bg-green-50 text-green-700" : ""
                               }
                             >
-                              {event.type}
+                              {event.eventName}
                               {event.completed && " ✓"}
                             </Badge>
                           ))}
@@ -452,10 +471,10 @@ export default function CompetitionsPage() {
                             <span>Teams:</span>
                           </div>
                           <div className="flex flex-wrap gap-1">
-                            {competition.teams.slice(0, 3).map((teamId) => (
-                              <span key={teamId} className="inline-block">
-                                {getTeamName(teamId)}
-                                {competition.teams.indexOf(teamId) < competition.teams.length - 1
+                            {competition.teams.slice(0, 3).map((team) => (
+                              <span key={team.id} className="inline-block">
+                                {team.teamName}
+                                {competition.teams.indexOf(team) < competition.teams.length - 1
                                   ? ", "
                                   : ""}
                               </span>
@@ -512,16 +531,16 @@ export default function CompetitionsPage() {
                         )}
                       </Label>
                       <div className="grid gap-2 sm:grid-cols-2">
-                        {eventTypes.map((event) => (
-                          <div key={event} className="flex items-center space-x-2">
+                        {events.map((event) => (
+                          <div key={event.eventName} className="flex items-center space-x-2">
                             <Checkbox
-                              id={`event-${event}`}
+                              id={`event-${event.id}`}
                               className="hover:cursor-pointer"
                               checked={selectedEvents.includes(event)}
                               onCheckedChange={() => toggleEvent(event)}
                             />
-                            <Label htmlFor={`event-${event}`} className="cursor-pointer">
-                              {event}
+                            <Label htmlFor={`event-${event.id}`} className="cursor-pointer">
+                              {event.eventName}
                             </Label>
                           </div>
                         ))}

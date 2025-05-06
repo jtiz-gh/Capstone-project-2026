@@ -6,15 +6,16 @@ export type Team = {
 }
 
 export type EventType = {
-  id: string
+  id: number
   name: string
 }
 
 export type Event = {
-  id: string
-  type: EventType
+  id: number
+  eventName: string
+  eventType: EventType
   completed: boolean
-  hasData: boolean
+  // hasData: boolean
 }
 
 export type Result = {
@@ -26,9 +27,10 @@ export type Result = {
 }
 
 export type Competition = {
-  id: string
-  name: string
+  id: number
+  competitionName: string
+  date: Date
   events: Event[]
-  teams: string[]
+  teams: Team[]
   results: Result[]
 }

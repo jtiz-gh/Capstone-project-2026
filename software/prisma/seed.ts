@@ -69,12 +69,32 @@ async function main() {
     ]
   })
 
-  // 5. Add an event
-  const event = await prisma.event.create({
+  // 5. Add events
+  const event1 = await prisma.event.create({
     data: {
-      eventType: 'Endurance',
+      eventType: 'Dynamic',
       date: new Date(),
-      eventName: 'National Finals',
+      eventName: 'Endurance',
+      eventStartTime: new Date(),
+      raceStartTime: new Date(),
+    },
+  })
+
+  const event2 = await prisma.event.create({
+    data: {
+      eventType: 'Dynamic',
+      date: new Date(),
+      eventName: 'Drag Race',
+      eventStartTime: new Date(),
+      raceStartTime: new Date(),
+    },
+  })
+
+  const event3 = await prisma.event.create({
+    data: {
+      eventType: 'Dynamic',
+      date: new Date(),
+      eventName: 'other event i forgot the name of',
       eventStartTime: new Date(),
       raceStartTime: new Date(),
     },
@@ -95,7 +115,9 @@ async function main() {
       },
       events: {
         connect: [
-          { id: event.id }
+          { id: event1.id },
+          { id: event2.id },
+          { id: event3.id }
         ]
       }
     },
@@ -106,7 +128,7 @@ async function main() {
     const record = await prisma.record.create({
       data: {
         deviceId: device.id,
-        eventId: event.id,
+        eventId: event1.id,
         competitionId: comp.id,
         avgVoltage: 13 + Math.random(),
         avgCurrent: 1.8 + Math.random(),
@@ -148,9 +170,9 @@ async function main() {
   // 8. Add rankings
   await prisma.ranking.createMany({
     data: [
-      { eventId: event.id, teamId: team1.id, rank: 1 },
-      { eventId: event.id, teamId: team2.id, rank: 2 },
-      { eventId: event.id, teamId: team3.id, rank: 3 },
+      { eventId: event1.id, teamId: team1.id, rank: 1 },
+      { eventId: event1.id, teamId: team2.id, rank: 2 },
+      { eventId: event1.id, teamId: team3.id, rank: 3 },
     ]
   })
 }
