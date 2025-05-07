@@ -37,9 +37,8 @@ async def upload_data(frame_data_list: list[bytes]):
     if not frame_data_list:
         return True
 
-    processed_data_buffer = bytearray(PROCESSED_FRAME_SIZE * len(frame_data_list))
-
-    # Unpack all the binary data
+    # Copy list into buffer.
+    processed_data_buffer = bytearray()
     for frame_data in frame_data_list:
         processed_data_buffer.extend(frame_data)
 
