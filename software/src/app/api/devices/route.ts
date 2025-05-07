@@ -12,7 +12,6 @@ export async function GET() {
       include: {
         team: true,
         config: true,
-        deviceStatus: true,
       },
     })
     return NextResponse.json(devices)
@@ -44,8 +43,6 @@ export async function POST(request: Request) {
     const newDevice = await prisma.device.create({
       data: {
         serialNo,
-        vehicleType,
-        vehicleClass,
         teamId,
       },
     })

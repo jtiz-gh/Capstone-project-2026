@@ -23,12 +23,15 @@ model Event {
   rankings       Ranking[]
   records        Record[]
   raceStartTime      DateTime
+  competitions   Competition[] @relation("CompetitionEvents")
 }
 
 model Competition {
   id              Int      @id @default(autoincrement())
-  vehicleClass    String
   competitionDate DateTime
+  competitionName String
+  teams           Team[]     @relation("CompetitionTeams")
+  events          Event[]    @relation("CompetitionEvents")
   records         Record[]
 }
 
@@ -45,22 +48,21 @@ model Ranking {
 model Team {
   id           Int          @id @default(autoincrement())
   teamName     String
-  organisation String
+  vehicleType  String
+  vehicleClass String
   devices      Device[]
   rankings     Ranking[]
+  competitions Competition[] @relation("CompetitionTeams")
 }
 
 model Device {
   id           Int           @id @default(autoincrement())
   serialNo     Int          @unique
-  vehicleType  String
-  vehicleClass String
   teamId       Int          
   team         Team         @relation(fields: [teamId], references: [id])
   config       DeviceConfig?
   records      Record[]
   sensorData   SensorData[]
-  deviceStatus DeviceStatus?
   @@index([teamId])
 }
 
@@ -87,7 +89,6 @@ model Record {
   competition Competition @relation(fields: [competitionId], references: [id])
   sensorData   SensorData[]
   stopTime     DateTime?
-
 }
 
 model SensorData {
@@ -98,15 +99,13 @@ model SensorData {
   deviceId  Int
   device    Device  @relation(fields: [deviceId], references: [id])
   sessionId Int
-  voltage   Float?
-  current   Float?
-}
-
-model DeviceStatus{
-  deviceId Int @id
-  device Device @relation(fields: [deviceId], references: [id])
-  internalTemperature Float?
-  flashMemoryUsage Float?
-  voltage Float?
-  current Float?
+  measurementId  Float?
+  avgPower       Float?
+  avgVoltage     Float?
+  avgCurrent     Float?
+  peakPower      Float?
+  peakVoltage    Float?
+  peakCurrent    Float?
+  energy         Float?
+  temperature    Float?
 }

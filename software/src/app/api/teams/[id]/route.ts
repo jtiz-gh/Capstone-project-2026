@@ -1,23 +1,31 @@
-import { NextResponse } from 'next/server'
+import { NextRequest, NextResponse } from 'next/server'
 import { PrismaClient } from '@prisma/client'
 
 const prisma = new PrismaClient()
 
 // PATCH /api/teams/[id]
-export async function PATCH(req: Request, { params }: { params: { id: string } }) {
-  const body = await req.json()
-  const teamId = parseInt(params.id)
+export async function PATCH(req: NextRequest) {
+  try {
+    const url = new URL(req.url)
+    const idParam = url.pathname.split('/').pop()
+    const teamId = parseInt(idParam || '', 10)
 
-  if (isNaN(teamId)) {
-    return NextResponse.json({ error: 'Invalid team ID' }, { status: 400 })
+    if (isNaN(teamId)) {
+      return NextResponse.json({ error: 'Invalid team ID' }, { status: 400 })
+    }
+
+    const body = await req.json()
+
+    const updatedTeam = await prisma.team.update({
+      where: { id: teamId },
+      data: body,
+    })
+
+    return NextResponse.json(updatedTeam)
+  } catch (error) {
+    console.error('Error updating team:', error)
+    return NextResponse.json({ error: 'Failed to update team' }, { status: 500 })
   }
-
-  const updatedTeam = await prisma.team.update({
-    where: { id: teamId },
-    data: body,
-  })
-
-  return NextResponse.json(updatedTeam)
 }
 
 // DELETE /api/teams/[id]

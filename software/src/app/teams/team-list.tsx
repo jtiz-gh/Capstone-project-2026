@@ -8,7 +8,7 @@ import type { Team } from "@/types/teams"
 interface TeamListProps {
   teams: Team[]
   onEditTeam?: (team: Team) => void
-  onConnectECU?: (teamId: string) => void
+  onConnectECU?: (teamId: number) => void
   emptyMessage?: string
   showActions?: boolean
 }
@@ -35,7 +35,7 @@ export function TeamList({
         <Card key={team.id}>
           <CardContent className="flex items-center justify-between p-6">
             <div>
-              <h3 className="text-xl font-semibold">{team.name}</h3>
+              <h3 className="text-xl font-semibold">{team.teamName}</h3>
               <div className="mt-2 flex gap-4 text-sm text-muted-foreground">
                 <span>{team.vehicleClass} Class</span>
                 <span>{team.vehicleType}</span>

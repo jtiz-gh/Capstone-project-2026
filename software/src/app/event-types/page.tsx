@@ -9,54 +9,54 @@ import { EventTypeList } from "@/app/event-types/event-type-list"
 import { EventTypeForm } from "@/app/event-types/event-type-form"
 import { useState } from "react"
 import { ArrowLeft } from "lucide-react"
-import { EventType } from "@/types/teams"
+import { Event } from "@/types/teams"
 
 export default function Home() {
-    // Placeholder data for eventTypes until we connect to backend
+    // Placeholder data for events until we connect to backend
     // Defaults are "Gymkhana" | "Drag Race" | "Endurance & Efficiency"
-    const [eventTypes, setEventTypes] = useState<EventType[]>([
-        { id: "1", name: "Gymkhana" },
-        { id: "2", name: "Drag Race" },
-        { id: "3", name: "Endurance & Efficiency" }
+    const [events, setEvents] = useState<Event[]>([
+        { id: 1, eventName: "Gymkhana", eventType: "Dynamic", completed: false },
+        { id: 2, eventName: "Drag Race", eventType: "Dynamic", completed: false },
+        { id: 3, eventName: "Endurance & Efficiency", eventType: "Dynamic", completed: false }
     ])
 
     // State for determining editing vs creating
-    const [editingEventType, setEditingEventType] = useState<EventType | null>(null)
+    const [editingEvent, setEditingEvent] = useState<Event | null>(null)
     const [activeTab, setActiveTab] = useState("view")
 
-    const handleAddEventType = (eventTypeData: Omit<EventType, "id">) => {
-        if (editingEventType) {
-            // Update existing EventType
-            setEventTypes(
-                eventTypes.map((EventType) =>
-                    EventType.id === editingEventType.id
+    const handleAddEvent = (eventData: Omit<Event, "id">) => {
+        if (editingEvent) {
+            // Update existing Event
+            setEvents(
+                events.map((Event) =>
+                    Event.id === editingEvent.id
                         ? {
-                            ...EventType,
-                            ...eventTypeData,
+                            ...Event,
+                            ...eventData,
                         }
-                        : EventType
+                        : Event
                 )
             )
-            setEditingEventType(null)
+            setEditingEvent(null)
         } else {
-            // Add new EventType
-            const newTeam: EventType = {
-                id: Date.now().toString(),
-                ...eventTypeData,
+            // Add new Event
+            const newTeam: Event = {
+                id: Date.now(),
+                ...eventData,
             }
-            setEventTypes([...eventTypes, newTeam])
+            setEvents([...events, newTeam])
         }
 
         setActiveTab("view")
     }
 
-    const handleEditEventType = (EventType: EventType) => {
-        setEditingEventType(EventType)
+    const handleEditEvent = (Event: Event) => {
+        setEditingEvent(Event)
         setActiveTab("add")
     }
 
     const handleCancelEdit = () => {
-        setEditingEventType(null)
+        setEditingEvent(null)
         setActiveTab("view")
     }
 
@@ -82,25 +82,25 @@ export default function Home() {
                                 View Event Types
                             </TabsTrigger>
                             <TabsTrigger value="add" className="hover:cursor-pointer">
-                                {editingEventType ? "Edit Event Type" : "Add Event Type"}
+                                {editingEvent ? "Edit Event Type" : "Add Event Type"}
                             </TabsTrigger>
                         </TabsList>
 
                         <TabsContent value="view" className="mt-6">
-                            <EventTypeList eventTypes={eventTypes} onEditEventType={handleEditEventType} />
+                            <EventTypeList events={events} onEditEvent={handleEditEvent} />
                         </TabsContent>
 
                         <TabsContent value="add" className="mt-6">
                             <Card>
                                 <CardHeader>
-                                    <CardTitle>{editingEventType ? "View/Edit EventType" : "Add New EventType"}</CardTitle>
+                                    <CardTitle>{editingEvent ? "View/Edit EventType" : "Add New EventType"}</CardTitle>
                                 </CardHeader>
                                 <CardContent>
                                     <EventTypeForm
-                                        onSubmit={handleAddEventType}
-                                        onCancel={editingEventType ? handleCancelEdit : undefined}
-                                        initialEventType={editingEventType || undefined}
-                                        submitLabel={editingEventType ? "Update EventType" : "Add EventType"}
+                                        onSubmit={handleAddEvent}
+                                        onCancel={editingEvent ? handleCancelEdit : undefined}
+                                        initialEvent={editingEvent || undefined}
+                                        submitLabel={editingEvent ? "Update EventType" : "Add EventType"}
                                     />
                                 </CardContent>
                             </Card>

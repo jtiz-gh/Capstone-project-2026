@@ -7,21 +7,25 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group"
-import { LineChartIcon as ChartLine } from "lucide-react"
+import { LineChartIcon as ChartLine, Loader2 } from "lucide-react"
 import type { Team } from "@/types/teams"
 
 interface TeamFormProps {
-  onSubmit: (team: Omit<Team, "id">) => void
+  addTeam: (team: Omit<Team, "id">) => void
+  editTeam?: (team: Team) => void
   onCancel?: () => void
   initialTeam?: Team
   submitLabel?: string
+  loading?: boolean
 }
 
 export function TeamForm({
-  onSubmit,
+  addTeam,
+  editTeam,
   onCancel,
   initialTeam,
   submitLabel = "Add Team",
+  loading,
 }: TeamFormProps) {
   const [teamName, setTeamName] = useState("")
   const [vehicleClass, setVehicleClass] = useState<"Open" | "Standard">("Open")
@@ -29,7 +33,7 @@ export function TeamForm({
 
   useEffect(() => {
     if (initialTeam) {
-      setTeamName(initialTeam.name)
+      setTeamName(initialTeam.teamName)
       setVehicleClass(initialTeam.vehicleClass)
       setVehicleType(initialTeam.vehicleType)
     }
@@ -39,13 +43,23 @@ export function TeamForm({
     e.preventDefault()
     e.stopPropagation()
 
+    if (loading) return
     if (!teamName.trim()) return
 
-    onSubmit({
-      name: teamName,
-      vehicleClass,
-      vehicleType,
-    })
+    if (initialTeam && editTeam) {
+      editTeam({
+        id: initialTeam.id,
+        teamName,
+        vehicleClass,
+        vehicleType,
+      })
+    } else {
+      addTeam({
+        teamName,
+        vehicleClass,
+        vehicleType,
+      })
+    }
 
     // Reset form if not editing
     if (!initialTeam) {
@@ -69,6 +83,7 @@ export function TeamForm({
           value={teamName}
           onChange={(e) => setTeamName(e.target.value)}
           placeholder="Enter team name"
+          disabled={loading}
           required
         />
       </div>
@@ -81,13 +96,23 @@ export function TeamForm({
           className="flex gap-4"
         >
           <div className="flex items-center space-x-2">
-            <RadioGroupItem value="Open" id="open" className="hover:cursor-pointer" />
+            <RadioGroupItem
+              value="Open"
+              id="open"
+              className="hover:cursor-pointer"
+              disabled={loading}
+            />
             <Label htmlFor="open" className="hover:cursor-pointer">
               Open
             </Label>
           </div>
           <div className="flex items-center space-x-2">
-            <RadioGroupItem value="Standard" id="standard" className="hover:cursor-pointer" />
+            <RadioGroupItem
+              value="Standard"
+              id="standard"
+              className="hover:cursor-pointer"
+              disabled={loading}
+            />
             <Label htmlFor="standard" className="hover:cursor-pointer">
               Standard
             </Label>
@@ -103,13 +128,23 @@ export function TeamForm({
           className="flex gap-4"
         >
           <div className="flex items-center space-x-2">
-            <RadioGroupItem value="Bike" id="bike" className="hover:cursor-pointer" />
+            <RadioGroupItem
+              value="Bike"
+              id="bike"
+              className="hover:cursor-pointer"
+              disabled={loading}
+            />
             <Label htmlFor="bike" className="hover:cursor-pointer">
               Bike
             </Label>
           </div>
           <div className="flex items-center space-x-2">
-            <RadioGroupItem value="Kart" id="kart" className="hover:cursor-pointer" />
+            <RadioGroupItem
+              value="Kart"
+              id="kart"
+              className="hover:cursor-pointer"
+              disabled={loading}
+            />
             <Label htmlFor="kart" className="hover:cursor-pointer">
               Kart
             </Label>
@@ -123,6 +158,7 @@ export function TeamForm({
             type="button"
             variant="outline"
             className="hover:cursor-pointer"
+            disabled={loading}
             onClick={handleViewEnergyMonitor}
           >
             <ChartLine className="mr-2 h-4 w-4" />
@@ -132,14 +168,15 @@ export function TeamForm({
       )}
 
       <div className="flex gap-2">
-        <Button type="submit" className="flex-1 hover:cursor-pointer">
-          {submitLabel}
+        <Button type="submit" className="flex-1 hover:cursor-pointer" disabled={loading}>
+          {loading ? <Loader2 className="mr-2 inline h-4 w-4 animate-spin" /> : submitLabel}
         </Button>
         {onCancel && (
           <Button
             type="button"
             variant="outline"
             className="hover:cursor-pointer"
+            disabled={loading}
             onClick={onCancel}
           >
             Cancel
