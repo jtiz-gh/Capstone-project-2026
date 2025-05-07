@@ -13,9 +13,8 @@ export type EventType = {
 export type Event = {
   id: number
   eventName: string
-  eventType: string
+  eventType: "Static" | "Dynamic"
   completed: boolean
-  // hasData: boolean
 }
 
 export type Result = {
