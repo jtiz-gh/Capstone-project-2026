@@ -12,7 +12,6 @@ export async function GET() {
       include: {
         team: true,
         config: true,
-        deviceStatus: true,
       },
     })
     return NextResponse.json(devices)

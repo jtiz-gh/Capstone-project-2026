@@ -85,7 +85,7 @@ async function main() {
     data: {
       eventType: 'Dynamic',
       date: new Date(),
-      eventName: 'other event i forgot the name of',
+      eventName: 'Gymkhana',
       eventStartTime: new Date(),
       raceStartTime: new Date(),
     },

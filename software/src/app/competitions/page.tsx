@@ -75,22 +75,8 @@ export default function CompetitionsPage() {
       }
     }
 
-    const fetchCompetitions = async () => {
-      try {
-        const response = await fetch("/api/competitions")
-        if (!response.ok) {
-          console.log("Failed to fetch competitions")
-        }
-        const data = await response.json()
-        setCompetitions(data)
-      } catch (error) {
-        console.error("Error fetching competitions:", error)
-      }
-    }
-
     fetchTeams()
     fetchEvents()
-    fetchCompetitions()
   }, [])
 
   // Load selected competition details
@@ -102,6 +88,19 @@ export default function CompetitionsPage() {
       }
     }
   }, [competitions, selectedCompetition])
+
+  const loadPastCompetitions = async () => {
+    try {
+      const response = await fetch("/api/competitions")
+      if (!response.ok) {
+        console.log("Failed to fetch competitions")
+      }
+      const data = await response.json()
+      setCompetitions(data)
+    } catch (error) {
+      console.error("Error fetching competitions:", error)
+    }
+  }
 
   // Handle creating a new competition
   const handleCreateCompetition = async (e: React.FormEvent) => {
@@ -409,13 +408,17 @@ export default function CompetitionsPage() {
   return (
     <div className="grid min-h-screen grid-rows-[20px_1fr_20px] items-center justify-items-center gap-16 p-8 pb-20 font-[family-name:var(--font-geist-sans)] sm:p-20">
       <main className="row-start-2 flex w-full max-w-4xl flex-col gap-8">
-        <div className="flex items-center gap-4">
-          <Link href="/">
-            <Button variant="ghost" size="icon" className="hover:cursor-pointer">
-              <ArrowLeft className="h-5 w-5" />
-            </Button>
-          </Link>
-          <h1 className="text-[30px] font-bold">Competitions</h1>
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-4">
+            <Link href="/">
+              <Button variant="ghost" size="icon" className="hover:cursor-pointer">
+                <ArrowLeft className="h-5 w-5" />
+              </Button>
+            </Link>
+            <h1 className="text-[30px] font-bold">Competitions</h1>
+          </div>
+
+          <Button onClick={loadPastCompetitions}>Load past competitions</Button>
         </div>
 
         {selectedCompetition ? (
