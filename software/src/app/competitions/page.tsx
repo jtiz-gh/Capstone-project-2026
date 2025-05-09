@@ -2,7 +2,7 @@
 
 import type React from "react"
 
-import { useState, useEffect } from "react"
+import { useState, useEffect, useMemo } from "react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
@@ -27,10 +27,12 @@ import {
 } from "@/components/ui/table"
 import { ScrollArea } from "@/components/ui/scroll-area"
 import { Separator } from "@/components/ui/separator"
-import { AlertCircle, ArrowLeft, Trophy, Users, Activity, Clock } from "lucide-react"
+import { AlertCircle, ArrowLeft, Trophy, Users, Activity, Clock, Loader2 } from "lucide-react"
 import Link from "next/link"
-import type { Team, Competition, EventType, Event } from "@/types/teams"
+import type { Team, Competition, Event, RaceRecord } from "@/types/teams"
 import { TeamSelector } from "@/app/teams/team-selector"
+import { calculateScore } from "@/lib/utils"
+import { toast } from "sonner"
 
 export default function CompetitionsPage() {
   const [teams, setTeams] = useState<Team[]>([])
@@ -41,11 +43,21 @@ export default function CompetitionsPage() {
   const [competitionName, setCompetitionName] = useState("")
   const [selectedEvents, setSelectedEvents] = useState<Event[]>([])
   const [selectedTeams, setSelectedTeams] = useState<Team[]>([])
+  const [loading, setLoading] = useState(false)
 
   // State for viewing competition details
   const [selectedCompetition, setSelectedCompetition] = useState<Competition | null>(null)
   const [activeTab, setActiveTab] = useState("view")
-  const [selectedEventId, setSelectedEventId] = useState<number | null>(null)
+
+  const [loadingRaceId, setLoadingRaceId] = useState<number | null>(null)
+
+  const [rankingsByCategory, setRankingsByCategory] = useState<
+    Record<number, Record<string, any[]>>
+  >({})
+
+  const [finishStatusUpdates, setFinishStatusUpdates] = useState<Record<number, boolean>>({})
+
+  const [selectedLeaderboard, setSelectedLeaderboard] = useState<string>("overall")
 
   // Get initial data
   useEffect(() => {
@@ -85,11 +97,285 @@ export default function CompetitionsPage() {
       const competition = competitions.find((c) => c.id === selectedCompetition.id)
       if (competition) {
         setSelectedCompetition(competition)
+        // setFinishStatusUpdates({})
       }
     }
   }, [competitions, selectedCompetition])
 
+  const handleViewDetails = (competition: Competition) => {
+    setSelectedCompetition(competition)
+
+    // Check if rankings exist for each race in the competition
+    const updatedRankings: Record<number, Record<string, any[]>> = {}
+
+    competition.races.forEach((race) => {
+      if (race.rankings && race.rankings.length > 0) {
+        race.rankings.forEach((ranking) => {
+          const team = teams.find((t) => t.id === ranking.teamId)
+
+          if (team) {
+            const vehicleCategory = `${team.vehicleClass} ${team.vehicleType}`
+
+            if (!updatedRankings[race.id]) {
+              updatedRankings[race.id] = {}
+            }
+
+            if (!updatedRankings[race.id][vehicleCategory]) {
+              updatedRankings[race.id][vehicleCategory] = []
+            }
+
+            updatedRankings[race.id][vehicleCategory].push(ranking)
+          }
+        })
+      }
+    })
+
+    // Sort the rankings by highest score first
+    for (const raceId in updatedRankings) {
+      for (const vehicleCategory in updatedRankings[raceId]) {
+        updatedRankings[raceId][vehicleCategory].sort((a, b) => b.score - a.score)
+      }
+    }
+    // Set the rankings in the state
+    setRankingsByCategory(updatedRankings)
+  }
+
+  const handleFinishStatusChange = (rankId: number, checked: boolean) => {
+    setFinishStatusUpdates((prev) => ({
+      ...prev,
+      [rankId]: checked,
+    }))
+  }
+
+  const applyFinishStatus = async () => {
+    setLoading(true)
+    try {
+      const updates = Object.entries(finishStatusUpdates)
+        .filter(([_, checked]) => checked)
+        .map(([rankId]) => parseInt(rankId, 10))
+
+      await Promise.all(
+        updates.map(async (rankId) => {
+          const response = await fetch(`/api/rankings/${rankId}`, {
+            method: "PATCH",
+            headers: {
+              "Content-Type": "application/json",
+            },
+            body: JSON.stringify({
+              finishStatus: "DNF", // You can change this to "DQ" or "DNS"
+              score: 0,
+            }),
+          })
+
+          if (!response.ok) {
+            console.error(`Failed to update finish status for rank ${rankId}`)
+          }
+        })
+      )
+
+      setRankingsByCategory((prev) => {
+        const updatedRankings: Record<number, Record<string, any[]>> = { ...prev }
+
+        for (const [raceId, raceRankings] of Object.entries(updatedRankings)) {
+          updatedRankings[Number(raceId)] = Object.fromEntries(
+            Object.entries(raceRankings).map(([vehicleCategory, rankings]) => [
+              vehicleCategory,
+              rankings.map((ranking) =>
+                finishStatusUpdates[ranking.rankingId]
+                  ? { ...ranking, finishStatus: "DNF", score: 0 }
+                  : ranking
+              ),
+            ])
+          )
+        }
+        return updatedRankings
+      })
+
+      setFinishStatusUpdates({})
+    } catch (error) {
+      console.error("Error applying finish status:", error)
+    }
+    setLoading(false)
+  }
+
+  const fetchRaceTimesForEvent = async (eventData: RaceRecord[]) => {
+    const teamToTime = await Promise.all(
+      eventData.map(async (record) => {
+        try {
+          const sensorDataResponse = await fetch(`api/records/${record.id}/sensor-data`)
+          const sensorData = await sensorDataResponse.json()
+
+          if (sensorDataResponse.ok) {
+            let startTime = 0
+            let endTime = 0
+            for (let i = 0; i < sensorData.length; i++) {
+              if (startTime === 0 && sensorData[i].avgCurrent > 0.5) {
+                startTime = sensorData[i].timestamp
+              }
+              if (endTime === 0 && sensorData[sensorData.length - 1 - i].avgCurrent > 0.5) {
+                endTime = sensorData[sensorData.length - 1 - i].timestamp
+              }
+            }
+            const raceTime = endTime - startTime
+            return { teamId: record.device.teamId, time: raceTime }
+          }
+        } catch {
+          console.log("Error fetching sensor data for record")
+        }
+        return null
+      })
+    )
+    return teamToTime.filter((item): item is { teamId: number; time: number } => item !== null)
+  }
+
+  const loadRankings = async (raceId: number) => {
+    setLoadingRaceId(raceId)
+    try {
+      const response = await fetch("/api/records")
+      if (!response.ok) {
+        console.log("Failed to fetch records")
+      }
+      const data = await response.json()
+
+      if (data.length === 0) {
+        setLoadingRaceId(null)
+        toast.error("Load rankings failed")
+        return
+      }
+
+      const eventData = data.filter(
+        (record: RaceRecord) =>
+          record.competitionId === selectedCompetition?.id && record.raceId === raceId
+      )
+
+      const raceTimes = await fetchRaceTimesForEvent(eventData)
+      raceTimes.sort((a, b) => a.time - b.time)
+
+      // Group raceTimes by vehicle category
+      const groupedRaceTimes = raceTimes.reduce(
+        (acc: Record<string, { teamId: number; time: number }[]>, raceTime) => {
+          const team = selectedCompetition?.teams.find((t) => t.id === raceTime.teamId)
+          if (team) {
+            const vehicleCategory = `${team.vehicleClass} ${team.vehicleType}`
+            if (!acc[vehicleCategory]) {
+              acc[vehicleCategory] = []
+            }
+            acc[vehicleCategory].push(raceTime)
+          }
+          return acc
+        },
+        {}
+      )
+
+      // Calculate scores for each vehicle category
+      const rankings: any[] = []
+      for (const [vehicleCategory, times] of Object.entries(groupedRaceTimes)) {
+        times.sort((a, b) => a.time - b.time) // Sort times within the category
+
+        // Skip teams that already have rankings for this race and vehicle category
+        const existingRankings = rankingsByCategory[raceId]?.[vehicleCategory] || []
+        const existingTeamIds = new Set(existingRankings.map((ranking) => ranking.teamId))
+
+        const categoryRankings = await Promise.all(
+          times
+            .filter((teamToRace) => !existingTeamIds.has(teamToRace.teamId)) // Skip teams with existing rankings
+            .map(async (teamToRace, index) => {
+              const score = calculateScore(index + 1, times.length)
+              try {
+                const response = await fetch("/api/rankings", {
+                  method: "POST",
+                  headers: {
+                    "Content-Type": "application/json",
+                  },
+                  body: JSON.stringify({
+                    teamId: teamToRace.teamId,
+                    raceId: raceId,
+                    rank: index + 1,
+                    score: score,
+                  }),
+                })
+                if (response.ok) {
+                  const newRanking = await response.json()
+                  return {
+                    ...newRanking,
+                    rankingId: newRanking.id,
+                    teamId: teamToRace.teamId,
+                    rank: index + 1,
+                    score: score,
+                    vehicleCategory,
+                  }
+                } else {
+                  const errorText = await response.text()
+                  console.error("Failed to create ranking:", response.status, errorText)
+                }
+              } catch (error) {
+                console.error("Error creating ranking:", error)
+              }
+              return null
+            })
+        )
+        rankings.push(...categoryRankings.filter((r) => r !== null))
+      }
+
+      // Group rankings by race and vehicle category
+      setRankingsByCategory((prev) => {
+        const updatedRankings = { ...prev }
+        if (!updatedRankings[raceId]) {
+          updatedRankings[raceId] = {}
+        }
+        for (const ranking of rankings) {
+          const vehicleCategory = ranking.vehicleCategory
+          if (!updatedRankings[raceId][vehicleCategory]) {
+            updatedRankings[raceId][vehicleCategory] = []
+          }
+          updatedRankings[raceId][vehicleCategory].push(ranking)
+        }
+        for (const raceId in updatedRankings) {
+          for (const vehicleCategory in updatedRankings[raceId]) {
+            updatedRankings[raceId][vehicleCategory].sort((a, b) => b.score - a.score)
+          }
+        }
+        return updatedRankings
+      })
+    } catch (error) {
+      console.error("Error fetching events:", error)
+    }
+
+    const response = await fetch(`/api/races/${raceId}`, {
+      method: "PATCH",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        completed: true,
+      }),
+    })
+    if (response.ok) {
+      setCompetitions((prev) =>
+        prev.map((competition) => {
+          if (competition.id === selectedCompetition?.id) {
+            const updatedRaces = competition.races.map((race) =>
+              race.id === raceId ? { ...race, completed: true } : race
+            )
+            setSelectedCompetition({
+              ...competition,
+              races: updatedRaces,
+            })
+            return {
+              ...competition,
+              races: updatedRaces,
+            }
+          }
+          return competition
+        })
+      )
+    }
+
+    setLoadingRaceId(null)
+  }
+
   const loadPastCompetitions = async () => {
+    setLoading(true)
     try {
       const response = await fetch("/api/competitions")
       if (!response.ok) {
@@ -100,21 +386,49 @@ export default function CompetitionsPage() {
     } catch (error) {
       console.error("Error fetching competitions:", error)
     }
+    setLoading(false)
   }
 
   // Handle creating a new competition
   const handleCreateCompetition = async (e: React.FormEvent) => {
     e.preventDefault()
+    setLoading(true)
 
     if (!competitionName.trim() || selectedEvents.length < 3 || selectedTeams.length === 0) {
       alert(
         "Please fill in all required fields. Competitions need a name, at least 3 events, and at least one team."
       )
+      setLoading(false)
       return
     }
 
     try {
-      const response = await fetch("api/competitions", {
+      // Create races for the selected events
+      const raceResponses = await Promise.all(
+        selectedEvents.map(async (event) => {
+          const response = await fetch("/api/races", {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+            },
+            body: JSON.stringify({
+              eventId: event.id,
+            }),
+          })
+
+          if (!response.ok) {
+            const errorText = await response.text()
+            console.error("Failed to create race:", response.status, errorText)
+            throw new Error("Failed to create race")
+          }
+
+          return response.json()
+        })
+      )
+
+      // Use the created races to create the competition
+      const raceIds = raceResponses.map((race) => race.id)
+      const response = await fetch("/api/competitions", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -123,9 +437,10 @@ export default function CompetitionsPage() {
           competitionName: competitionName,
           competitionDate: new Date().toISOString(),
           teamIds: selectedTeams.map((team) => team.id),
-          eventIds: selectedEvents.map((event) => event.id),
+          raceIds: raceIds,
         }),
       })
+
       if (response.ok) {
         const newCompetition = await response.json()
         setCompetitions([...competitions, newCompetition])
@@ -135,11 +450,13 @@ export default function CompetitionsPage() {
         setActiveTab("view")
       } else {
         const errorText = await response.text()
-        console.error("Failed to create team:", response.status, errorText)
+        console.error("Failed to create competition:", response.status, errorText)
       }
     } catch (error) {
-      console.error("Error creating team:", error)
+      console.error("Error creating competition:", error)
     }
+
+    setLoading(false)
   }
 
   // Handle toggling event selection
@@ -167,6 +484,7 @@ export default function CompetitionsPage() {
 
   // Handle adding a new team
   const handleAddTeam = async (teamData: Omit<Team, "id">) => {
+    setLoading(true)
     try {
       const response = await fetch("api/teams", {
         method: "POST",
@@ -191,61 +509,49 @@ export default function CompetitionsPage() {
     } catch (error) {
       console.error("Error creating team:", error)
     }
+    setLoading(false)
   }
 
-  // Handle marking an event as completed and connecting ECUs
-  // TODO: Need to actually connect to ECUs
-  const handleConnectECUs = (competitionId: number, eventId: number) => {
-    // setCompetitions(
-    //   competitions.map((competition) => {
-    //     if (competition.id === competitionId) {
-    //       // Update the event to be completed and have data
-    //       const updatedEvents = competition.events.map((event) => {
-    //         if (event.id === eventId) {
-    //           return { ...event, completed: true, hasData: true }
-    //         }
-    //         return event
-    //       })
-    //       // Generate mock results if there aren't any for this event
-    //       let updatedResults = [...competition.results]
-    //       const hasResultsForEvent = updatedResults.some((result) => result.eventId === eventId)
-    //       if (!hasResultsForEvent) {
-    //         // Create random results for this event
-    //         const teamResults = competition.teams.map((teamId) => {
-    //           const randomTime = Math.floor(Math.random() * 30) + 10 + Math.random()
-    //           return {
-    //             teamId,
-    //             eventId,
-    //             time: Number.parseFloat(randomTime.toFixed(1)),
-    //             position: 0, // Will be calculated below
-    //           }
-    //         })
-    //         // Sort by time (lower is better) and assign positions
-    //         teamResults.sort((a, b) => (a.time || 0) - (b.time || 0))
-    //         teamResults.forEach((result, index) => {
-    //           result.position = index + 1
-    //         })
-    //         updatedResults = [...updatedResults, ...teamResults]
-    //       }
-    //       return {
-    //         ...competition,
-    //         events: updatedEvents,
-    //         results: updatedResults,
-    //       }
-    //     }
-    //     return competition
-    //   })
-    // )
-    // // Update the selected event ID to show results
-    // setSelectedEventId(eventId)
-  }
+  // Calculate overall rankings
+  const overallRankings = useMemo(() => {
+    if (!selectedCompetition) return {}
 
-  // Get results for a specific event
-  const getEventResults = (competition: Competition, eventId: string) => {
-    return competition.results
-      .filter((result) => result.eventId === eventId)
-      .sort((a, b) => a.position - b.position)
-  }
+    const overallScores: Record<
+      string,
+      { teamId: number; teamName: string; totalScore: number }[]
+    > = {}
+
+    Object.values(rankingsByCategory).forEach((raceRankings) => {
+      Object.entries(raceRankings).forEach(([vehicleCategory, categoryRankings]) => {
+        if (!overallScores[vehicleCategory]) {
+          overallScores[vehicleCategory] = []
+        }
+
+        categoryRankings.forEach((ranking) => {
+          const existingTeam = overallScores[vehicleCategory].find(
+            (team) => team.teamId === ranking.teamId
+          )
+
+          if (existingTeam) {
+            existingTeam.totalScore += ranking.score
+          } else {
+            overallScores[vehicleCategory].push({
+              teamId: ranking.teamId,
+              teamName: ranking.teamName,
+              totalScore: ranking.score,
+            })
+          }
+        })
+      })
+    })
+
+    // Sort rankings within each vehicle classification by total score
+    Object.keys(overallScores).forEach((vehicleCategory) => {
+      overallScores[vehicleCategory].sort((a, b) => b.totalScore - a.totalScore)
+    })
+
+    return overallScores
+  }, [selectedCompetition, rankingsByCategory])
 
   // View for competition details
   const renderCompetitionDetails = () => {
@@ -276,12 +582,14 @@ export default function CompetitionsPage() {
             <CardContent>
               <ScrollArea className="h-[300px]">
                 <div className="space-y-4">
-                  {selectedCompetition.events.map((event) => (
-                    <div key={event.id} className="space-y-2">
+                  {selectedCompetition.races.map((race) => (
+                    <div key={race.id} className="space-y-2">
                       <div className="flex items-center justify-between">
                         <div className="flex items-center gap-2">
-                          <h3 className="font-medium">{event.eventName}</h3>
-                          {event.completed && (
+                          <h3 className="font-medium">
+                            {events.find((event) => event.id === race.eventId)?.eventName}
+                          </h3>
+                          {race.completed && (
                             <Badge
                               variant="outline"
                               className="border-green-200 bg-green-50 text-green-700"
@@ -290,24 +598,19 @@ export default function CompetitionsPage() {
                             </Badge>
                           )}
                         </div>
-                        {!event.completed ? (
-                          <Button
-                            size="sm"
-                            className="hover:cursor-pointer"
-                            onClick={() => handleConnectECUs(selectedCompetition.id, event.id)}
-                          >
-                            Connect ECUs
-                          </Button>
-                        ) : (
-                          <Button
-                            size="sm"
-                            variant="outline"
-                            className="hover:cursor-pointer"
-                            onClick={() => setSelectedEventId(event.id)}
-                          >
-                            View Results
-                          </Button>
-                        )}
+
+                        <Button
+                          onClick={() => loadRankings(race.id)}
+                          className="hover:cursor-pointer"
+                        >
+                          {loadingRaceId === race.id ? (
+                            <Loader2 className="mr-2 inline h-4 w-4 animate-spin" />
+                          ) : race.completed ? (
+                            "Retry?"
+                          ) : (
+                            "Finish and Score"
+                          )}
+                        </Button>
                       </div>
                       <Separator />
                     </div>
@@ -350,57 +653,127 @@ export default function CompetitionsPage() {
           </Card>
         </div>
 
-        {/* Results Section
-        {selectedEventId && (
+        <select
+          value={selectedLeaderboard}
+          onChange={(e) => setSelectedLeaderboard(e.target.value)}
+          className="rounded border px-4 py-2"
+        >
+          <option value="overall">Overall Leaderboard</option>
+          {selectedCompetition.races.map((race) => (
+            <option key={race.id} value={`race-${race.id}`}>
+              {events.find((event) => event.id === race.eventId)?.eventName} Leaderboard
+            </option>
+          ))}
+        </select>
+
+        {selectedLeaderboard === "overall" ? (
+          // Render Overall Leaderboard
           <Card>
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
                 <Trophy className="h-5 w-5" />
-                Results: {getEventName(selectedEventId, selectedCompetition)}
+                Overall Results
               </CardTitle>
             </CardHeader>
             <CardContent>
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>Position</TableHead>
-                    <TableHead>Team</TableHead>
-                    <TableHead>Time</TableHead>
-                    <TableHead>Class</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {getEventResults(selectedCompetition, selectedEventId).map((result) => {
-                    const team = teams.find((t) => t.id === result.teamId)
-                    if (!team) return null
-
-                    return (
-                      <TableRow key={`${result.teamId}-${result.eventId}`}>
-                        <TableCell className="font-medium">
-                          {result.position === 1 ? (
-                            <span className="flex items-center gap-1">
-                              1 <Trophy className="h-4 w-4 text-yellow-500" />
-                            </span>
-                          ) : (
-                            result.position
-                          )}
-                        </TableCell>
-                        <TableCell>{team.name}</TableCell>
-                        <TableCell>
-                          <div className="flex items-center gap-1">
-                            <Clock className="h-4 w-4" />
-                            {result.time?.toFixed(1)}s
-                          </div>
-                        </TableCell>
-                        <TableCell>{team.vehicleClass}</TableCell>
-                      </TableRow>
-                    )
-                  })}
-                </TableBody>
-              </Table>
+              {Object.keys(overallRankings).length === 0 ? (
+                <p>No rankings available yet. Complete a race to see results.</p>
+              ) : (
+                Object.entries(overallRankings).map(([vehicleCategory, rankings]) => (
+                  <div key={vehicleCategory} className="mb-6">
+                    <h3 className="text-lg font-bold">{vehicleCategory}</h3>
+                    <Table>
+                      <TableHeader>
+                        <TableRow>
+                          <TableHead>Position</TableHead>
+                          <TableHead>Team</TableHead>
+                          <TableHead>Total Score</TableHead>
+                        </TableRow>
+                      </TableHeader>
+                      <TableBody>
+                        {rankings.map((ranking, index) => (
+                          <TableRow key={ranking.teamId}>
+                            <TableCell>{index + 1}</TableCell>
+                            <TableCell>
+                              {teams.find((team) => team.id === ranking.teamId)?.teamName}
+                            </TableCell>
+                            <TableCell>{ranking.totalScore}</TableCell>
+                          </TableRow>
+                        ))}
+                      </TableBody>
+                    </Table>
+                  </div>
+                ))
+              )}
             </CardContent>
           </Card>
-        )} */}
+        ) : (
+          // Render Race Leaderboard
+          selectedCompetition.races.map((race) =>
+            `race-${race.id}` === selectedLeaderboard ? (
+              <Card key={race.id}>
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2">
+                    <Trophy className="h-5 w-5" />
+                    {events.find((event) => event.id === race.eventId)?.eventName} Results
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  {rankingsByCategory[race.id] ? (
+                    Object.entries(rankingsByCategory[race.id]).map(
+                      ([vehicleCategory, rankings]) => (
+                        <div key={vehicleCategory} className="mb-6">
+                          <h3 className="text-lg font-bold">{vehicleCategory}</h3>
+                          <Table>
+                            <TableHeader>
+                              <TableRow>
+                                <TableHead>DNF/DQ/DNS</TableHead>
+                                <TableHead>Position</TableHead>
+                                <TableHead>Team</TableHead>
+                                <TableHead>Score</TableHead>
+                              </TableRow>
+                            </TableHeader>
+                            <TableBody>
+                              {rankings.map((ranking, index) => (
+                                <TableRow key={ranking.id}>
+                                  <TableCell>
+                                    <Checkbox
+                                      id={`ranking-${ranking.id}`}
+                                      className="hover:cursor-pointer"
+                                      onCheckedChange={(checked) => {
+                                        handleFinishStatusChange(ranking.id, Boolean(checked))
+                                      }}
+                                    />
+                                  </TableCell>
+                                  <TableCell>{index + 1}</TableCell>
+                                  <TableCell>
+                                    {teams.find((team) => team.id === ranking.teamId)?.teamName}
+                                  </TableCell>
+                                  <TableCell>{ranking.score}</TableCell>
+                                </TableRow>
+                              ))}
+                            </TableBody>
+                          </Table>
+                        </div>
+                      )
+                    )
+                  ) : (
+                    <p>No rankings available yet. Complete this race to see results.</p>
+                  )}
+                  {race.completed ? (
+                    <Button
+                      onClick={applyFinishStatus}
+                      disabled={loading}
+                      className="hover:cursor-pointer"
+                    >
+                      Apply Finish Status Changes
+                    </Button>
+                  ) : null}
+                </CardContent>
+              </Card>
+            ) : null
+          )
+        )}
       </div>
     )
   }
@@ -418,7 +791,13 @@ export default function CompetitionsPage() {
             <h1 className="text-[30px] font-bold">Competitions</h1>
           </div>
 
-          <Button onClick={loadPastCompetitions}>Load past competitions</Button>
+          <Button
+            onClick={loadPastCompetitions}
+            disabled={loading}
+            className="hover:cursor-pointer"
+          >
+            Load past competitions (Online Only)
+          </Button>
         </div>
 
         {selectedCompetition ? (
@@ -449,21 +828,21 @@ export default function CompetitionsPage() {
                       <CardHeader className="pb-3">
                         <CardTitle>{competition.competitionName}</CardTitle>
                         <CardDescription>
-                          {competition.events?.length} events • {competition.teams?.length} teams
+                          {competition.races?.length} events • {competition.teams?.length} teams
                         </CardDescription>
                       </CardHeader>
                       <CardContent className="pb-3">
                         <div className="mb-4 flex flex-wrap gap-2">
-                          {competition.events.map((event) => (
+                          {competition.races.map((race) => (
                             <Badge
-                              key={event.id}
+                              key={race.id}
                               variant="outline"
                               className={
-                                event.completed ? "border-green-200 bg-green-50 text-green-700" : ""
+                                race.completed ? "border-green-200 bg-green-50 text-green-700" : ""
                               }
                             >
-                              {event.eventName}
-                              {event.completed && " ✓"}
+                              {events.find((event) => event.id === race.eventId)?.eventName}
+                              {race.completed && " ✓"}
                             </Badge>
                           ))}
                         </div>
@@ -490,7 +869,7 @@ export default function CompetitionsPage() {
                       <CardFooter>
                         <Button
                           className="w-full hover:cursor-pointer"
-                          onClick={() => setSelectedCompetition(competition)}
+                          onClick={() => handleViewDetails(competition)}
                         >
                           View Details
                         </Button>
@@ -518,6 +897,7 @@ export default function CompetitionsPage() {
                         value={competitionName}
                         onChange={(e) => setCompetitionName(e.target.value)}
                         placeholder="Enter competition name"
+                        disabled={loading}
                         required
                       />
                     </div>
@@ -540,6 +920,7 @@ export default function CompetitionsPage() {
                               className="hover:cursor-pointer"
                               checked={selectedEvents.includes(event)}
                               onCheckedChange={() => toggleEvent(event)}
+                              disabled={loading}
                             />
                             <Label htmlFor={`event-${event.id}`} className="cursor-pointer">
                               {event.eventName}
@@ -554,6 +935,7 @@ export default function CompetitionsPage() {
                       selectedTeams={selectedTeams}
                       onTeamToggle={toggleTeam}
                       onAddTeam={handleAddTeam}
+                      loading={loading}
                     />
 
                     <Button
@@ -562,10 +944,15 @@ export default function CompetitionsPage() {
                       disabled={
                         !competitionName.trim() ||
                         selectedEvents.length < 3 ||
-                        selectedTeams.length === 0
+                        selectedTeams.length === 0 ||
+                        loading
                       }
                     >
-                      Create Competition
+                      {loading ? (
+                        <Loader2 className="mr-2 inline h-4 w-4 animate-spin" />
+                      ) : (
+                        "Create Competition"
+                      )}
                     </Button>
                   </form>
                 </CardContent>

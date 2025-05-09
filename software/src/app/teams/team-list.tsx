@@ -8,7 +8,7 @@ import type { Team } from "@/types/teams"
 interface TeamListProps {
   teams: Team[]
   onEditTeam?: (team: Team) => void
-  onConnectECU?: (teamId: number) => void
+  onConfigureECU?: (teamId: number) => void
   emptyMessage?: string
   showActions?: boolean
 }
@@ -16,7 +16,7 @@ interface TeamListProps {
 export function TeamList({
   teams,
   onEditTeam,
-  onConnectECU,
+  onConfigureECU,
   emptyMessage = "No teams added yet. Add your first team!",
   showActions = true,
 }: TeamListProps) {
@@ -53,14 +53,14 @@ export function TeamList({
                     View/Edit
                   </Button>
                 )}
-                {onConnectECU && (
+                {onConfigureECU && (
                   <Button
                     variant="default"
                     size="sm"
                     className="hover:cursor-pointer"
-                    onClick={() => onConnectECU(team.id)}
+                    onClick={() => onConfigureECU(team.id)}
                   >
-                    Connect to ECU
+                    Configure ECU
                   </Button>
                 )}
               </div>

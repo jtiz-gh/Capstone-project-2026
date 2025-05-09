@@ -1,11 +1,15 @@
 import { PrismaClient } from '@prisma/client'
-import { NextResponse } from 'next/server'
+import { NextRequest, NextResponse } from 'next/server'
 
 const prisma = new PrismaClient()
 
 // GET /api/records/:id/sensor-data
-export async function GET(_: Request, { params }: { params: { id: string } }) {
-  const recordId = parseInt(params.id)
+export async function GET(
+  _: NextRequest,
+  context: { params: { id: string } }
+) {
+  const { id } = context.params
+  const recordId = parseInt(id)
 
   if (isNaN(recordId)) {
     return NextResponse.json({ error: 'Invalid record ID' }, { status: 400 })
@@ -17,8 +21,8 @@ export async function GET(_: Request, { params }: { params: { id: string } }) {
       orderBy: { timestamp: 'asc' },
       select: {
         timestamp: true,
-        voltage: true,
-        current: true,
+        avgVoltage: true,
+        avgCurrent: true,
       },
     })
 

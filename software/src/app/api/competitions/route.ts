@@ -9,7 +9,9 @@ const prisma = new PrismaClient()
 export async function GET() {
   try {
     const competitions = await prisma.competition.findMany({
-      include: { records: true, teams: true, events: true }, // Include related records if needed
+      include: { records: true, teams: true, races: {
+        include: { event: true, rankings: true },
+      } }, // Include related records if needed
     })
     return NextResponse.json(competitions)
   } catch (error) {
@@ -22,7 +24,7 @@ export async function GET() {
 export async function POST(request: Request) {
   try {
     const body = await request.json()
-    const { competitionName, competitionDate, teamIds, eventIds } = body
+    const { competitionName, competitionDate, teamIds, raceIds } = body
 
     if (!competitionName || !competitionDate) {
       return NextResponse.json({ error: 'Missing competitionName or competitionDate' }, { status: 400 })
@@ -35,13 +37,13 @@ export async function POST(request: Request) {
         teams: {
           connect: teamIds.map((id: number) => ({ id })),
         },
-        events: {
-          connect: eventIds.map((id: number) => ({ id })),
+        races: {
+          connect: raceIds.map((id: number) => ({ id })),
         },
       },
       include: {
         teams: true,
-        events: true,
+        races: true,
       },
     })
 

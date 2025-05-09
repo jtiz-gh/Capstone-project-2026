@@ -93,7 +93,7 @@ export default function TeamsPage() {
     setActiveTab("add")
   }
 
-  const handleConnectECU = (teamId: number) => {
+  const handleConfigureECU = async (teamId: number) => {
     // TODO: Actually need to connect to the ECU
     alert(`Connecting to ECU for team ID: ${teamId}`)
   }
@@ -134,7 +134,7 @@ export default function TeamsPage() {
               <TeamList
                 teams={teams}
                 onEditTeam={handleEditingMode}
-                onConnectECU={handleConnectECU}
+                onConfigureECU={handleConfigureECU}
               />
             )}{" "}
           </TabsContent>
@@ -151,6 +151,8 @@ export default function TeamsPage() {
                   onCancel={editingTeam ? handleCancelEdit : undefined}
                   initialTeam={editingTeam || undefined}
                   submitLabel={editingTeam ? "Update Team" : "Add Team"}
+                  loading={loading}
+                  setLoading={setLoading}
                 />
               </CardContent>
             </Card>

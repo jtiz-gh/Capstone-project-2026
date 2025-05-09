@@ -3,17 +3,17 @@ import { PrismaClient } from '@prisma/client'
 
 const prisma = new PrismaClient()
 
-// GET /api/events/:id/rankings
+// GET /api/races/:id/rankings
 export async function GET(_: Request, { params }: { params: { id: string } }) {
   try {
-    const eventId = parseInt(params.id)
+    const raceId = parseInt(params.id)
 
-    if (isNaN(eventId)) {
-      return NextResponse.json({ error: 'Invalid event ID' }, { status: 400 })
+    if (isNaN(raceId)) {
+      return NextResponse.json({ error: 'Invalid race ID' }, { status: 400 })
     }
 
     const rankings = await prisma.ranking.findMany({
-      where: { eventId },
+      where: { raceId },
       include: {
         team: true,
       },
@@ -24,7 +24,7 @@ export async function GET(_: Request, { params }: { params: { id: string } }) {
 
     return NextResponse.json(rankings)
   } catch (error) {
-    console.error('Error fetching event rankings:', error)
-    return NextResponse.json({ error: 'Error fetching event rankings' }, { status: 500 })
+    console.error('Error fetching race rankings:', error)
+    return NextResponse.json({ error: 'Error fetching race rankings' }, { status: 500 })
   }
 }

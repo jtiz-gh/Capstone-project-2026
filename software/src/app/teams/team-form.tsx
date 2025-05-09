@@ -17,6 +17,7 @@ interface TeamFormProps {
   initialTeam?: Team
   submitLabel?: string
   loading?: boolean
+  setLoading?: (arg0: boolean) => void
 }
 
 export function TeamForm({
@@ -26,6 +27,7 @@ export function TeamForm({
   initialTeam,
   submitLabel = "Add Team",
   loading,
+  setLoading,
 }: TeamFormProps) {
   const [teamName, setTeamName] = useState("")
   const [vehicleClass, setVehicleClass] = useState<"Open" | "Standard">("Open")
@@ -39,26 +41,37 @@ export function TeamForm({
     }
   }, [initialTeam])
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     e.stopPropagation()
 
-    if (loading) return
+    if (setLoading) {
+      setLoading(true)
+    }
+
     if (!teamName.trim()) return
 
     if (initialTeam && editTeam) {
-      editTeam({
-        id: initialTeam.id,
-        teamName,
-        vehicleClass,
-        vehicleType,
-      })
+      await Promise.resolve(
+        editTeam({
+          id: initialTeam.id,
+          teamName,
+          vehicleClass,
+          vehicleType,
+        })
+      )
     } else {
-      addTeam({
-        teamName,
-        vehicleClass,
-        vehicleType,
-      })
+      await Promise.resolve(
+        addTeam({
+          teamName,
+          vehicleClass,
+          vehicleType,
+        })
+      )
+    }
+
+    if (setLoading) {
+      setLoading(false)
     }
 
     // Reset form if not editing

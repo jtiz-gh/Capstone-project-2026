@@ -9,9 +9,9 @@ export async function POST(request: Request) {
   try {
     const data = await request.json()
 
-    const { serialNo, readings, eventId, competitionId, sessionId } = data
+    const { serialNo, readings, raceId, competitionId, sessionId } = data
 
-    if (!serialNo || !readings || !eventId || !competitionId || !sessionId) {
+    if (!serialNo || !readings || !raceId || !competitionId || !sessionId) {
       return NextResponse.json({
         error: 'Missing required fields: serialNo, readings, eventId, competitionId, sessionId',
       }, { status: 400 })
@@ -29,7 +29,7 @@ export async function POST(request: Request) {
     // Create a new record for this upload
     const record = await prisma.record.create({
       data: {
-        eventId,
+        raceId,
         competitionId,
         deviceId: device.id,
       },
@@ -37,12 +37,19 @@ export async function POST(request: Request) {
 
     // Store all sensor readings
     const sensorDataCreates = readings.map((reading: any) => ({
-      timestamp: new Date(reading.timestamp),
-      voltage: reading.voltage,
-      current: reading.current,
       sessionId,
       recordId: record.id,
       deviceId: device.id,
+      measurementId: reading.measurementId,
+      timestamp: new Date(reading.timestamp),
+      avgVoltage: reading.avgVoltage,
+      avgCurrent: reading.avgCurrent,
+      avgPower: reading.avgPower,
+      peakVoltage: reading.peakVoltage,
+      peakCurrent: reading.peakCurrent,
+      peakPower: reading.peakPower,
+      energy: reading.energy,
+      temperature: reading.temperature,
     }))
 
     await prisma.sensorData.createMany({
@@ -50,8 +57,8 @@ export async function POST(request: Request) {
     })
 
     // Calculate average voltage/current and energy
-    const voltages = readings.map((r: any) => r.voltage).filter(Boolean)
-    const currents = readings.map((r: any) => r.current).filter(Boolean)
+    const voltages = readings.map((r: any) => r.avgVoltage).filter(Boolean)
+    const currents = readings.map((r: any) => r.avgCurrent).filter(Boolean)
 
     const avgVoltage = voltages.length
     ? voltages.reduce((a: number, b: number) => a + b, 0) / voltages.length
@@ -86,7 +93,7 @@ export async function GET() {
       orderBy: { timestamp: 'asc' },
       include: {
         device: { select: { serialNo: true } },
-        record: { select: { id: true, eventId: true, competitionId: true } },
+        record: { select: { id: true, raceId: true, competitionId: true } },
       },
     })
 

@@ -9,10 +9,10 @@ export async function GET() {
     const rankings = await prisma.ranking.findMany({
       include: {
         team: true,
-        event: true,
+        race: true,
       },
       orderBy: {
-        eventId: 'asc',
+        raceId: 'asc',
       },
     })
     return NextResponse.json(rankings)
@@ -26,17 +26,18 @@ export async function GET() {
 export async function POST(req: Request) {
   try {
     const body = await req.json()
-    const { teamId, eventId, rank } = body
+    const { teamId, raceId, rank, score } = body
 
-    if (!teamId || !eventId || rank == null) {
-      return NextResponse.json({ error: 'Missing teamId, eventId, or rank' }, { status: 400 })
+    if (!teamId || !raceId || rank == null) {
+      return NextResponse.json({ error: 'Missing teamId, raceId, or rank' }, { status: 400 })
     }
 
     const newRanking = await prisma.ranking.create({
       data: {
         teamId,
-        eventId,
+        raceId,
         rank,
+        score
       },
     })
 

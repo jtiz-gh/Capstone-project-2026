@@ -14,39 +14,49 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
-model Event {
-  id             Int      @id @default(autoincrement())
-  eventType      String
-  date           DateTime
-  eventName      String
-  eventStartTime DateTime
+// This is an event instance
+model Race {
+  id             Int           @id @default(autoincrement())
+  eventId        Int
+  event          Event         @relation(fields: [eventId], references: [id])
+  // date           DateTime
+  // eventStartTime DateTime
   rankings       Ranking[]
   records        Record[]
-  raceStartTime      DateTime
-  competitions   Competition[] @relation("CompetitionEvents")
+  // raceStartTime  DateTime
+  competitions   Competition[] @relation("CompetitionRaces")
+  completed      Boolean       @default(false)
+}
+
+model Event {
+  id        Int    @id @default(autoincrement())
+  eventType String
+  eventName String
+  Race      Race[]
 }
 
 model Competition {
   id              Int      @id @default(autoincrement())
   competitionDate DateTime
   competitionName String
-  teams           Team[]     @relation("CompetitionTeams")
-  events          Event[]    @relation("CompetitionEvents")
+  teams           Team[]   @relation("CompetitionTeams")
+  races           Race[]   @relation("CompetitionRaces")
   records         Record[]
 }
 
-
 model Ranking {
-  id          Int      @id @default(autoincrement())
-  rank        Int
-  teamId      Int
-  team        Team     @relation(fields: [teamId], references: [id])
-  eventId     Int
-  event       Event     @relation(fields: [eventId], references: [id])
+  id     Int  @id @default(autoincrement())
+  rank   Int
+  teamId Int
+  team   Team @relation(fields: [teamId], references: [id])
+  raceId Int
+  race   Race @relation(fields: [raceId], references: [id])
+  score  Int
+  finishStatus String?
 }
 
 model Team {
-  id           Int          @id @default(autoincrement())
+  id           Int           @id @default(autoincrement())
   teamName     String
   vehicleType  String
   vehicleClass String
@@ -56,56 +66,57 @@ model Team {
 }
 
 model Device {
-  id           Int           @id @default(autoincrement())
-  serialNo     Int          @unique
-  teamId       Int          
-  team         Team         @relation(fields: [teamId], references: [id])
-  config       DeviceConfig?
-  records      Record[]
-  sensorData   SensorData[]
+  id         Int           @id @default(autoincrement())
+  serialNo   Int           @unique
+  teamId     Int
+  team       Team          @relation(fields: [teamId], references: [id])
+  config     DeviceConfig?
+  records    Record[]
+  sensorData SensorData[]
+
   @@index([teamId])
 }
 
 model DeviceConfig {
-  id          Int      @id @default(autoincrement())
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
-  configName  String?
-  settings    Json
-  deviceId    Int      @unique
-  device      Device   @relation(fields: [deviceId], references: [id])
+  id         Int      @id @default(autoincrement())
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+  configName String?
+  settings   Json
+  deviceId   Int      @unique
+  device     Device   @relation(fields: [deviceId], references: [id])
 }
 
 model Record {
-  id        Int      @id @default(autoincrement())
-  avgCurrent   Float?
-  avgVoltage   Float?
-  energy            Float?
-  eventId   Int
-  event     Event   @relation(fields: [eventId], references: [id])
-  deviceId  Int
-  device    Device  @relation(fields: [deviceId], references: [id])
+  id            Int          @id @default(autoincrement())
+  avgCurrent    Float?
+  avgVoltage    Float?
+  energy        Float?
+  raceId        Int
+  race          Race         @relation(fields: [raceId], references: [id])
+  deviceId      Int
+  device        Device       @relation(fields: [deviceId], references: [id])
   competitionId Int
-  competition Competition @relation(fields: [competitionId], references: [id])
-  sensorData   SensorData[]
-  stopTime     DateTime?
+  competition   Competition  @relation(fields: [competitionId], references: [id])
+  sensorData    SensorData[]
+  stopTime      DateTime?
 }
 
 model SensorData {
-  id        Int     @id @default(autoincrement()) 
-  timestamp Decimal
-  recordId  Int
-  record    Record  @relation(fields: [recordId], references: [id])
-  deviceId  Int
-  device    Device  @relation(fields: [deviceId], references: [id])
-  sessionId Int
-  measurementId  Float?
-  avgPower       Float?
-  avgVoltage     Float?
-  avgCurrent     Float?
-  peakPower      Float?
-  peakVoltage    Float?
-  peakCurrent    Float?
-  energy         Float?
-  temperature    Float?
+  id            Int     @id @default(autoincrement())
+  timestamp     Decimal
+  recordId      Int
+  record        Record  @relation(fields: [recordId], references: [id])
+  deviceId      Int
+  device        Device  @relation(fields: [deviceId], references: [id])
+  sessionId     Int
+  measurementId Float?
+  avgPower      Float?
+  avgVoltage    Float?
+  avgCurrent    Float?
+  peakPower     Float?
+  peakVoltage   Float?
+  peakCurrent   Float?
+  energy        Float?
+  temperature   Float?
 }

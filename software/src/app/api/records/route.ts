@@ -10,7 +10,7 @@ export async function GET() {
   try {
     const records = await prisma.record.findMany({
       include: {
-        event: true,
+        race: true,
         competition: true,
         device: {
           include: {
@@ -34,15 +34,15 @@ export async function GET() {
 export async function POST(request: Request) {
   try {
     const body = await request.json()
-    const { eventId, competitionId, deviceId, avgVoltage, avgCurrent, energy } = body
+    const { raceId, competitionId, deviceId, avgVoltage, avgCurrent, energy } = body
 
-    if (!eventId || !competitionId || !deviceId) {
+    if (!raceId || !competitionId || !deviceId) {
       return NextResponse.json({ error: 'Missing required fields' }, { status: 400 })
     }
 
     const record = await prisma.record.create({
       data: {
-        eventId,
+        raceId,
         competitionId,
         deviceId,
         avgVoltage,

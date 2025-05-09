@@ -1,51 +1,39 @@
-// app/api/events/route.ts
+import { NextResponse } from 'next/server';
+import { PrismaClient } from '@prisma/client';
 
-import { NextResponse } from 'next/server'
-import { PrismaClient } from '@prisma/client'
+const prisma = new PrismaClient();
 
-const prisma = new PrismaClient()
-
-// GET /api/events
+// GET api/events
 export async function GET() {
-  try {
-    const events = await prisma.event.findMany({
-      include: {
-        rankings: true,
-        records: true,
-      },
-    })
-    return NextResponse.json(events)
-  } catch (error) {
-    console.error('Error fetching events:', error)
-    return NextResponse.json({ error: 'Error fetching events' }, { status: 500 })
-  }
+    try {
+        const events = await prisma.event.findMany();
+        return NextResponse.json(events, { status: 200 });
+    } catch (error) {
+        console.error('Error fetching events:', error);
+        return NextResponse.json({ error: 'Failed to fetch events' }, { status: 500 });
+    }
 }
 
-// POST /api/events
-export async function POST(request: Request) {
-  try {
-    const body = await request.json()
-    const { eventType, date, eventName, eventStartTime, raceStartTime } = body
+// POST api/events
+export async function POST(req: Request) {
+    try {
+        const body = await req.json();
+        const { eventName, eventType } = body;
 
-    if (!eventType || !date || !eventName || !eventStartTime || !raceStartTime) {
-      return NextResponse.json({
-        error: 'Missing required fields: eventType, date, eventName, eventStartTime, raceStartTime',
-      }, { status: 400 })
+        if (!eventName || !eventType) {
+            return NextResponse.json({ error: 'Missing required fields' }, { status: 400 });
+        }
+
+        const newEvent = await prisma.event.create({
+            data: {
+                eventName,
+                eventType,
+            },
+        });
+
+        return NextResponse.json(newEvent, { status: 201 });
+    } catch (error) {
+        console.error('Error creating event:', error);
+        return NextResponse.json({ error: 'Failed to create event' }, { status: 500 });
     }
-
-    const newEvent = await prisma.event.create({
-      data: {
-        eventType,
-        date: new Date(date),
-        eventName,
-        eventStartTime: new Date(eventStartTime),
-        raceStartTime: new Date(raceStartTime),
-      },
-    })
-
-    return NextResponse.json(newEvent, { status: 201 })
-  } catch (error) {
-    console.error('Error creating event:', error)
-    return NextResponse.json({ error: 'Error creating event' }, { status: 500 })
-  }
 }

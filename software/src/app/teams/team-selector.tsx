@@ -21,6 +21,7 @@ interface TeamSelectorProps {
   onTeamToggle: (teamId: number) => void
   onAddTeam: (team: Omit<Team, "id">) => void
   showAddTeamOption?: boolean
+  loading: boolean
 }
 
 export function TeamSelector({
@@ -29,6 +30,7 @@ export function TeamSelector({
   onTeamToggle,
   onAddTeam,
   showAddTeamOption = true,
+  loading,
 }: TeamSelectorProps) {
   const [isAddTeamDialogOpen, setIsAddTeamDialogOpen] = useState(false)
 
@@ -54,6 +56,7 @@ export function TeamSelector({
                 variant="outline"
                 size="sm"
                 className="flex items-center gap-1 hover:cursor-pointer"
+                disabled={loading}
               >
                 <PlusCircle className="h-4 w-4" />
                 Add New Team
@@ -76,6 +79,7 @@ export function TeamSelector({
               className="hover:cursor-pointer"
               checked={selectedTeams.includes(team)}
               onCheckedChange={() => onTeamToggle(team.id)}
+              disabled={loading}
             />
             <Label htmlFor={`team-${team.id}`} className="cursor-pointer">
               {team.teamName} ({team.vehicleClass} - {team.vehicleType})
