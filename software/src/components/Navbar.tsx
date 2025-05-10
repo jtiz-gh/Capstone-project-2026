@@ -6,6 +6,8 @@ import {
   navigationMenuTriggerStyle,
 } from "@/components/ui/navigation-menu"
 import Link from "next/link"
+import Image from "next/image"
+import logo from "@/assets/detailed_logo.png"
 
 export default function Navbar() {
   return (
@@ -40,6 +42,13 @@ export default function Navbar() {
           </NavigationMenuItem>
         </NavigationMenuList>
       </NavigationMenu>
+      <Image
+        src={logo}
+        alt="Logo"
+        width={160}
+        height={70}
+        className="absolute left-5"
+        />
     </div>
   )
 }

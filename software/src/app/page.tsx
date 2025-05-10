@@ -1,12 +1,20 @@
 import { Button } from "@/components/ui/button"
 import Image from "next/image"
 import Link from "next/link"
+import logo from "@/assets/detailed_logo.png"
 
 export default function Home() {
   return (
     <div className="grid min-h-screen grid-rows-[20px_1fr_20px] items-center justify-items-center gap-16 p-8 pb-20 font-[family-name:var(--font-geist-sans)] sm:p-20">
       <main className="row-start-2 flex flex-col items-center gap-[32px] sm:items-start">
-        <h1 className="w-full text-center text-[30px] font-bold">EVolocity</h1>
+        <Image
+                src={logo}
+                alt="Logo"
+                width={200}
+                height={70}
+                className="mx-auto"
+                />
+        
 
         <div className="grid w-full max-w-md grid-cols-2 gap-4">
           <Link href="/teams">

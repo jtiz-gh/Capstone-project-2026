@@ -9,6 +9,7 @@ import { ArrowLeft } from "lucide-react"
 import type { Team } from "@/types/teams"
 import { TeamList } from "@/app/teams/team-list"
 import { TeamForm } from "@/app/teams/team-form"
+import Navbar from "@/components/Navbar"
 
 export default function TeamsPage() {
   const [teams, setTeams] = useState<Team[]>([])
@@ -104,6 +105,8 @@ export default function TeamsPage() {
   }
 
   return (
+    <>
+    <Navbar />
     <div className="grid min-h-screen grid-rows-[20px_1fr_20px] items-center justify-items-center gap-16 p-8 pb-20 font-[family-name:var(--font-geist-sans)] sm:p-20">
       <main className="row-start-2 flex w-full max-w-3xl flex-col gap-8">
         <div className="flex items-center gap-4">
@@ -160,5 +163,6 @@ export default function TeamsPage() {
         </Tabs>
       </main>
     </div>
+    </>
   )
 }

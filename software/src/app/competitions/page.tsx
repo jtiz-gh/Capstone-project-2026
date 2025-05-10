@@ -2,34 +2,28 @@
 
 import type React from "react"
 
+import { TeamSelector } from "@/app/teams/team-selector"
+import Navbar from "@/components/Navbar"
+import { Badge } from "@/components/ui/badge"
 import { useState, useEffect, useMemo } from "react"
 import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
-import { Label } from "@/components/ui/label"
 import {
   Card,
   CardContent,
-  CardHeader,
-  CardTitle,
   CardDescription,
   CardFooter,
+  CardHeader,
+  CardTitle,
 } from "@/components/ui/card"
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Checkbox } from "@/components/ui/checkbox"
-import { Badge } from "@/components/ui/badge"
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table"
+import { Input } from "@/components/ui/input"
+import { Label } from "@/components/ui/label"
 import { ScrollArea } from "@/components/ui/scroll-area"
 import { Separator } from "@/components/ui/separator"
-import { AlertCircle, ArrowLeft, Trophy, Users, Activity, Clock, Loader2 } from "lucide-react"
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
+import type { Competition, Event, Team } from "@/types/teams"
 import Link from "next/link"
-import type { Team, Competition, Event, RaceRecord } from "@/types/teams"
+import { AlertCircle, ArrowLeft, Trophy, Users, Activity, Clock, Loader2 } from "lucide-react"
 import { TeamSelector } from "@/app/teams/team-selector"
 import { calculateScore } from "@/lib/utils"
 import { toast } from "sonner"
@@ -779,16 +773,21 @@ export default function CompetitionsPage() {
   }
 
   return (
-    <div className="grid min-h-screen grid-rows-[20px_1fr_20px] items-center justify-items-center gap-16 p-8 pb-20 font-[family-name:var(--font-geist-sans)] sm:p-20">
-      <main className="row-start-2 flex w-full max-w-4xl flex-col gap-8">
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-4">
-            <Link href="/">
-              <Button variant="ghost" size="icon" className="hover:cursor-pointer">
-                <ArrowLeft className="h-5 w-5" />
-              </Button>
-            </Link>
-            <h1 className="text-[30px] font-bold">Competitions</h1>
+    <>
+      <Navbar />
+      <div className="grid grid-rows-[20px_1fr_20px] items-center justify-items-center gap-16 p-8 pb-20 font-[family-name:var(--font-geist-sans)] sm:p-20">
+        <main className="row-start-2 flex w-full max-w-4xl flex-col gap-8">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-4">
+              <Link href="/">
+                <Button variant="ghost" size="icon" className="hover:cursor-pointer">
+                  <ArrowLeft className="h-5 w-5" />
+                </Button>
+              </Link>
+              <h1 className="text-[30px] font-bold">Competitions</h1>
+            </div>
+
+            <Button onClick={loadPastCompetitions}>Load past competitions</Button>
           </div>
 
           <Button
@@ -860,9 +859,6 @@ export default function CompetitionsPage() {
                                   : ""}
                               </span>
                             ))}
-                            {competition.teams.length > 3 && (
-                              <span>+{competition.teams.length - 3} more</span>
-                            )}
                           </div>
                         </div>
                       </CardContent>
@@ -926,9 +922,41 @@ export default function CompetitionsPage() {
                               {event.eventName}
                             </Label>
                           </div>
-                        ))}
+                        </CardContent>
+                        <CardFooter>
+                          <Button
+                            className="w-full hover:cursor-pointer"
+                            onClick={() => setSelectedCompetition(competition)}
+                          >
+                            View Details
+                          </Button>
+                        </CardFooter>
+                      </Card>
+                    ))}
+                  </div>
+                )}
+              </TabsContent>
+
+              <TabsContent value="create" className="mt-6">
+                <Card>
+                  <CardHeader>
+                    <CardTitle>Create New Competition</CardTitle>
+                    <CardDescription>
+                      Add a name, select at least 3 events, and choose teams to participate.
+                    </CardDescription>
+                  </CardHeader>
+                  <CardContent>
+                    <form onSubmit={handleCreateCompetition} className="space-y-6">
+                      <div className="space-y-2">
+                        <Label htmlFor="competition-name">Competition Name</Label>
+                        <Input
+                          id="competition-name"
+                          value={competitionName}
+                          onChange={(e) => setCompetitionName(e.target.value)}
+                          placeholder="Enter competition name"
+                          required
+                        />
                       </div>
-                    </div>
 
                     <TeamSelector
                       teams={teams}
