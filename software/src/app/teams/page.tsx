@@ -106,63 +106,63 @@ export default function TeamsPage() {
 
   return (
     <>
-    <Navbar />
-    <div className="grid min-h-screen grid-rows-[20px_1fr_20px] items-center justify-items-center gap-16 p-8 pb-20 font-[family-name:var(--font-geist-sans)] sm:p-20">
-      <main className="row-start-2 flex w-full max-w-3xl flex-col gap-8">
-        <div className="flex items-center gap-4">
-          <Link href="/">
-            <Button variant="ghost" size="icon" className="hover:cursor-pointer">
-              <ArrowLeft className="h-5 w-5" />
-            </Button>
-          </Link>
-          <h1 className="text-[30px] font-bold">Teams</h1>
-        </div>
+      <Navbar />
+      <div className="grid min-h-screen grid-rows-[20px_1fr_20px] items-center justify-items-center gap-16 p-8 pb-20 font-[family-name:var(--font-geist-sans)] sm:p-20">
+        <main className="row-start-2 flex w-full max-w-3xl flex-col gap-8">
+          <div className="flex items-center gap-4">
+            <Link href="/">
+              <Button variant="ghost" size="icon" className="hover:cursor-pointer">
+                <ArrowLeft className="h-5 w-5" />
+              </Button>
+            </Link>
+            <h1 className="text-[30px] font-bold">Teams</h1>
+          </div>
 
-        <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-          <TabsList className="grid w-full grid-cols-2">
-            <TabsTrigger value="view" className="hover:cursor-pointer">
-              View Teams
-            </TabsTrigger>
-            <TabsTrigger value="add" className="hover:cursor-pointer">
-              {editingTeam ? "Edit Team" : "Add Team"}
-            </TabsTrigger>
-          </TabsList>
+          <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
+            <TabsList className="grid w-full grid-cols-2">
+              <TabsTrigger value="view" className="hover:cursor-pointer">
+                View Teams
+              </TabsTrigger>
+              <TabsTrigger value="add" className="hover:cursor-pointer">
+                {editingTeam ? "Edit Team" : "Add Team"}
+              </TabsTrigger>
+            </TabsList>
 
-          <TabsContent value="view" className="mt-6">
-            {loading ? (
-              <div className="flex h-40 items-center justify-center">
-                <p>Loading teams...</p>
-              </div>
-            ) : (
-              <TeamList
-                teams={teams}
-                onEditTeam={handleEditingMode}
-                onConfigureECU={handleConfigureECU}
-              />
-            )}{" "}
-          </TabsContent>
-
-          <TabsContent value="add" className="mt-6">
-            <Card>
-              <CardHeader>
-                <CardTitle>{editingTeam ? "View/Edit Team" : "Add New Team"}</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <TeamForm
-                  addTeam={handleAddTeam}
-                  editTeam={handleEditTeam}
-                  onCancel={editingTeam ? handleCancelEdit : undefined}
-                  initialTeam={editingTeam || undefined}
-                  submitLabel={editingTeam ? "Update Team" : "Add Team"}
-                  loading={loading}
-                  setLoading={setLoading}
+            <TabsContent value="view" className="mt-6">
+              {loading ? (
+                <div className="flex h-40 items-center justify-center">
+                  <p>Loading teams...</p>
+                </div>
+              ) : (
+                <TeamList
+                  teams={teams}
+                  onEditTeam={handleEditingMode}
+                  onConfigureECU={handleConfigureECU}
                 />
-              </CardContent>
-            </Card>
-          </TabsContent>
-        </Tabs>
-      </main>
-    </div>
+              )}{" "}
+            </TabsContent>
+
+            <TabsContent value="add" className="mt-6">
+              <Card>
+                <CardHeader>
+                  <CardTitle>{editingTeam ? "View/Edit Team" : "Add New Team"}</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <TeamForm
+                    addTeam={handleAddTeam}
+                    editTeam={handleEditTeam}
+                    onCancel={editingTeam ? handleCancelEdit : undefined}
+                    initialTeam={editingTeam || undefined}
+                    submitLabel={editingTeam ? "Update Team" : "Add Team"}
+                    loading={loading}
+                    setLoading={setLoading}
+                  />
+                </CardContent>
+              </Card>
+            </TabsContent>
+          </Tabs>
+        </main>
+      </div>
     </>
   )
 }
