@@ -60,3 +60,7 @@ coverage.xml
 # Local development
 .local/
 .history/ 
+
+# Actual data files of local superbase database
+local-supabase/volumes/db/data/
+local-supabase/volumes/storage/
