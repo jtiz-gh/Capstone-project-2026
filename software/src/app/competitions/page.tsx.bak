@@ -24,9 +24,16 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import type { Competition, Event, Team } from "@/types/teams"
 import Link from "next/link"
 import { AlertCircle, ArrowLeft, Trophy, Users, Activity, Clock, Loader2 } from "lucide-react"
-import { TeamSelector } from "@/app/teams/team-selector"
 import { calculateScore } from "@/lib/utils"
 import { toast } from "sonner"
+import {
+  Table,
+  TableHeader,
+  TableRow,
+  TableHead,
+  TableBody,
+  TableCell,
+} from "@/components/ui/table"
 
 export default function CompetitionsPage() {
   const [teams, setTeams] = useState<Team[]>([])
@@ -797,7 +804,7 @@ export default function CompetitionsPage() {
           >
             Load past competitions (Online Only)
           </Button>
-        </div>
+        </main>
 
         {selectedCompetition ? (
           renderCompetitionDetails()
@@ -922,41 +929,9 @@ export default function CompetitionsPage() {
                               {event.eventName}
                             </Label>
                           </div>
-                        </CardContent>
-                        <CardFooter>
-                          <Button
-                            className="w-full hover:cursor-pointer"
-                            onClick={() => setSelectedCompetition(competition)}
-                          >
-                            View Details
-                          </Button>
-                        </CardFooter>
-                      </Card>
-                    ))}
-                  </div>
-                )}
-              </TabsContent>
-
-              <TabsContent value="create" className="mt-6">
-                <Card>
-                  <CardHeader>
-                    <CardTitle>Create New Competition</CardTitle>
-                    <CardDescription>
-                      Add a name, select at least 3 events, and choose teams to participate.
-                    </CardDescription>
-                  </CardHeader>
-                  <CardContent>
-                    <form onSubmit={handleCreateCompetition} className="space-y-6">
-                      <div className="space-y-2">
-                        <Label htmlFor="competition-name">Competition Name</Label>
-                        <Input
-                          id="competition-name"
-                          value={competitionName}
-                          onChange={(e) => setCompetitionName(e.target.value)}
-                          placeholder="Enter competition name"
-                          required
-                        />
+                        ))}
                       </div>
+                    </div>
 
                     <TeamSelector
                       teams={teams}
@@ -988,7 +963,7 @@ export default function CompetitionsPage() {
             </TabsContent>
           </Tabs>
         )}
-      </main>
-    </div>
+      </div>
+    </>
   )
 }
