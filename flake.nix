@@ -28,6 +28,8 @@
           # SOFTWARE
           nodejs
           pnpm
+          docker
+          docker-compose
 
           # FIRMWARE
           # Required for MicroPython development
