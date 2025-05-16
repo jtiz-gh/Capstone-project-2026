@@ -1,107 +1,146 @@
-# Capstone Project 2025 - Team 19
+# Software
 
-## Project Overview
-> `TODO` Needs to be evaluated with the team
+This directory contains the web application built with React, Tailwind CSS, Prisma, and Supabase.
 
-[Brief description of your project, its goals, and key features] 
+## Tech Stack
+- **Frontend**: React with Tailwind CSS
+- **Database**: Supabase (PostgreSQL)
+- **ORM**: Prisma
+- **Authentication**: Supabase Auth
 
+## Prerequisites
+- Node.js (v18 or higher recommended)
+- npm or yarn
+- Git
 
-Project brief can be found [here](https://docs.google.com/document/d/1vH7OvMVSJteDKoSW-FQfeeVJb95oDqaqZ6kooqCCcWs/edit?usp=sharing)
+## Getting Started
+> `TODO` Update these steps once project is initialized with specific requirements
 
-## Repository Structure 
-> `TODO` subject to change
-```
-.
-├── software/          # Web application code
-│   ├── src/           # Source code
-│   └── docs/          # Setup & troubleshooting guides
-├── firmware/          # Embedded system firmware
-│   ├── src/           # Source code
-│   └── docs/          # Datasheets, build instructions
-├── hardware/          # PCB and hardware designs
-│   ├── pcb/           # PCB design files
-│   ├── schematics/    # Circuit schematics
-│   └── docs/          # Datasheets, design docs
-└── CONTRIBUTING.md    # Development guidelines
-```
-
-## Quick Start
-1. Clone the repository
+1. Install dependencies after project creation:
    ```bash
-   git clone git@github.com:ECSECapstone/capstone-project-2025-team_19.git
-   cd capstone-project-2025-team_19
+   npm install
+   # or
+   yarn install
    ```
-2. Follow setup instructions in respective directories:
-   - [Software Setup](software/README.md)
-   - [Firmware Setup](firmware/README.md)
-   - [Hardware Setup](hardware/README.md)
 
-## Development Workflow
-- Read [CONTRIBUTING.md](CONTRIBUTING.md) before starting development
-- Create feature/bugfix branches from `main`
-- Keep branches up to date with `main`
-- Submit pull requests for review
-- Update relevant `CHANGELOG.md` files
+2. Set up environment variables:
+   ```bash
+   cp .env.example .env
+   ```
+   Update the following in your `.env`:
+   - `SUPABASE_URL`
+   - `SUPABASE_ANON_KEY`
+   - `DATABASE_URL`
 
-## Team Members
-- Project Lead
-  - **Pulasthi Lenaduwa**
-- Software Team
-  - **Chulshin Kim** - Software Lead
-  - Chris Valenzuela
-  - Jackson Schofield
-  - Zhiyu He
-- Firmware Team
-  - **Tai Wei Loh** - Firmware Lead
-  - Saarthak Negi
-- Hardware Team
-  - **Jin Shim** - Hardware Lead
-  - Aldonza Watt
-  - Vinayak Verma
+3. Initialize Prisma:
+   ```bash
+   npx prisma generate
+   npx prisma db push
+   ```
 
-## Project Status
-> `TODO` needs to be reworked after establishing storyboard
+4. Start the development server:
+   ```bash
+   npm run dev
+   # or
+   yarn dev
+   ```
 
-Current project phase and milestones:
-- [ ] Initial Setup
-- [ ] Hardware Design
-- [ ] Firmware Development
-- [ ] Software Development
-- [ ] Integration Testing
-- [ ] Final Documentation
+## Development Guidelines
+> `TODO` Add specific coding standards and practices once agreed upon by the team
+- Follow React best practices and hooks guidelines
+- Use Tailwind CSS for styling
+- Keep components small and reusable
+- Document API integrations
+- Update CHANGELOG.md for significant changes
+
+## Project Structure
+> `TODO` Update with actual project structure once created
+
+Once created, the project will follow standard React project structure:
+```
+software/
+├── public/          # Static files
+├── src/             # Source code (auto-generated)
+├── docs/            # Documentation
+├── prisma/          # Database schema and migrations
+└── CHANGELOG.md     # Software changes log
+```
+
+## Useful Commands
+> `TODO` Add project-specific commands and scripts once configured
+```bash
+# Development
+npm run dev         # Start development server
+
+# Database
+npx prisma studio   # Open Prisma database UI
+npx prisma generate # Generate Prisma client
+npx prisma db push  # Push schema changes to database
+
+# Building
+npm run build       # Create production build
+npm run start       # Start production server
+```
 
 ## Documentation
-> `TODO` All of it needs to be changed - spec leads & project lead
-### Software Documentation (`software/docs/`)
-- Setup and installation guides
-- API documentation
-- Architecture diagrams
-- Troubleshooting guides
+Key documentation will be maintained in the `docs/` directory:
+> `TODO` Update with actual documentation once created
+- API endpoints and usage
+- Database schema
+- Component documentation
+- Setup troubleshooting
 
-### Firmware Documentation (`firmware/docs/`)
-- Datasheets
-- Pin mappings and interfaces
-- Build instructions
-- Testing procedures
-- Hardware interface documentation
+## Additional Resources
+- [React Documentation](https://react.dev/)
+- [Tailwind CSS Documentation](https://tailwindcss.com/docs)
+- [Prisma Documentation](https://www.prisma.io/docs)
+- [Supabase Documentation](https://supabase.com/docs) 
 
-### Hardware Documentation (`hardware/docs/`)
-- Component datasheets
-- Design documentation
-- Assembly guides
-- Testing procedures
+## Setting Up Local Supabase Database
 
-### Project Documentation (Google Drive)
-> `TODO` update as you progress through the semester
+To run the project locally with a working Supabase backend, follow these steps:
 
-Project management documentation stored in Google Drive:
-- [Project brief](https://docs.google.com/document/d/1vH7OvMVSJteDKoSW-FQfeeVJb95oDqaqZ6kooqCCcWs/edit?usp=sharing)
-- [Meeting minutes](https://drive.google.com/drive/folders/1z7YsXZboZKT3bY4RvGdQBiedCJfJxP-C?usp=sharing)
-- [Logbooks](https://drive.google.com/drive/folders/1cl1ZUcF_Y9H9Y0-6AfLaIR1GfmjoznK_?usp=sharing)
-- Assessment documents
-- Presentation slides
-- Design decisions and discussions
-- Research documents
-- Team schedules
+1. **Ensure `.env` is configured correctly**  
+   Copy the example file if needed:
+   ```bash
+   cp .env.example .env
+   ```
+   Update any missing secrets, especially:
+   - `DATABASE_URL`
+   - `NEXT_PUBLIC_SUPABASE_URL`
+   - `NEXT_PUBLIC_SUPABASE_ANON_KEY`  
+   > 🔁 Ask Jackson if you're unsure about the correct values.
 
-Development guidelines are in [CONTRIBUTING.md](CONTRIBUTING.md)
+2. **Navigate to the local Supabase project directory**  
+   For example:
+   ```bash
+   cd ../local-supabase-project
+   ```
+
+3. **Start Supabase using Docker Compose**  
+   Ensure Docker Desktop is installed and running, then:
+   ```bash
+   docker compose up -d
+   ```
+   > ✅ This spins up the Supabase services locally.  
+   > ⚠️ **You do *not* need to run `supabase start`** — that is only required if you're using the Supabase CLI workflow. This setup uses plain Docker Compose.
+
+4. **Push your Prisma schema to the local database**  
+   Navigate back to the software directory and run:
+   ```bash
+   cd ../software
+   npx prisma db push
+   ```
+
+5. **Open Prisma Studio (optional, for inspecting the DB)**  
+   ```bash
+   npx prisma studio
+   ```
+
+6. **Seed your local database with fake data**  
+   Run:
+   ```bash
+   npm run prisma:seed
+   ```
+
+You're now ready to run the full app locally!
