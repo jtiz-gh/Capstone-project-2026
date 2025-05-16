@@ -5,8 +5,8 @@ export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs))
 }
 
-type VoltageData = { seconds: number; voltage: number }[];
-type CurrentData = { seconds: number; current: number }[];
+type VoltageData = { seconds: number; voltage: number }[]
+type CurrentData = { seconds: number; current: number }[]
 
 export function mergeAndCalculateEnergy(
   voltageData: VoltageData,
@@ -35,7 +35,6 @@ export function calculateScore(place: number | string, n: number): number {
 
   // Ensure place is a number for calculations
   if (typeof place === "number") {
-
     // Guard against invalid placements
     if (place < 1 || place > n) {
       return 0

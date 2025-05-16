@@ -1,5 +1,5 @@
-import { Toaster } from 'sonner';
-import { NotificationsController } from '@/components/NotificationsController';
+import { Toaster } from "sonner"
+import { NotificationsController } from "@/components/NotificationsController"
 
 export default function NotificationDemoLayout({ children }: { children: React.ReactNode }) {
   return (
@@ -8,5 +8,5 @@ export default function NotificationDemoLayout({ children }: { children: React.R
       <Toaster richColors position="top-right" />
       <NotificationsController />
     </>
-  );
+  )
 }

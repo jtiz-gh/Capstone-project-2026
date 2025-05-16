@@ -1,6 +1,6 @@
 include:
   - local-supabase-project/docker-compose.yml
-  
+
 services:
   capstone-web:
     build:
@@ -14,7 +14,7 @@ services:
         - NODE_ENV=$NODE_ENV
     restart: on-failure:5
     ports:
-      - '3001:3001'
+      - "3001:3001"
     env_file:
       - .env
     depends_on:

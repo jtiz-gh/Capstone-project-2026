@@ -1,7 +1,7 @@
 // app/api/races/route.ts
 
-import { NextResponse } from 'next/server'
-import { PrismaClient } from '@prisma/client'
+import { NextResponse } from "next/server"
+import { PrismaClient } from "@prisma/client"
 
 const prisma = new PrismaClient()
 
@@ -16,8 +16,8 @@ export async function GET() {
     })
     return NextResponse.json(races)
   } catch (error) {
-    console.error('Error fetching races:', error)
-    return NextResponse.json({ error: 'Error fetching races' }, { status: 500 })
+    console.error("Error fetching races:", error)
+    return NextResponse.json({ error: "Error fetching races" }, { status: 500 })
   }
 }
 
@@ -28,9 +28,13 @@ export async function POST(request: Request) {
     const { eventId } = body
 
     if (!eventId) {
-      return NextResponse.json({
-        error: 'Missing required fields: eventType, date, eventName, eventStartTime, raceStartTime',
-      }, { status: 400 })
+      return NextResponse.json(
+        {
+          error:
+            "Missing required fields: eventType, date, eventName, eventStartTime, raceStartTime",
+        },
+        { status: 400 }
+      )
     }
 
     const newRace = await prisma.race.create({
@@ -41,7 +45,7 @@ export async function POST(request: Request) {
 
     return NextResponse.json(newRace, { status: 201 })
   } catch (error) {
-    console.error('Error creating race:', error)
-    return NextResponse.json({ error: 'Error creating race' }, { status: 500 })
+    console.error("Error creating race:", error)
+    return NextResponse.json({ error: "Error creating race" }, { status: 500 })
   }
 }

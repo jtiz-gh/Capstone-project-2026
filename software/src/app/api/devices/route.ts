@@ -1,7 +1,7 @@
 // app/api/devices/route.ts
 
-import { NextResponse } from 'next/server'
-import { PrismaClient } from '@prisma/client'
+import { NextResponse } from "next/server"
+import { PrismaClient } from "@prisma/client"
 
 const prisma = new PrismaClient()
 
@@ -16,8 +16,8 @@ export async function GET() {
     })
     return NextResponse.json(devices)
   } catch (error) {
-    console.error('Error fetching devices:', error)
-    return NextResponse.json({ error: 'Error fetching devices' }, { status: 500 })
+    console.error("Error fetching devices:", error)
+    return NextResponse.json({ error: "Error fetching devices" }, { status: 500 })
   }
 }
 
@@ -29,7 +29,7 @@ export async function POST(request: Request) {
 
     if (!serialNo || !vehicleType || !vehicleClass || !teamId) {
       return NextResponse.json(
-        { error: 'Missing required fields: serialNo, vehicleType, vehicleClass, teamId' },
+        { error: "Missing required fields: serialNo, vehicleType, vehicleClass, teamId" },
         { status: 400 }
       )
     }
@@ -37,7 +37,7 @@ export async function POST(request: Request) {
     // Ensure the team exists
     const team = await prisma.team.findUnique({ where: { id: teamId } })
     if (!team) {
-      return NextResponse.json({ error: 'Team not found' }, { status: 404 })
+      return NextResponse.json({ error: "Team not found" }, { status: 404 })
     }
 
     const newDevice = await prisma.device.create({
@@ -49,7 +49,7 @@ export async function POST(request: Request) {
 
     return NextResponse.json(newDevice, { status: 201 })
   } catch (error) {
-    console.error('Error creating device:', error)
-    return NextResponse.json({ error: 'Error creating device' }, { status: 500 })
+    console.error("Error creating device:", error)
+    return NextResponse.json({ error: "Error creating device" }, { status: 500 })
   }
 }

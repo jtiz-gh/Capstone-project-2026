@@ -1,5 +1,5 @@
-import { NextResponse } from 'next/server'
-import { PrismaClient } from '@prisma/client'
+import { NextResponse } from "next/server"
+import { PrismaClient } from "@prisma/client"
 
 const prisma = new PrismaClient()
 
@@ -12,13 +12,13 @@ export async function GET() {
         race: true,
       },
       orderBy: {
-        raceId: 'asc',
+        raceId: "asc",
       },
     })
     return NextResponse.json(rankings)
   } catch (error) {
-    console.error('Error fetching rankings:', error)
-    return NextResponse.json({ error: 'Error fetching rankings' }, { status: 500 })
+    console.error("Error fetching rankings:", error)
+    return NextResponse.json({ error: "Error fetching rankings" }, { status: 500 })
   }
 }
 
@@ -29,7 +29,7 @@ export async function POST(req: Request) {
     const { teamId, raceId, rank, score } = body
 
     if (!teamId || !raceId || rank == null) {
-      return NextResponse.json({ error: 'Missing teamId, raceId, or rank' }, { status: 400 })
+      return NextResponse.json({ error: "Missing teamId, raceId, or rank" }, { status: 400 })
     }
 
     const newRanking = await prisma.ranking.create({
@@ -37,13 +37,13 @@ export async function POST(req: Request) {
         teamId,
         raceId,
         rank,
-        score
+        score,
       },
     })
 
     return NextResponse.json(newRanking, { status: 201 })
   } catch (error) {
-    console.error('Error creating ranking:', error)
-    return NextResponse.json({ error: 'Error creating ranking' }, { status: 500 })
+    console.error("Error creating ranking:", error)
+    return NextResponse.json({ error: "Error creating ranking" }, { status: 500 })
   }
 }

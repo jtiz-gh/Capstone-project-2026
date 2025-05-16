@@ -1,8 +1,8 @@
 import { defineConfig } from "cypress"
 
 export default defineConfig({
-    e2e: {
-        setupNodeEvents() { },
-    },
-    video: true,
+  e2e: {
+    setupNodeEvents() {},
+  },
+  video: true,
 })

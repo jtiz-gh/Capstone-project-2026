@@ -13,7 +13,7 @@ export type Team = {
   teamName: string
   vehicleClass: "Open" | "Standard"
   vehicleType: "Bike" | "Kart"
-  rankings: Ranking[]
+  rankings?: Ranking[]
 }
 
 // export type EventType = {
@@ -25,6 +25,7 @@ export type Event = {
   id: number
   eventName: string
   eventType: "Static" | "Dynamic"
+  completed?: boolean
 }
 
 export type Race = {

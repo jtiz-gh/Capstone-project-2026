@@ -1,7 +1,7 @@
 // app/api/records/route.ts
 
-import { PrismaClient } from '@prisma/client'
-import { NextResponse } from 'next/server'
+import { PrismaClient } from "@prisma/client"
+import { NextResponse } from "next/server"
 
 const prisma = new PrismaClient()
 
@@ -19,14 +19,14 @@ export async function GET() {
         },
       },
       orderBy: {
-        stopTime: 'desc',
+        stopTime: "desc",
       },
     })
 
     return NextResponse.json(records)
   } catch (error) {
-    console.error('Error fetching records:', error)
-    return NextResponse.json({ error: 'Failed to fetch records' }, { status: 500 })
+    console.error("Error fetching records:", error)
+    return NextResponse.json({ error: "Failed to fetch records" }, { status: 500 })
   }
 }
 
@@ -37,7 +37,7 @@ export async function POST(request: Request) {
     const { raceId, competitionId, deviceId, avgVoltage, avgCurrent, energy } = body
 
     if (!raceId || !competitionId || !deviceId) {
-      return NextResponse.json({ error: 'Missing required fields' }, { status: 400 })
+      return NextResponse.json({ error: "Missing required fields" }, { status: 400 })
     }
 
     const record = await prisma.record.create({
@@ -54,7 +54,7 @@ export async function POST(request: Request) {
 
     return NextResponse.json(record, { status: 201 })
   } catch (error) {
-    console.error('Error creating record:', error)
-    return NextResponse.json({ error: 'Failed to create record' }, { status: 500 })
+    console.error("Error creating record:", error)
+    return NextResponse.json({ error: "Failed to create record" }, { status: 500 })
   }
 }
