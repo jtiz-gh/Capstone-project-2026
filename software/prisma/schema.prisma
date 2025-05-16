@@ -120,3 +120,10 @@ model SensorData {
   energy        Float?
   temperature   Float?
 }
+
+model Notification {
+  id        Int      @id @default(autoincrement())
+  message   String
+  createdAt DateTime @default(now())
+  read      Boolean  @default(false)
+}
