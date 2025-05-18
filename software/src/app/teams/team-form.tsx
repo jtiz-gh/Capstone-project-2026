@@ -28,7 +28,7 @@ export function TeamForm({
   submitLabel = "Add Team",
   loading,
   setLoading,
-}: TeamFormProps) {
+}: Readonly<TeamFormProps>) {
   const [teamName, setTeamName] = useState("")
   const [vehicleClass, setVehicleClass] = useState<"Open" | "Standard">("Open")
   const [vehicleType, setVehicleType] = useState<"Bike" | "Kart">("Kart")
@@ -58,6 +58,7 @@ export function TeamForm({
           teamName,
           vehicleClass,
           vehicleType,
+          rankings: initialTeam.rankings,
         })
       )
     } else {
@@ -66,6 +67,7 @@ export function TeamForm({
           teamName,
           vehicleClass,
           vehicleType,
+          rankings: [],
         })
       )
     }
