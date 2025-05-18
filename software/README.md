@@ -95,3 +95,52 @@ Key documentation will be maintained in the `docs/` directory:
 - [Tailwind CSS Documentation](https://tailwindcss.com/docs)
 - [Prisma Documentation](https://www.prisma.io/docs)
 - [Supabase Documentation](https://supabase.com/docs) 
+
+## Setting Up Local Supabase Database
+
+To run the project locally with a working Supabase backend, follow these steps:
+
+1. **Ensure `.env` is configured correctly**  
+   Copy the example file if needed:
+   ```bash
+   cp .env.example .env
+   ```
+   Update any missing secrets, especially:
+   - `DATABASE_URL`
+   - `NEXT_PUBLIC_SUPABASE_URL`
+   - `NEXT_PUBLIC_SUPABASE_ANON_KEY`  
+   > 🔁 Ask Jackson if you're unsure about the correct values.
+
+2. **Navigate to the local Supabase project directory**  
+   For example:
+   ```bash
+   cd ../local-supabase-project
+   ```
+
+3. **Start Supabase using Docker Compose**  
+   Ensure Docker Desktop is installed and running, then:
+   ```bash
+   docker compose up -d
+   ```
+   > ✅ This spins up the Supabase services locally.  
+   > ⚠️ **You do *not* need to run `supabase start`** — that is only required if you're using the Supabase CLI workflow. This setup uses plain Docker Compose.
+
+4. **Push your Prisma schema to the local database**  
+   Navigate back to the software directory and run:
+   ```bash
+   cd ../software
+   npx prisma db push
+   ```
+
+5. **Open Prisma Studio (optional, for inspecting the DB)**  
+   ```bash
+   npx prisma studio
+   ```
+
+6. **Seed your local database with fake data**  
+   Run:
+   ```bash
+   npm run prisma:seed
+   ```
+
+You're now ready to run the full app locally!
