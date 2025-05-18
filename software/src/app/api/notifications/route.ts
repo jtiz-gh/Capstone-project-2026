@@ -49,12 +49,12 @@ export async function PUT(request: Request) {
 export async function GET(request: Request) {
   try {
     const { searchParams } = new URL(request.url)
-    const unreadOnly = searchParams.get('unreadOnly') === 'true'
-    const limit = Number(searchParams.get('limit') || '50')
+    const unreadOnly = searchParams.get("unreadOnly") === "true"
+    const limit = Number(searchParams.get("limit") || "50")
     
     const notifications = await prisma.notification.findMany({
       where: unreadOnly ? { read: false } : undefined,
-      orderBy: { createdAt: 'desc' },
+      orderBy: { createdAt: "desc" },
       take: limit,
     })
     

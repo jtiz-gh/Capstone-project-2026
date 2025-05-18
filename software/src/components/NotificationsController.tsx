@@ -13,24 +13,24 @@ export function NotificationsController() {
 
     const markAsRead = async (notificationId: number) => {
       try {
-        const response = await fetch('/api/notifications', {
-          method: 'PUT',
+        const response = await fetch("/api/notifications", {
+          method: "PUT",
           headers: {
-            'Content-Type': 'application/json',
+            "Content-Type": "application/json",
           },
           body: JSON.stringify({
             id: notificationId,
             read: true
           })
-        });
+        })
         
         if (!response.ok) {
-          console.error("Failed to mark notification as read:", await response.text());
+          console.error("Failed to mark notification as read:", await response.text())
         }
       } catch (error) {
-        console.error("Error marking notification as read:", error);
+        console.error("Error marking notification as read:", error)
       }
-    };
+    }
 
     eventSource.onmessage = (event) => {
       try {
@@ -38,10 +38,10 @@ export function NotificationsController() {
         if (data.type === "WELCOME") {
           // Optionally show welcome toast
         } else if (data.type === "NEW_NOTIFICATION" && data.payload) {
-          const notification = data.payload;
+          const notification = data.payload
           
           // Get additional data if available
-          const notificationData = notification.data ? notification.data : {};
+          const notificationData = notification.data ? notification.data : {}
           
           // Show toast with message (default content to display)
           toast.success(`Notification: ${notification.message}`, {
@@ -49,13 +49,13 @@ export function NotificationsController() {
             duration: 10000,
             onDismiss: () => {
               // Mark notification as read when toast is dismissed
-              markAsRead(notification.id);
+              markAsRead(notification.id)
             },
             action: {
               label: "Dismiss",
               onClick: () => markAsRead(notification.id)
             }
-          });
+          })
         } else if (data.type === "HEARTBEAT") {
           // Heartbeat, can be ignored or logged
         } else if (data.type === "ERROR") {
