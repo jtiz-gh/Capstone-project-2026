@@ -43,7 +43,7 @@ sample_counter = 0
 # ruff: noqa: F821
 @rp2.asm_pio()
 def clock_200hz():
-    # Total cycle = 10 cycles for 250Hz @ 2000Hz clock
+    # Total cycle = 10 cycles for 200Hz @ 2000Hz clock
     # 1 + 8 = 9 cycles
     nop()[8]  # type: ignore
     # 1 cycle
