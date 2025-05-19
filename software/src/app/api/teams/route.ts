@@ -1,12 +1,12 @@
 // app/api/teams/route.ts
 
-import { NextResponse } from 'next/server'
-import { PrismaClient } from '@prisma/client'
+import { NextResponse } from "next/server"
+import { PrismaClient } from "@prisma/client"
 
 const prisma = new PrismaClient()
 
 // GET /api/teams
-export async function GET(request: Request) {
+export async function GET() {
   try {
     const teams = await prisma.team.findMany({
       include: {
@@ -16,8 +16,8 @@ export async function GET(request: Request) {
     })
     return NextResponse.json(teams)
   } catch (error) {
-    console.error('Error fetching teams:', error)
-    return NextResponse.json({ error: 'Error fetching teams' }, { status: 500 })
+    console.error("Error fetching teams:", error)
+    return NextResponse.json({ error: "Error fetching teams" }, { status: 500 })
   }
 }
 
@@ -29,7 +29,10 @@ export async function POST(request: Request) {
     const { teamName, vehicleClass, vehicleType } = body
 
     if (!teamName || !vehicleClass || !vehicleType) {
-      return NextResponse.json({ error: 'Missing teamName or vehicleClass or vehicleType' }, { status: 400 })
+      return NextResponse.json(
+        { error: "Missing teamName or vehicleClass or vehicleType" },
+        { status: 400 }
+      )
     }
 
     const newTeam = await prisma.team.create({
@@ -42,7 +45,7 @@ export async function POST(request: Request) {
 
     return NextResponse.json(newTeam, { status: 201 })
   } catch (error) {
-    console.error('Error creating team:', error)
-    return NextResponse.json({ error: 'Error creating team' }, { status: 500 })
+    console.error("Error creating team:", error)
+    return NextResponse.json({ error: "Error creating team" }, { status: 500 })
   }
 }

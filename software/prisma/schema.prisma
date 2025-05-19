@@ -12,6 +12,8 @@ generator client {
 datasource db {
   provider = "postgresql"
   url      = env("DATABASE_URL")
+  // provider = "sqlite"
+  // url      = env("DATABASE_URL")
 }
 
 // This is an event instance
@@ -119,4 +121,12 @@ model SensorData {
   peakCurrent   Float?
   energy        Float?
   temperature   Float?
+}
+
+model Notification {
+  id        Int      @id @default(autoincrement())
+  message   String
+  data      Json?
+  createdAt DateTime @default(now())
+  read      Boolean  @default(false)
 }

@@ -1,7 +1,7 @@
 // app/api/competitions/route.ts
 
-import { NextResponse } from 'next/server'
-import { PrismaClient } from '@prisma/client'
+import { NextResponse } from "next/server"
+import { PrismaClient } from "@prisma/client"
 
 const prisma = new PrismaClient()
 
@@ -9,14 +9,18 @@ const prisma = new PrismaClient()
 export async function GET() {
   try {
     const competitions = await prisma.competition.findMany({
-      include: { records: true, teams: true, races: {
-        include: { event: true, rankings: true },
-      } }, // Include related records if needed
+      include: {
+        records: true,
+        teams: true,
+        races: {
+          include: { event: true, rankings: true },
+        },
+      }, // Include related records if needed
     })
     return NextResponse.json(competitions)
   } catch (error) {
-    console.error('Error fetching competitions:', error)
-    return NextResponse.json({ error: 'Error fetching competitions' }, { status: 500 })
+    console.error("Error fetching competitions:", error)
+    return NextResponse.json({ error: "Error fetching competitions" }, { status: 500 })
   }
 }
 
@@ -27,7 +31,10 @@ export async function POST(request: Request) {
     const { competitionName, competitionDate, teamIds, raceIds } = body
 
     if (!competitionName || !competitionDate) {
-      return NextResponse.json({ error: 'Missing competitionName or competitionDate' }, { status: 400 })
+      return NextResponse.json(
+        { error: "Missing competitionName or competitionDate" },
+        { status: 400 }
+      )
     }
 
     const newCompetition = await prisma.competition.create({
@@ -49,7 +56,7 @@ export async function POST(request: Request) {
 
     return NextResponse.json(newCompetition, { status: 201 })
   } catch (error) {
-    console.error('Error creating competition:', error)
-    return NextResponse.json({ error: 'Error creating competition' }, { status: 500 })
+    console.error("Error creating competition:", error)
+    return NextResponse.json({ error: "Error creating competition" }, { status: 500 })
   }
 }

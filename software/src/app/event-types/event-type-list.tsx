@@ -6,52 +6,52 @@ import { Users } from "lucide-react"
 import type { Event } from "@/types/teams"
 
 interface EventTypeListProps {
-    events: Event[]
-    onEditEvent?: (Event: Event) => void
-    emptyMessage?: string
-    showActions?: boolean
+  events: Event[]
+  onEditEvent?: (Event: Event) => void
+  emptyMessage?: string
+  showActions?: boolean
 }
 
 export function EventTypeList({
-    events,
-    onEditEvent,
-    emptyMessage = "No eventTypes added yet. Add your first EventType!",
-    showActions = true,
+  events,
+  onEditEvent,
+  emptyMessage = "No eventTypes added yet. Add your first EventType!",
+  showActions = true,
 }: Readonly<EventTypeListProps>) {
-    if (events.length === 0) {
-        return (
-            <div className="flex h-40 flex-col items-center justify-center gap-4 rounded-lg border border-dashed p-8 text-center">
-                <Users className="h-10 w-10 text-muted-foreground" />
-                <p className="text-muted-foreground">{emptyMessage}</p>
-            </div>
-        )
-    }
-
+  if (events.length === 0) {
     return (
-        <div className="grid gap-4">
-            {events.map((Event) => (
-                <Card key={Event.id}>
-                    <CardContent className="flex items-center justify-between p-6">
-                        <div>
-                            <h3 className="text-xl font-semibold">{Event.eventName}</h3>
-                        </div>
-                        {showActions && (
-                            <div className="flex items-center gap-2">
-                                {onEditEvent && (
-                                    <Button
-                                        variant="outline"
-                                        size="sm"
-                                        className="hover:cursor-pointer"
-                                        onClick={() => onEditEvent(Event)}
-                                    >
-                                        View/Edit
-                                    </Button>
-                                )}
-                            </div>
-                        )}
-                    </CardContent>
-                </Card>
-            ))}
-        </div>
+      <div className="flex h-40 flex-col items-center justify-center gap-4 rounded-lg border border-dashed p-8 text-center">
+        <Users className="h-10 w-10 text-muted-foreground" />
+        <p className="text-muted-foreground">{emptyMessage}</p>
+      </div>
     )
+  }
+
+  return (
+    <div className="grid gap-4">
+      {events.map((Event) => (
+        <Card key={Event.id}>
+          <CardContent className="flex items-center justify-between p-6">
+            <div>
+              <h3 className="text-xl font-semibold">{Event.eventName}</h3>
+            </div>
+            {showActions && (
+              <div className="flex items-center gap-2">
+                {onEditEvent && (
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="hover:cursor-pointer"
+                    onClick={() => onEditEvent(Event)}
+                  >
+                    View/Edit
+                  </Button>
+                )}
+              </div>
+            )}
+          </CardContent>
+        </Card>
+      ))}
+    </div>
+  )
 }

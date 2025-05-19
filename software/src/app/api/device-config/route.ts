@@ -1,5 +1,5 @@
-import { PrismaClient } from '@prisma/client'
-import { NextResponse } from 'next/server'
+import { PrismaClient } from "@prisma/client"
+import { NextResponse } from "next/server"
 
 const prisma = new PrismaClient()
 
@@ -14,8 +14,8 @@ export async function GET() {
 
     return NextResponse.json(configs)
   } catch (error) {
-    console.error('Error fetching device configs:', error)
-    return NextResponse.json({ error: 'Failed to fetch configs' }, { status: 500 })
+    console.error("Error fetching device configs:", error)
+    return NextResponse.json({ error: "Failed to fetch configs" }, { status: 500 })
   }
 }
 
@@ -26,7 +26,7 @@ export async function POST(request: Request) {
     const { deviceId, settings, configName } = body
 
     if (!deviceId || !settings) {
-      return NextResponse.json({ error: 'Missing required fields' }, { status: 400 })
+      return NextResponse.json({ error: "Missing required fields" }, { status: 400 })
     }
 
     const config = await prisma.deviceConfig.upsert({
@@ -44,7 +44,7 @@ export async function POST(request: Request) {
 
     return NextResponse.json(config, { status: 201 })
   } catch (error) {
-    console.error('Error saving device config:', error)
-    return NextResponse.json({ error: 'Failed to save config' }, { status: 500 })
+    console.error("Error saving device config:", error)
+    return NextResponse.json({ error: "Failed to save config" }, { status: 500 })
   }
 }

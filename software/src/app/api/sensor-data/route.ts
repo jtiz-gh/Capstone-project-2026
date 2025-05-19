@@ -1,7 +1,7 @@
 // app/api/sensor-data/route.ts
 
-import { PrismaClient } from '@prisma/client'
-import { NextResponse } from 'next/server'
+import { PrismaClient } from "@prisma/client"
+import { NextResponse } from "next/server"
 
 const prisma = new PrismaClient()
 
@@ -12,9 +12,12 @@ export async function POST(request: Request) {
     const { serialNo, readings, raceId, competitionId, sessionId } = data
 
     if (!serialNo || !readings || !raceId || !competitionId || !sessionId) {
-      return NextResponse.json({
-        error: 'Missing required fields: serialNo, readings, eventId, competitionId, sessionId',
-      }, { status: 400 })
+      return NextResponse.json(
+        {
+          error: "Missing required fields: serialNo, readings, eventId, competitionId, sessionId",
+        },
+        { status: 400 }
+      )
     }
 
     // Find the device by serial number
@@ -23,7 +26,7 @@ export async function POST(request: Request) {
     })
 
     if (!device) {
-      return NextResponse.json({ error: 'Device not found' }, { status: 404 })
+      return NextResponse.json({ error: "Device not found" }, { status: 404 })
     }
 
     // Create a new record for this upload
@@ -61,13 +64,14 @@ export async function POST(request: Request) {
     const currents = readings.map((r: any) => r.avgCurrent).filter(Boolean)
 
     const avgVoltage = voltages.length
-    ? voltages.reduce((a: number, b: number) => a + b, 0) / voltages.length
-    : null
-  
-  const avgCurrent = currents.length
-    ? currents.reduce((a: number, b: number) => a + b, 0) / currents.length
-    : null
-    const energy = avgVoltage && avgCurrent ? (avgVoltage * avgCurrent * readings.length) / 3600 : null
+      ? voltages.reduce((a: number, b: number) => a + b, 0) / voltages.length
+      : null
+
+    const avgCurrent = currents.length
+      ? currents.reduce((a: number, b: number) => a + b, 0) / currents.length
+      : null
+    const energy =
+      avgVoltage && avgCurrent ? (avgVoltage * avgCurrent * readings.length) / 3600 : null
 
     await prisma.record.update({
       where: { id: record.id },
@@ -81,8 +85,8 @@ export async function POST(request: Request) {
 
     return NextResponse.json({ success: true, recordId: record.id }, { status: 201 })
   } catch (error: any) {
-    console.error('Error uploading sensor data:', error)
-    return NextResponse.json({ error: 'Server error', message: error.message }, { status: 500 })
+    console.error("Error uploading sensor data:", error)
+    return NextResponse.json({ error: "Server error", message: error.message }, { status: 500 })
   }
 }
 
@@ -90,7 +94,7 @@ export async function GET() {
   try {
     const sensorData = await prisma.sensorData.findMany({
       take: 1000, // optional: limit results
-      orderBy: { timestamp: 'asc' },
+      orderBy: { timestamp: "asc" },
       include: {
         device: { select: { serialNo: true } },
         record: { select: { id: true, raceId: true, competitionId: true } },
@@ -99,7 +103,7 @@ export async function GET() {
 
     return NextResponse.json(sensorData)
   } catch (error) {
-    console.error('Error fetching sensor data:', error)
-    return NextResponse.json({ error: 'Failed to fetch sensor data' }, { status: 500 })
+    console.error("Error fetching sensor data:", error)
+    return NextResponse.json({ error: "Failed to fetch sensor data" }, { status: 500 })
   }
 }

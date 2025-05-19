@@ -11,7 +11,7 @@ import logo from "@/assets/detailed_logo.png"
 
 export default function Navbar() {
   return (
-    <div className="flex w-full justify-center bg-white p-4 border-b-4 border-gray shadow-md">
+    <div className="border-gray flex w-full justify-center border-b-4 bg-white p-4 shadow-md">
       <NavigationMenu>
         <NavigationMenuList>
           <NavigationMenuItem>
@@ -42,13 +42,7 @@ export default function Navbar() {
           </NavigationMenuItem>
         </NavigationMenuList>
       </NavigationMenu>
-      <Image
-        src={logo}
-        alt="Logo"
-        width={160}
-        height={70}
-        className="absolute left-5"
-        />
+      <Image src={logo} alt="Logo" width={160} height={70} className="absolute left-5" />
     </div>
   )
 }
