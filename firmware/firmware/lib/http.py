@@ -1,10 +1,19 @@
 import drivers.flash_storage
-from constants import BACKLOG_BATCH_SIZE
-from lib.async_urequests import async_urequests
+from constants import SERVER_PORT
+from drivers.flash_storage import stream_file_data
 from lib.packer import PROCESSED_FRAME_SIZE
+from lib.tcp import (
+    build_http_request_headers,
+    close_connection,
+    handle_response,
+    open_connection,
+    send_data,
+    send_request_with_body,
+)
 from lib.udp import udp_discover_server
 
-SERVER_PORT = 8000
+DATA_UPLOAD_PATH = "data"
+PING_PATH = "ping"
 
 server_ip: str | None = None
 
@@ -14,17 +23,12 @@ async def is_server_online(server_ip):
     if server_ip is None:
         return False
 
-    ping_url = f"http://{server_ip}:{SERVER_PORT}/ping"
-
     try:
-        response = await async_urequests.get(ping_url)
-        is_online = response.status_code == 200
-        if is_online:
-            print("Server is online.")
-        else:
-            print(f"Server ping failed with status: {response.status_code}")
-        await response.close()
-        return is_online
+        success, _ = await send_request_with_body(
+            PING_PATH, server_ip, headers={"Connection": "close"}, method="GET"
+        )
+
+        return success
     except Exception as e:
         print(f"Error pinging server {server_ip}: {e}")
         return False
@@ -63,103 +67,79 @@ async def upload_data(frame_data_list: list[bytes]):
         return False
 
 
-async def upload_file_streaming(file_path, total_frames):
+async def post_binary_file_streaming(file_path, total_frames):
     """Uploads a file using streaming to avoid loading the entire file into memory."""
     global server_ip
 
     if not server_ip:
         return False
 
-    url = f"http://{server_ip}:{SERVER_PORT}/data"
     content_length = total_frames * PROCESSED_FRAME_SIZE
-    
-    print(f"Streaming upload of {total_frames} frames ({content_length} bytes) from {file_path}")
-    
+
+    print(
+        f"Streaming upload of {total_frames} frames ({content_length} bytes) from {file_path}"
+    )
+
     try:
-        from drivers.flash_storage import stream_file_data
-        
         headers = {
             "Content-Type": "application/octet-stream",
             "Content-Length": str(content_length),
             "Pico-ID": drivers.flash_storage.get_pico_id(),
         }
-        
-        # Prepare HTTP request
-        proto, dummy, host, path = url.split("/", 3)
-        if ":" in host:
-            host, port = host.split(":")
-            port = int(port)
-        else:
-            port = 80
-            
-        import uasyncio as asyncio
-        reader, writer = await asyncio.open_connection(host, port)
-        
-        # Build and send HTTP request headers
-        request = f"POST /{path} HTTP/1.1\r\nHost: {host}\r\n"
-        for header, value in headers.items():
-            request += f"{header}: {value}\r\n"
-        request += "\r\n"
-        
-        await writer.awrite(request.encode('latin-1'))
-        
+
+        host = server_ip
+        port = SERVER_PORT
+        path = "data"
+
+        # Open connection
+        reader, writer, conn_error = await open_connection(host, port)
+        if conn_error:
+            print(f"Connection error: {conn_error}")
+            return False
+
+        # Send headers
+        request = build_http_request_headers("POST", path, host, headers)
+        if not await send_data(writer, request.encode("latin-1")):
+            await close_connection(writer)
+            return False
+
         # Stream file data in chunks
         bytes_sent = 0
         for chunk in stream_file_data(file_path, total_frames * PROCESSED_FRAME_SIZE):
-            await writer.awrite(chunk)
+            if not await send_data(writer, chunk):
+                await close_connection(writer)
+                return False
+
             bytes_sent += len(chunk)
             if bytes_sent >= content_length:
                 break
-                
-        # Read response
-        response_line = await reader.readline()
-        if not response_line:
-            await writer.aclose()
-            return False
-            
-        parts = response_line.decode('latin-1').split()
-        if len(parts) < 3:
-            await writer.aclose()
-            return False
-            
-        status = int(parts[1])
-        
-        # Skip headers
-        while True:
-            line = await reader.readline()
-            if not line or line == b"\r\n":
-                break
-                
-        # Close the connection
-        await writer.aclose()
-        
-        print(f"Streaming upload completed with status: {status}")
-        return status == 200
-        
+
+        # Handle response
+        status, body = await handle_response(reader, writer)
+        return status
+
     except Exception as e:
         print(f"Error in streaming upload: {e}")
         return False
 
 
 async def post_binary_data(server_ip, data):
-    """Sends a POST request with JSON data to the specified server IP and port."""
-    url = f"http://{server_ip}:{SERVER_PORT}/data"
+    """Sends a POST request with binary data to the specified server IP and port."""
     headers = {
         "Content-Type": "application/octet-stream",
-        "Pico-ID": drivers.flash_storage.get_pico_id(),
+        "Content-Length": str(len(data)),
+        "Connection": "close",
     }
 
     try:
-        response = await async_urequests.post(url, headers=headers, data=bytes(data))
-        print(
-            f"POST to {url}, Status: {response.status_code}, Response: {await response.text()}"
+        success, status = await send_request_with_body(
+            DATA_UPLOAD_PATH, server_ip, headers, data, method="POST"
         )
-        status_code = response.status_code
-        await response.close()
-        return True, status_code
-    except OSError as e:
-        print(f"Error posting data to {url}: {e}")
-        return False, str(e)
+
+        if success:
+            print(f"POST to /{DATA_UPLOAD_PATH}, Status: {status}")
+
+        return success, status
     except Exception as e:
         print(f"An unexpected error occurred during POST: {e}")
         return False, str(e)
@@ -174,4 +154,3 @@ async def try_discover_server_ip_wrapper(timeout_ms=1000):
     """Wrapper for UDP discovery that updates global server_ip"""
     global server_ip
     server_ip = await udp_discover_server(timeout_ms)
-    return server_ip

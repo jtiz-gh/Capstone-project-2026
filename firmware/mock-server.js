@@ -4,7 +4,7 @@ const http = require('http');
 
 const UDP_BROADCAST_PORT = 5555;
 const UDP_LISTEN_PORT = 8888;
-const HTTP_SERVER_PORT = 8000;
+const HTTP_SERVER_PORT = 3001;
 const BROADCAST_INTERVAL_MS = 250;
 
 // Binary data format constants

@@ -114,7 +114,7 @@ async def process_backlog():
         return
 
     # Stream directly from the file to the server
-    result = await lib.http.upload_file_streaming(
+    result = await lib.http.post_binary_file_streaming(
         drivers.flash_storage.MEASUREMENT_FILENAME,
         frames_to_process,
     )

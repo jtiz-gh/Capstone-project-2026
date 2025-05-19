@@ -50,3 +50,4 @@ if __name__ == "__main__":
             print(f"Error during Wi-Fi cleanup: {e}")
         pico_led.off()
         print("Cleanup complete.")
+        sys.exit(1)
