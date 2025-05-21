@@ -70,8 +70,8 @@ model Team {
 model Device {
   id         Int           @id @default(autoincrement())
   serialNo   Int           @unique
-  teamId     Int
-  team       Team          @relation(fields: [teamId], references: [id])
+  teamId     Int?
+  team       Team?          @relation(fields: [teamId], references: [id])
   config     DeviceConfig?
   records    Record[]
   sensorData SensorData[]

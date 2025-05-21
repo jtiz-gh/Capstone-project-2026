@@ -14,6 +14,7 @@ export type Team = {
   vehicleClass: "Open" | "Standard"
   vehicleType: "Bike" | "Kart"
   rankings?: Ranking[]
+  devices: Device[]
 }
 
 // export type EventType = {
@@ -65,5 +66,5 @@ export type RaceRecord = {
 export type Device = {
   id: number
   serialNo: number
-  teamId: number
+  teamId?: number
 }

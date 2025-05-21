@@ -1,8 +1,8 @@
 import React from "react"
 
-import type { Metadata } from "next"
+import { NotificationsController } from "@/components/NotificationsController"
 import { Geist, Geist_Mono } from "next/font/google"
-import Navbar from "../components/Navbar"
+import { Toaster } from "sonner"
 import "./globals.css"
 
 const geistSans = Geist({
@@ -27,7 +27,11 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en">
-      <body className={`${geistSans.variable} ${geistMono.variable} antialiased`}>{children}</body>
+      <body className={`${geistSans.variable} ${geistMono.variable} antialiased`}>
+        {children}
+        <Toaster richColors position="top-right" />
+        <NotificationsController />
+      </body>
     </html>
   )
 }

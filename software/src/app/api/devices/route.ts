@@ -25,25 +25,25 @@ export async function GET() {
 export async function POST(request: Request) {
   try {
     const body = await request.json()
-    const { serialNo, vehicleType, vehicleClass, teamId } = body
+    const { serialNo } = body
 
-    if (!serialNo || !vehicleType || !vehicleClass || !teamId) {
+    if (!serialNo) {
       return NextResponse.json(
-        { error: "Missing required fields: serialNo, vehicleType, vehicleClass, teamId" },
+        { error: "Missing required field: serialNo" },
         { status: 400 }
       )
     }
 
-    // Ensure the team exists
-    const team = await prisma.team.findUnique({ where: { id: teamId } })
-    if (!team) {
-      return NextResponse.json({ error: "Team not found" }, { status: 404 })
-    }
+    // // Ensure the team exists
+    // const team = await prisma.team.findUnique({ where: { id: teamId } })
+    // if (!team) {
+    //   return NextResponse.json({ error: "Team not found" }, { status: 404 })
+    // }
 
     const newDevice = await prisma.device.create({
       data: {
         serialNo,
-        teamId,
+        // teamId,
       },
     })
 

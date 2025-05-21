@@ -6,7 +6,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import Link from "next/link"
 import { ArrowLeft } from "lucide-react"
-import type { Team } from "@/types/teams"
+import type { Device, Team } from "@/types/teams"
 import { TeamList } from "@/app/teams/team-list"
 import { TeamForm } from "@/app/teams/team-form"
 import Navbar from "@/components/Navbar"
@@ -18,6 +18,11 @@ export default function TeamsPage() {
   // State for determining editing vs creating
   const [editingTeam, setEditingTeam] = useState<Team | null>(null)
   const [activeTab, setActiveTab] = useState("view")
+  const [showDevicePopup, setShowDevicePopup] = useState(false)
+  const [availableDevices, setAvailableDevices] = useState<
+    { id: number; serialNo: number; teamId: number | null }[]
+  >([])
+  const [selectedTeamId, setSelectedTeamId] = useState<number | null>(null)
 
   // Fetch teams on component mount
   useEffect(() => {
@@ -95,8 +100,61 @@ export default function TeamsPage() {
   }
 
   const handleConfigureECU = async (teamId: number) => {
-    // TODO: Actually need to connect to the ECU
-    alert(`Connecting to ECU for team ID: ${teamId}`)
+    setSelectedTeamId(teamId)
+    try {
+      const response = await fetch("/api/devices")
+      if (response.ok) {
+        const devices = await response.json()
+        const unassigned = devices.filter((device: Device) => !device.teamId)
+        setAvailableDevices(unassigned)
+        setShowDevicePopup(true)
+      } else {
+        alert("Failed to fetch devices")
+      }
+    } catch (err) {
+      alert("Error fetching devices")
+    }
+  }
+
+  const handleAssignDevice = async (deviceId: number) => {
+    if (!selectedTeamId) return
+    try {
+      const response = await fetch(`/api/devices/${deviceId}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ teamId: selectedTeamId }),
+      })
+      if (response.ok) {
+        const assignedDevice = await response.json()
+        alert("Device assigned to team!")
+        setShowDevicePopup(false)
+
+        await fetch(`/api/teams/${selectedTeamId}`, {
+          method: "PATCH",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            devices: {
+              connect: [{ id: deviceId }],
+            },
+          }),
+        })
+
+        setTeams((prevTeams) =>
+          prevTeams.map((team) =>
+            team.id === selectedTeamId
+              ? {
+                  ...team,
+                  devices: [...(team.devices || []), assignedDevice],
+                }
+              : team
+          )
+        )
+      } else {
+        alert("Failed to assign device")
+      }
+    } catch (err) {
+      alert("Error assigning device")
+    }
   }
 
   const handleCancelEdit = () => {
@@ -107,6 +165,39 @@ export default function TeamsPage() {
   return (
     <>
       <Navbar />
+      {showDevicePopup && (
+        <div className="fixed inset-0 flex items-center justify-center">
+          <div className="fixed inset-0 z-30 bg-black opacity-80"></div>
+          <div className="z-50 min-w-[300px] rounded-lg bg-white p-6 shadow-lg">
+            <h2 className="mb-4 text-lg font-bold">Assign Device to Team</h2>
+            {availableDevices.length === 0 ? (
+              <p>No unassigned devices available.</p>
+            ) : (
+              <ul className="mb-4">
+                {availableDevices.map((device) => (
+                  <li key={device.id} className="mb-2 flex items-center justify-between">
+                    <span>Serial No: {device.serialNo}</span>
+                    <Button
+                      size="sm"
+                      onClick={() => handleAssignDevice(device.id)}
+                      className="hover:cursor-pointer"
+                    >
+                      Assign
+                    </Button>
+                  </li>
+                ))}
+              </ul>
+            )}
+            <Button
+              variant="outline"
+              onClick={() => setShowDevicePopup(false)}
+              className="hover:cursor-pointer"
+            >
+              Cancel
+            </Button>
+          </div>
+        </div>
+      )}
       <div className="grid min-h-screen grid-rows-[20px_1fr_20px] items-center justify-items-center gap-16 p-8 pb-20 font-[family-name:var(--font-geist-sans)] sm:p-20">
         <main className="row-start-2 flex w-full max-w-3xl flex-col gap-8">
           <div className="flex items-center gap-4">

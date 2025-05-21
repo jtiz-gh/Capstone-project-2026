@@ -1,14 +1,14 @@
-import { NextResponse } from "next/server"
 import { PrismaClient } from "@prisma/client"
+import { NextResponse } from "next/server"
 
 const prisma = new PrismaClient()
 
 // PATCH /api/rankings/:id
-export async function PATCH(req: Request, props: { params: Promise<{ id: string }> }) {
-  const params = await props.params
+export async function PATCH(req: Request, context: { params: { id: string } }) {
   try {
     const body = await req.json()
-    const rankingId = parseInt(params.id)
+    const { id } = context.params
+    const rankingId = parseInt(id)
 
     if (isNaN(rankingId)) {
       return NextResponse.json({ error: "Invalid ranking ID" }, { status: 400 })

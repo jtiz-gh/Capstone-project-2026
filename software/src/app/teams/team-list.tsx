@@ -40,6 +40,13 @@ export function TeamList({
                 <span>{team.vehicleClass} Class</span>
                 <span>{team.vehicleType}</span>
               </div>
+              <div className="mt-2 flex text-sm text-muted-foreground">
+                {team.devices && team.devices.length > 0 ? (
+                  <span>Assigned to ECU: {team.devices[0].serialNo}</span>
+                ) : (
+                  <span>Not assigned to an ECU.</span>
+                )}
+              </div>
             </div>
             {showActions && (
               <div className="flex items-center gap-2">

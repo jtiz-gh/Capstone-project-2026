@@ -5,7 +5,6 @@ import type React from "react"
 import { TeamSelector } from "@/app/teams/team-selector"
 import Navbar from "@/components/Navbar"
 import { Badge } from "@/components/ui/badge"
-import { useState, useEffect, useMemo } from "react"
 import { Button } from "@/components/ui/button"
 import {
   Card,
@@ -20,20 +19,21 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { ScrollArea } from "@/components/ui/scroll-area"
 import { Separator } from "@/components/ui/separator"
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import type { Competition, Event, Team } from "@/types/teams"
-import Link from "next/link"
-import { AlertCircle, ArrowLeft, Trophy, Users, Activity, Clock, Loader2 } from "lucide-react"
-import { calculateScore } from "@/lib/utils"
-import { toast } from "sonner"
 import {
   Table,
-  TableHeader,
-  TableRow,
-  TableHead,
   TableBody,
   TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
 } from "@/components/ui/table"
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
+import { calculateScore } from "@/lib/utils"
+import type { Competition, Event, RaceRecord, Team } from "@/types/teams"
+import { Activity, AlertCircle, ArrowLeft, Loader2, Trophy, Users } from "lucide-react"
+import Link from "next/link"
+import { useEffect, useMemo, useState } from "react"
+import { toast } from "sonner"
 
 export default function CompetitionsPage() {
   const [teams, setTeams] = useState<Team[]>([])
@@ -782,7 +782,7 @@ export default function CompetitionsPage() {
   return (
     <>
       <Navbar />
-      <div className="grid grid-rows-[20px_1fr_20px] items-center justify-items-center gap-16 p-8 pb-20 font-[family-name:var(--font-geist-sans)] sm:p-20">
+      <div className="grid min-h-screen grid-rows-[20px_1fr_20px] items-center justify-items-center gap-16 p-8 pb-20 font-[family-name:var(--font-geist-sans)] sm:p-20">
         <main className="row-start-2 flex w-full max-w-4xl flex-col gap-8">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-4">
@@ -794,175 +794,178 @@ export default function CompetitionsPage() {
               <h1 className="text-[30px] font-bold">Competitions</h1>
             </div>
 
-            <Button onClick={loadPastCompetitions}>Load past competitions</Button>
+            <Button
+              onClick={loadPastCompetitions}
+              disabled={loading}
+              className="hover:cursor-pointer"
+            >
+              Load past competitions (Online Only)
+            </Button>
           </div>
 
-          <Button
-            onClick={loadPastCompetitions}
-            disabled={loading}
-            className="hover:cursor-pointer"
-          >
-            Load past competitions (Online Only)
-          </Button>
-        </main>
+          {selectedCompetition ? (
+            renderCompetitionDetails()
+          ) : (
+            <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
+              <TabsList className="grid w-full grid-cols-2">
+                <TabsTrigger value="view" className="hover:cursor-pointer">
+                  View Competitions
+                </TabsTrigger>
+                <TabsTrigger value="create" className="hover:cursor-pointer">
+                  Create Competition
+                </TabsTrigger>
+              </TabsList>
 
-        {selectedCompetition ? (
-          renderCompetitionDetails()
-        ) : (
-          <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-            <TabsList className="grid w-full grid-cols-2">
-              <TabsTrigger value="view" className="hover:cursor-pointer">
-                View Competitions
-              </TabsTrigger>
-              <TabsTrigger value="create" className="hover:cursor-pointer">
-                Create Competition
-              </TabsTrigger>
-            </TabsList>
-
-            <TabsContent value="view" className="mt-6">
-              {competitions.length === 0 ? (
-                <div className="flex h-40 flex-col items-center justify-center gap-4 rounded-lg border border-dashed p-8 text-center">
-                  <Trophy className="h-10 w-10 text-muted-foreground" />
-                  <p className="text-muted-foreground">
-                    No competitions created yet. Create your first competition!
-                  </p>
-                </div>
-              ) : (
-                <div className="grid gap-4 md:grid-cols-2">
-                  {competitions.map((competition) => (
-                    <Card key={competition.id} className="overflow-hidden">
-                      <CardHeader className="pb-3">
-                        <CardTitle>{competition.competitionName}</CardTitle>
-                        <CardDescription>
-                          {competition.races?.length} events • {competition.teams?.length} teams
-                        </CardDescription>
-                      </CardHeader>
-                      <CardContent className="pb-3">
-                        <div className="mb-4 flex flex-wrap gap-2">
-                          {competition.races.map((race) => (
-                            <Badge
-                              key={race.id}
-                              variant="outline"
-                              className={
-                                race.completed ? "border-green-200 bg-green-50 text-green-700" : ""
-                              }
-                            >
-                              {events.find((event) => event.id === race.eventId)?.eventName}
-                              {race.completed && " ✓"}
-                            </Badge>
-                          ))}
-                        </div>
-                        <div className="text-sm text-muted-foreground">
-                          <div className="mb-1 flex items-center gap-1">
-                            <Users className="h-4 w-4" />
-                            <span>Teams:</span>
-                          </div>
-                          <div className="flex flex-wrap gap-1">
-                            {competition.teams.slice(0, 3).map((team) => (
-                              <span key={team.id} className="inline-block">
-                                {team.teamName}
-                                {competition.teams.indexOf(team) < competition.teams.length - 1
-                                  ? ", "
-                                  : ""}
-                              </span>
+              <TabsContent value="view" className="mt-6">
+                {competitions.length === 0 ? (
+                  <div className="flex h-40 flex-col items-center justify-center gap-4 rounded-lg border border-dashed p-8 text-center">
+                    <Trophy className="h-10 w-10 text-muted-foreground" />
+                    <p className="text-muted-foreground">
+                      No competitions created yet. Create your first competition!
+                    </p>
+                  </div>
+                ) : (
+                  <div className="grid gap-4 md:grid-cols-2">
+                    {competitions.map((competition) => (
+                      <Card key={competition.id} className="overflow-hidden">
+                        <CardHeader className="pb-3">
+                          <CardTitle>{competition.competitionName}</CardTitle>
+                          <CardDescription>
+                            {competition.races?.length} events • {competition.teams?.length} teams
+                          </CardDescription>
+                        </CardHeader>
+                        <CardContent className="pb-3">
+                          <div className="mb-4 flex flex-wrap gap-2">
+                            {competition.races.map((race) => (
+                              <Badge
+                                key={race.id}
+                                variant="outline"
+                                className={
+                                  race.completed
+                                    ? "border-green-200 bg-green-50 text-green-700"
+                                    : ""
+                                }
+                              >
+                                {events.find((event) => event.id === race.eventId)?.eventName}
+                                {race.completed && " ✓"}
+                              </Badge>
                             ))}
                           </div>
-                        </div>
-                      </CardContent>
-                      <CardFooter>
-                        <Button
-                          className="w-full hover:cursor-pointer"
-                          onClick={() => handleViewDetails(competition)}
-                        >
-                          View Details
-                        </Button>
-                      </CardFooter>
-                    </Card>
-                  ))}
-                </div>
-              )}
-            </TabsContent>
-
-            <TabsContent value="create" className="mt-6">
-              <Card>
-                <CardHeader>
-                  <CardTitle>Create New Competition</CardTitle>
-                  <CardDescription>
-                    Add a name, select at least 3 events, and choose teams to participate.
-                  </CardDescription>
-                </CardHeader>
-                <CardContent>
-                  <form onSubmit={handleCreateCompetition} className="space-y-6">
-                    <div className="space-y-2">
-                      <Label htmlFor="competition-name">Competition Name</Label>
-                      <Input
-                        id="competition-name"
-                        value={competitionName}
-                        onChange={(e) => setCompetitionName(e.target.value)}
-                        placeholder="Enter competition name"
-                        disabled={loading}
-                        required
-                      />
-                    </div>
-
-                    <div className="space-y-3">
-                      <Label className="mb-2 block">
-                        Select Events (minimum 3)
-                        {selectedEvents.length < 3 && (
-                          <span className="ml-2 flex items-center gap-1 text-sm text-red-500">
-                            <AlertCircle className="h-3 w-3" />
-                            At least 3 events required
-                          </span>
-                        )}
-                      </Label>
-                      <div className="grid gap-2 sm:grid-cols-2">
-                        {events.map((event) => (
-                          <div key={event.eventName} className="flex items-center space-x-2">
-                            <Checkbox
-                              id={`event-${event.id}`}
-                              className="hover:cursor-pointer"
-                              checked={selectedEvents.includes(event)}
-                              onCheckedChange={() => toggleEvent(event)}
-                              disabled={loading}
-                            />
-                            <Label htmlFor={`event-${event.id}`} className="cursor-pointer">
-                              {event.eventName}
-                            </Label>
+                          <div className="text-sm text-muted-foreground">
+                            <div className="mb-1 flex items-center gap-1">
+                              <Users className="h-4 w-4" />
+                              <span>Teams:</span>
+                            </div>
+                            <div className="flex flex-wrap gap-1">
+                              {competition.teams.slice(0, 3).map((team) => (
+                                <span key={team.id} className="inline-block">
+                                  {team.teamName}
+                                  {competition.teams.indexOf(team) < competition.teams.length - 1
+                                    ? ", "
+                                    : ""}
+                                </span>
+                              ))}
+                              {competition.teams.length > 3 && (
+                                <span>+{competition.teams.length - 3} more</span>
+                              )}
+                            </div>
                           </div>
-                        ))}
+                        </CardContent>
+                        <CardFooter>
+                          <Button
+                            className="w-full hover:cursor-pointer"
+                            onClick={() => handleViewDetails(competition)}
+                          >
+                            View Details
+                          </Button>
+                        </CardFooter>
+                      </Card>
+                    ))}
+                  </div>
+                )}
+              </TabsContent>
+
+              <TabsContent value="create" className="mt-6">
+                <Card>
+                  <CardHeader>
+                    <CardTitle>Create New Competition</CardTitle>
+                    <CardDescription>
+                      Add a name, select at least 3 events, and choose teams to participate.
+                    </CardDescription>
+                  </CardHeader>
+                  <CardContent>
+                    <form onSubmit={handleCreateCompetition} className="space-y-6">
+                      <div className="space-y-2">
+                        <Label htmlFor="competition-name">Competition Name</Label>
+                        <Input
+                          id="competition-name"
+                          value={competitionName}
+                          onChange={(e) => setCompetitionName(e.target.value)}
+                          placeholder="Enter competition name"
+                          disabled={loading}
+                          required
+                        />
                       </div>
-                    </div>
 
-                    <TeamSelector
-                      teams={teams}
-                      selectedTeams={selectedTeams}
-                      onTeamToggle={toggleTeam}
-                      onAddTeam={handleAddTeam}
-                      loading={loading}
-                    />
+                      <div className="space-y-3">
+                        <Label className="mb-2 block">
+                          Select Events (minimum 3)
+                          {selectedEvents.length < 3 && (
+                            <span className="ml-2 flex items-center gap-1 text-sm text-red-500">
+                              <AlertCircle className="h-3 w-3" />
+                              At least 3 events required
+                            </span>
+                          )}
+                        </Label>
+                        <div className="grid gap-2 sm:grid-cols-2">
+                          {events.map((event) => (
+                            <div key={event.eventName} className="flex items-center space-x-2">
+                              <Checkbox
+                                id={`event-${event.id}`}
+                                className="hover:cursor-pointer"
+                                checked={selectedEvents.includes(event)}
+                                onCheckedChange={() => toggleEvent(event)}
+                                disabled={loading}
+                              />
+                              <Label htmlFor={`event-${event.id}`} className="cursor-pointer">
+                                {event.eventName}
+                              </Label>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
 
-                    <Button
-                      type="submit"
-                      className="w-full hover:cursor-pointer"
-                      disabled={
-                        !competitionName.trim() ||
-                        selectedEvents.length < 3 ||
-                        selectedTeams.length === 0 ||
-                        loading
-                      }
-                    >
-                      {loading ? (
-                        <Loader2 className="mr-2 inline h-4 w-4 animate-spin" />
-                      ) : (
-                        "Create Competition"
-                      )}
-                    </Button>
-                  </form>
-                </CardContent>
-              </Card>
-            </TabsContent>
-          </Tabs>
-        )}
+                      <TeamSelector
+                        teams={teams}
+                        selectedTeams={selectedTeams}
+                        onTeamToggle={toggleTeam}
+                        onAddTeam={handleAddTeam}
+                        loading={loading}
+                      />
+
+                      <Button
+                        type="submit"
+                        className="w-full hover:cursor-pointer"
+                        disabled={
+                          !competitionName.trim() ||
+                          selectedEvents.length < 3 ||
+                          selectedTeams.length === 0 ||
+                          loading
+                        }
+                      >
+                        {loading ? (
+                          <Loader2 className="mr-2 inline h-4 w-4 animate-spin" />
+                        ) : (
+                          "Create Competition"
+                        )}
+                      </Button>
+                    </form>
+                  </CardContent>
+                </Card>
+              </TabsContent>
+            </Tabs>
+          )}
+        </main>
       </div>
     </>
   )
