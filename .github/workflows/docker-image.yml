@@ -16,7 +16,7 @@ jobs:
     permissions:
       id-token: write
       packages: write
-      contents: read
+      contents: write
       attestations: write
     env:
       REGISTRY: ghcr.io
@@ -43,6 +43,25 @@ jobs:
         run: |
           pnpm install
           pnpm run build
+          
+      - 
+        name: Create standalone package
+        run: |
+          mkdir -p standalone-package
+          cp -r .next/standalone/* standalone-package/
+          cp -r public standalone-package/ || echo "no public folder found"
+          mkdir -p standalone-package/.next
+          cp -r .next/static standalone-package/.next/ || echo "no static folder found"
+          cp .env.example standalone-package/ || echo "no .env files found"
+          
+          echo '#!/bin/bash
+          node server.js' > standalone-package/start.sh
+          chmod +x standalone-package/start.sh
+          
+          TIMESTAMP=$(date +%Y%m%d%H%M%S)
+          PACKAGE_NAME="release-standalone-${{ github.ref_name }}-$TIMESTAMP-${{ github.sha }}.tar.gz"
+          cd standalone-package && tar -czf ../$PACKAGE_NAME .
+      
       - 
         name: PrepareReg Names
         run: |
@@ -71,3 +90,25 @@ jobs:
           tags: |
             ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${{ github.sha }}
             ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:dev
+            
+      - 
+        name: Create Release
+        uses: softprops/action-gh-release@v1
+        with:
+          name: Release ${{ github.ref_name }} - $(date +%Y-%m-%d-%H-%M-%S)
+          tag_name: release-${{ github.sha }}
+          draft: false
+          prerelease: true
+          token: ${{ secrets.GITHUB_TOKEN }}
+          files: software/*.tar.gz
+          body: |
+            # Release for branch: ${{ github.ref_name }}
+            **Release Time**: $(date +%Y-%m-%d %H:%M:%S)
+            **Commit SHA**: ${{ github.sha }}
+            
+            ## Docker Image
+            Available at: `${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${{ github.sha }}`
+            
+            ## Next.js Standalone Package
+            Included in this release as `${{ github.ref_name }}-${{ github.sha }}.tar.gz`
+            To run the package, extract it and run `./start.sh` in the terminal.
