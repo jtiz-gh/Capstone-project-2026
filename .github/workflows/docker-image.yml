@@ -41,6 +41,7 @@ jobs:
       -
         name: Build software
         run: |
+          pnpm install
           pnpm run build
       - 
         name: PrepareReg Names
