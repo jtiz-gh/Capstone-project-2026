@@ -103,7 +103,7 @@ jobs:
           files: software/*.tar.gz
           body: |
             # Release for branch: ${{ github.ref_name }}
-            **Release Time**: $(date +%Y-%m-%d %H:%M:%S)
+            **Release Time**: $(date "+%Y-%m-%d%H:%M:%S")
             **Commit SHA**: ${{ github.sha }}
             
             ## Docker Image
