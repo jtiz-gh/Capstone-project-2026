@@ -39,11 +39,6 @@ jobs:
           node-version: '23'
           cache: 'pnpm'
           cache-dependency-path: "**/pnpm-lock.yaml"
-      -
-        name: Build software
-        run: |
-          pnpm install
-          pnpm run build
       - 
         name: Cache next.js build
         uses: actions/cache@v4
@@ -56,6 +51,11 @@ jobs:
           # If source files changed but packages didn't, rebuild from a prior cache.
           restore-keys: |
             ${{ runner.os }}-nextjs-${{ hashFiles('**/package-lock.json') }}-
+      -
+        name: Build software
+        run: |
+          pnpm install
+          pnpm run build
       - 
         name: Create standalone package
         run: |
