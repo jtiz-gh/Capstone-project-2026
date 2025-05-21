@@ -10,6 +10,9 @@ on:
 jobs:
   docker:
     runs-on: ubuntu-24.04
+    defaults:
+      run:
+        working-directory: software
     permissions:
       id-token: write
       packages: write
@@ -23,6 +26,17 @@ jobs:
         name: Checkout code
         uses: actions/checkout@v4
         
+      - 
+        name: Node.js setup
+        uses: actions/setup-node@v3
+        with:
+          node-version: '23'
+          cache: 'pnpm'
+          cache-dependency-path: software/package-lock.json
+      -
+        name: Build software
+        run: |
+          pnpm run build
       - 
         name: PrepareReg Names
         run: |
