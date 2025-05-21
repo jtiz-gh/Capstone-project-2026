@@ -107,8 +107,8 @@ jobs:
         name: Create Release
         uses: softprops/action-gh-release@v1
         with:
-          name: Release ${{ github.ref_name }} -${{env.RELEASE_NAME}}
-          tag_name: release-${{ github.sha }}
+          name: Release ${{ github.ref_name }}-/${{ env.IMAGE_NAME }}
+          tag_name: release-${{ env.IMAGE_NAME }}-${{ github.sha }}
           draft: false
           prerelease: true
           token: ${{ secrets.GITHUB_TOKEN }}
