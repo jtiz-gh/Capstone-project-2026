@@ -60,7 +60,7 @@ jobs:
           
           TIMESTAMP=$(date +%Y%m%d%H%M%S)
           PACKAGE_NAME="release-standalone-${{ github.ref_name }}-$TIMESTAMP-${{ github.sha }}.tar.gz"
-          cd standalone-package && tar -czf ../$PACKAGE_NAME .
+          cd standalone-package && tar -czf ../"$PACKAGE_NAME" .
       
       - 
         name: PrepareReg Names
