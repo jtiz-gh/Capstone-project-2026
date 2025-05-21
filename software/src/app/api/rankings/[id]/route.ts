@@ -4,10 +4,10 @@ import { NextResponse } from "next/server"
 const prisma = new PrismaClient()
 
 // PATCH /api/rankings/:id
-export async function PATCH(req: Request, context: { params: { id: string } }) {
+export async function PATCH(req: Request, context: { params: Promise<{ id: string }> }) {
   try {
     const body = await req.json()
-    const { id } = context.params
+    const { id } = (await context.params)
     const rankingId = parseInt(id)
 
     if (isNaN(rankingId)) {
