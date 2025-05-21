@@ -37,7 +37,7 @@ jobs:
         with:
           node-version: '23'
           cache: 'pnpm'
-          cache-dependency-path: package-lock.json
+          cache-dependency-path: pnpm-lock.yaml
       -
         name: Build software
         run: |
@@ -59,7 +59,7 @@ jobs:
           chmod +x standalone-package/start.sh
           
           TIMESTAMP=$(date +%Y%m%d%H%M%S)
-          PACKAGE_NAME="release-standalone-${{ github.ref_name }}-$TIMESTAMP-${{ github.sha }}.tar.gz"
+          PACKAGE_NAME="release-standalone-$TIMESTAMP-${{ github.sha }}.tar.gz"
           cd standalone-package && tar -czf ../"$PACKAGE_NAME" .
       
       - 
