@@ -84,7 +84,7 @@ jobs:
         id: push
         uses: docker/build-push-action@v6
         with:
-          context: "{{defaultContext}}:software"
+          context: "./software"
           push: true
           platforms: linux/amd64,linux/arm64
           tags: |
