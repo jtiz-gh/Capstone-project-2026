@@ -18,6 +18,7 @@
     "pylint.enabled": false,
     "micropico.syncFolder": "firmware/firmware",
     "cSpell.words": [
+        "BOOTSEL",
         "Cooldown",
         "DGRAM",
         "ECONNABORTED",

@@ -98,6 +98,27 @@ function setupHttpServer() {
 			console.log('Responded to GET /ping');
 		} else if (req.method === 'POST' && req.url === '/data') {
 			handleDataRequest(req, res);
+		} else if (req.method === 'POST' && req.url === '/api/notification') {
+			let body = '';
+
+			req.on('data', chunk => {
+				body += chunk.toString();
+			});
+
+			req.on('end', () => {
+				try {
+					const json = JSON.parse(body);
+					console.log('Received JSON:', json);
+
+					res.writeHead(200, { 'Content-Type': 'application/json' });
+					res.end(JSON.stringify({ status: 'success', message: 'Notification received' }));
+					console.log('Responded to POST /api/notification');
+				} catch (err) {
+					console.error('Invalid JSON received:', err);
+					res.writeHead(400, { 'Content-Type': 'application/json' });
+					res.end(JSON.stringify({ status: 'error', message: 'Invalid JSON' }));
+				}
+			});
 		} else {
 			res.writeHead(404, { 'Content-Type': 'text/plain' });
 			res.end('Not Found');

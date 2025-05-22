@@ -2,7 +2,9 @@ import gc
 import sys
 
 import drivers.adc_sampler
+import drivers.button
 import network
+import machine
 import tasks.data_processing
 import tasks.data_transmission
 import uasyncio as asyncio
@@ -13,6 +15,7 @@ async def main():
     print("Initialising drivers...")
     gc.enable()
 
+    await drivers.button.init()
     await drivers.adc_sampler.init()
 
     print("Initializing data processing...")

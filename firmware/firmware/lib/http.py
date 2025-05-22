@@ -1,3 +1,5 @@
+import json
+
 import drivers.flash_storage
 from constants import SERVER_PORT
 from drivers.flash_storage import stream_file_data
@@ -46,7 +48,9 @@ async def upload_data(frame_data_list: list[bytes]):
     for frame_data in frame_data_list:
         processed_data_buffer.extend(frame_data)
 
-    success, status = await post_binary_data(server_ip, processed_data_buffer)
+    success, status = await post_binary_data(
+        DATA_UPLOAD_PATH, server_ip, processed_data_buffer
+    )
 
     if success:
         print(f"Data batch sent (Status: {status}, Count: {len(frame_data_list)}).")
@@ -123,7 +127,7 @@ async def post_binary_file_streaming(file_path, total_frames):
         return False
 
 
-async def post_binary_data(server_ip, data):
+async def post_binary_data(path, server_ip, data):
     """Sends a POST request with binary data to the specified server IP and port."""
     headers = {
         "Content-Type": "application/octet-stream",
@@ -133,15 +137,35 @@ async def post_binary_data(server_ip, data):
 
     try:
         success, status = await send_request_with_body(
-            DATA_UPLOAD_PATH, server_ip, headers, data, method="POST"
+            path, server_ip, headers, data, method="POST"
         )
 
         if success:
-            print(f"POST to /{DATA_UPLOAD_PATH}, Status: {status}")
+            print(f"POST to /{path}, Status: {status}")
 
         return success, status
     except Exception as e:
         print(f"An unexpected error occurred during POST: {e}")
+        return False, str(e)
+
+
+async def post_json_data(path, server_ip, data_dict):
+    """Sends a POST request with JSON data to the specified server IP and port."""
+    headers = {
+        "Content-Type": "application/json",
+        "Connection": "close",
+    }
+    try:
+        body = json.dumps(data_dict)
+        headers["Content-Length"] = str(len(body))
+        success, status = await send_request_with_body(
+            path, server_ip, headers, body.encode("latin-1"), method="POST"
+        )
+        if success:
+            print(f"POST to /{path} (JSON), Status: {status}")
+        return success, status
+    except Exception as e:
+        print(f"An unexpected error occurred during JSON POST: {e}")
         return False, str(e)
 
 
@@ -154,3 +178,4 @@ async def try_discover_server_ip_wrapper(timeout_ms=1000):
     """Wrapper for UDP discovery that updates global server_ip"""
     global server_ip
     server_ip = await udp_discover_server(timeout_ms)
+    return server_ip
