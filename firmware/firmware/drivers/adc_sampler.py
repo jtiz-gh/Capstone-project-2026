@@ -1,24 +1,22 @@
 import rp2
 from lib.packer import pack_timestamp, pack_voltage_current_measurement
+from lib.threadsafe.threadsafe_queue import ThreadSafeQueue
 from machine import ADC
 
-from lib.threadsafe.threadsafe_queue import ThreadSafeQueue
-
-# TODO: Replace with actual ADC pins
-ADC_VOLTAGE_PIN = 27
+ADC_VOLTAGE_PIN = 26
 ADC_CURRENT_PIN = 28
 
 MEASUREMENT_FRAME_SIZE = 2 + 2
 TIMESTAMP_FRAME_SIZE = 4
 
-CHUNK_SIZE = 100
+CHUNK_SIZE = 10
 
-SAMPLE_PERIOD_MS = 4
+SAMPLE_PERIOD_MS = 5
 
 # We try to clear the buffer every CHUNK_SIZE samples
-MEASUREMENT_BUFFER_MAX_SAMPLES = 300
+MEASUREMENT_BUFFER_MAX_SAMPLES = 100
 # We store timestamps for each CHUNK_SIZE measurements
-TIMESTAMP_BUFFER_MAX = 3
+TIMESTAMP_BUFFER_MAX = 20
 
 # Queue with ADC measurements
 adc_queue = ThreadSafeQueue(
@@ -59,8 +57,9 @@ def adc_pio_irq_callback(pio):  # Renamed and changed parameter
         timestamp_buffer_data, \
         sample_counter
 
-    voltage_raw: uint = uint(adc_voltage.read_u16())  # type: ignore
-    current_raw: uint = uint(adc_current.read_u16())  # type: ignore
+    # Get 12-bit ADC values from 16-bit ADC
+    voltage_raw: uint = uint(adc_voltage.read_u16()) >> 4  # type: ignore
+    current_raw: uint = uint(adc_current.read_u16()) >> 4  # type: ignore
 
     pack_voltage_current_measurement(adc_ring_buffer_data, voltage_raw, current_raw)
 

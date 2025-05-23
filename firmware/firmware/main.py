@@ -4,7 +4,6 @@ import sys
 import drivers.adc_sampler
 import drivers.button
 import network
-import machine
 import tasks.data_processing
 import tasks.data_transmission
 import uasyncio as asyncio
@@ -43,6 +42,7 @@ if __name__ == "__main__":
         sys.print_exception(e)
     finally:
         print("Performing cleanup...")
+        tasks.data_processing.should_exit_program = True
         try:
             wlan_interface = network.WLAN(network.STA_IF)
             if wlan_interface.isconnected():

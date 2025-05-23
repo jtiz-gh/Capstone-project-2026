@@ -8,7 +8,7 @@ const HTTP_SERVER_PORT = 3001;
 const BROADCAST_INTERVAL_MS = 250;
 
 // Binary data format constants
-const PROCESSED_DATA_FMT = "LLLfffffffff"; // 3 uint32 + 8 float values
+// const PROCESSED_DATA_FMT = "LLLfffffffff"; // 3 uint32 + 7 float values
 
 setupUdpBroadcast();
 setupHttpServer();
@@ -33,7 +33,7 @@ function unpackProcessedFloatDataToDict(frameData) {
 	const session_id = frameData.readUInt32LE(4);
 	const measurement_id = frameData.readUInt32LE(8);
 
-	// Read 8 float values (4 bytes each)
+	// Read 7 float values (4 bytes each)
 	const avg_voltage = frameData.readFloatLE(12);
 	const avg_current = frameData.readFloatLE(16);
 	const avg_power = frameData.readFloatLE(20);

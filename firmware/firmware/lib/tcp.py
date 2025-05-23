@@ -1,3 +1,4 @@
+import gc
 import time
 
 import drivers.flash_storage
@@ -5,10 +6,17 @@ import uasyncio as asyncio
 from constants import SERVER_PORT
 
 
-async def open_connection(host, port):
+def open_connection(host, port):
     """Open a TCP connection and return the reader and writer objects."""
     try:
-        reader, writer = await asyncio.open_connection(host, port)
+        future = asyncio.open_connection(host, port)
+
+        try:
+            # Wait for 3 seconds, then raise TimeoutError
+            reader, writer = yield from asyncio.wait_for(future, timeout=3)
+        except asyncio.TimeoutError:
+            return None, None, "Connection timed out"
+
         return reader, writer, None
     except Exception as e:
         return None, None, str(e)
@@ -117,6 +125,15 @@ async def send_request_with_body(path, host, headers=None, body=None, method="PO
 
     if reader is None or writer is None:
         return False, "Failed to open connection"
+    
+    if body is not None:
+        if not headers:
+            headers = {}
+
+        if isinstance(body, bytearray):
+            headers["Content-Length"] = str(len(body))
+        elif isinstance(body, list):
+            headers["Content-Length"] = str(sum(len(item) for item in body))
 
     try:
         # Prepare request
@@ -128,10 +145,17 @@ async def send_request_with_body(path, host, headers=None, body=None, method="PO
             return False, "Failed to send request headers"
 
         # Send body if provided
+        gc.collect()
         if body is not None:
-            if not await send_data(writer, body):
-                await writer.wait_closed()
-                return False, "Failed to send request body"
+            if isinstance(body, bytearray):
+                if not await send_data(writer, body):
+                    await writer.wait_closed()
+                    return False, "Failed to send request body"
+            elif isinstance(body, list):
+                for item in body:
+                    if not await send_data(writer, item):
+                        await writer.wait_closed()
+                        return False, "Failed to send request body"
 
         return await handle_response(reader, writer)
 

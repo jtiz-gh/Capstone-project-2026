@@ -1,3 +1,4 @@
+import gc
 import json
 
 import drivers.flash_storage
@@ -43,31 +44,13 @@ async def upload_data(frame_data_list: list[bytes]):
     if not frame_data_list:
         return True
 
-    # Copy list into buffer.
-    processed_data_buffer = bytearray()
-    for frame_data in frame_data_list:
-        processed_data_buffer.extend(frame_data)
-
-    success, status = await post_binary_data(
-        DATA_UPLOAD_PATH, server_ip, processed_data_buffer
-    )
+    success, status = await post_binary_data(DATA_UPLOAD_PATH, server_ip, frame_data_list)
 
     if success:
         print(f"Data batch sent (Status: {status}, Count: {len(frame_data_list)}).")
         return True
     else:
         print(f"Failed to send data batch (Reason: {status}).")
-
-        # Check for connection errors to clear server IP
-        if isinstance(status, str) and (
-            "ECONNREFUSED" in status
-            or "ETIMEDOUT" in status
-            or "EHOSTUNREACH" in status
-            or "ECONNABORTED" in status
-            or "ECONNRESET" in status
-        ):
-            print("Connection error detected, clearing server IP for rediscovery.")
-            server_ip = None
         return False
 
 
@@ -99,6 +82,7 @@ async def post_binary_file_streaming(file_path, total_frames):
         reader, writer, conn_error = await open_connection(host, port)
         if conn_error:
             print(f"Connection error: {conn_error}")
+            server_ip = None
             return False
 
         # Send headers
@@ -110,6 +94,8 @@ async def post_binary_file_streaming(file_path, total_frames):
         # Stream file data in chunks
         bytes_sent = 0
         for chunk in stream_file_data(file_path, total_frames * PROCESSED_FRAME_SIZE):
+            gc.collect()
+
             if not await send_data(writer, chunk):
                 await close_connection(writer)
                 return False
@@ -121,9 +107,12 @@ async def post_binary_file_streaming(file_path, total_frames):
         # Handle response
         status, body = await handle_response(reader, writer)
         return status
-
     except Exception as e:
         print(f"Error in streaming upload: {e}")
+
+        if "memory allocation failed" not in str(e):
+            server_ip = None
+
         return False
 
 
@@ -145,6 +134,9 @@ async def post_binary_data(path, server_ip, data):
 
         return success, status
     except Exception as e:
+        if "memory allocation failed" not in str(e):
+            server_ip = None
+
         print(f"An unexpected error occurred during POST: {e}")
         return False, str(e)
 

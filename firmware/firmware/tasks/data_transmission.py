@@ -3,6 +3,7 @@ import time
 import drivers.flash_storage
 import drivers.wlan
 import lib.http
+import tasks.data_processing
 import uasyncio as asyncio
 from constants import (
     BACKLOG_BATCH_SIZE,
@@ -10,7 +11,6 @@ from constants import (
     STREAMING_BATCH_SIZE,
 )
 from lib.packer import PROCESSED_FRAME_SIZE
-from tasks.data_processing import processed_queue
 
 last_wifi_connect_attempt = 0  # Timestamp of the last connection attempt
 
@@ -27,24 +27,43 @@ async def task():
     while True:
         await asyncio.sleep_ms(0)
 
+        if tasks.data_processing.should_exit_program:
+            print("Exiting data sender task.")
+            break
+
         try:
-            if should_process_backlog():
+            while (
+                should_process_backlog()
+                and tasks.data_processing.processed_queue.empty()
+            ):
                 await process_backlog()
 
-            new_frame_data = bytearray(await processed_queue.get())
+            new_frame_data = bytearray(
+                await tasks.data_processing.processed_queue.get()
+            )
             frame_buffer.append(new_frame_data)
 
             while (
-                not processed_queue.empty() and len(frame_buffer) < STREAMING_BATCH_SIZE
+                not tasks.data_processing.processed_queue.empty()
+                and len(frame_buffer) < STREAMING_BATCH_SIZE
             ):
-                new_frame_data = bytearray(await processed_queue.get())
-                frame_buffer.append(new_frame_data)
+                # Empty the processed queue into the frame buffer
+                while (
+                    not tasks.data_processing.processed_queue.empty()
+                    and len(frame_buffer) < STREAMING_BATCH_SIZE
+                ):
+                    new_frame_data = bytearray(
+                        await tasks.data_processing.processed_queue.get()
+                    )
+                    frame_buffer.append(new_frame_data)
 
             if drivers.wlan.is_connected() and lib.http.has_server_ip():
                 # Check if there's a backlog
                 if drivers.flash_storage.measurement_backlog_size() > 0:
                     # Dump buffer to storage, try to upload the backlog first
-                    print(f"Adding {len(frame_buffer)} frames to measurement backlog.")
+                    print(
+                        f"Adding {len(frame_buffer)} frames to existing measurement backlog."
+                    )
                     drivers.flash_storage.write_measurements(frame_buffer)
                     frame_buffer = []
 
@@ -95,7 +114,6 @@ def should_process_backlog():
     return (
         drivers.wlan.is_connected()
         and lib.http.has_server_ip()
-        and processed_queue.empty()
         and drivers.flash_storage.measurement_backlog_size() > 0
     )
 
@@ -107,11 +125,6 @@ async def process_backlog():
     frames_to_process = min(frames_available, BACKLOG_BATCH_SIZE)
 
     print(f"Processing backlog with {frames_available} measurements using streaming.")
-
-    # Check if there are any new frames on the buffer
-    if not processed_queue.empty():
-        print("New frames available in the buffer, skipping backlog processing.")
-        return
 
     # Stream directly from the file to the server
     result = await lib.http.post_binary_file_streaming(
