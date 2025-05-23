@@ -4,7 +4,7 @@ import time
 
 rm = visa.ResourceManager()
 
-LOADADDR = 'ASRL4::INSTR' # change to match assigned address for your computer/load
+LOADADDR = 'ASRL9::INSTR' # change to match assigned address for your computer/load
 load = rm.open_resource(LOADADDR)
 
 load.write(':INPut ON') # turn on load 
