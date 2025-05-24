@@ -22,8 +22,6 @@ async def main():
     await tasks.data_processing.init()
 
     print("Creating tasks...")
-    # Data processing now runs in a separate thread initiated in tasks.data_processing.init()
-    # We keep a dummy task for compatibility
     sender_task = asyncio.create_task(tasks.data_transmission.task())
 
     print("Running tasks...")

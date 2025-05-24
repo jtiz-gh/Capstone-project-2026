@@ -66,6 +66,6 @@ export type RaceRecord = {
 
 export type Device = {
   id: number
-  serialNo: number
+  serialNo: string
   teamId?: number
 }

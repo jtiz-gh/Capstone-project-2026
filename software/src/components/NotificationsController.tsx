@@ -44,7 +44,7 @@ export function NotificationsController() {
           const notificationData = notification.data ? notification.data : {}
           
           // Show toast with message (default content to display)
-          toast.success(`Notification: ${notification.message}`, {
+          toast.success(notification.message, {
             description: `${new Date(notification.createdAt).toLocaleTimeString()}`,
             duration: 10000,
             onDismiss: () => {

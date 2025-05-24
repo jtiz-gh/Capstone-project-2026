@@ -70,7 +70,7 @@ model Team {
 
 model Device {
   id         Int           @id @default(autoincrement())
-  serialNo   Int           @unique
+  serialNo   String        @unique
   teamId     Int?
   team       Team?          @relation(fields: [teamId], references: [id])
   config     DeviceConfig?
@@ -95,33 +95,32 @@ model Record {
   avgCurrent    Float?
   avgVoltage    Float?
   energy        Float?
-  raceId        Int
-  race          Race         @relation(fields: [raceId], references: [id])
+  raceId        Int?
+  race          Race?         @relation(fields: [raceId], references: [id])
   deviceId      Int
   device        Device       @relation(fields: [deviceId], references: [id])
-  competitionId Int
-  competition   Competition  @relation(fields: [competitionId], references: [id])
+  competitionId Int?
+  competition   Competition?  @relation(fields: [competitionId], references: [id])
   sensorData    SensorData[]
   stopTime      DateTime?
 }
 
 model SensorData {
-  id            Int     @id @default(autoincrement())
-  timestamp     Decimal
-  recordId      Int
-  record        Record  @relation(fields: [recordId], references: [id])
-  deviceId      Int
-  device        Device  @relation(fields: [deviceId], references: [id])
-  sessionId     Int
-  measurementId Float?
-  avgPower      Float?
-  avgVoltage    Float?
-  avgCurrent    Float?
-  peakPower     Float?
-  peakVoltage   Float?
-  peakCurrent   Float?
-  energy        Float?
-  temperature   Float?
+  id             Int     @id @default(autoincrement())
+  timestamp      Decimal
+  recordId       Int
+  record         Record  @relation(fields: [recordId], references: [id])
+  deviceId       Int
+  device         Device  @relation(fields: [deviceId], references: [id])
+  sessionId      Int
+  measurementId  Int
+  avgPower       Float?
+  avgVoltage     Float?
+  avgCurrent     Float?
+  peakPower      Float?
+  peakVoltage    Float?
+  peakCurrent    Float?
+  energy         Float?
 }
 
 model Notification {

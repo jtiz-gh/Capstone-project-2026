@@ -41,6 +41,7 @@ build/
 *.pyd
 .Python
 *.db
+*.db-journal
 *.sqlite3
 
 # Logs

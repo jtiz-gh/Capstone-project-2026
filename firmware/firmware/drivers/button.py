@@ -1,4 +1,5 @@
 import time
+import json
 
 import drivers.flash_storage
 import drivers.wlan
@@ -7,7 +8,7 @@ import rp2
 import uasyncio as asyncio
 from drivers.picozero import pico_led
 
-NOTIFICATION_PATH = "api/notification"
+NOTIFICATION_PATH = "api/notifications"
 
 
 async def init():
@@ -46,17 +47,28 @@ async def init():
             # Try to discover server
             server_ip = await lib.http.try_discover_server_ip_wrapper()
 
-        if server_ip is not None:
-            await lib.http.post_json_data(
-                NOTIFICATION_PATH,
-                server_ip,
-                {
-                    "message": drivers.flash_storage.get_pico_id(),
-                },
-            )
+        if drivers.wlan.is_connected() and lib.http.has_server_ip():
+            print(f"Sending notification to server: {server_ip}")
+            data = {
+                "message": f"Hello from {drivers.flash_storage.get_pico_id()}",
+            }
 
-            while True:
-                pico_led.on()
-                await asyncio.sleep_ms(2000)
-                pico_led.off()
-                await asyncio.sleep_ms(2000)
+            # Convert data to json string to binary format
+            json_data = json.dumps(data)
+            json_data = [json_data.encode("latin-1")]
+
+            try:
+                status, result = await lib.http.post_binary_data(
+                    NOTIFICATION_PATH,
+                    json_data,
+                )
+
+                if not status:
+                    print(f"Failed to send notification: {result}")
+                    server_ip = None
+            except Exception as e:
+                print(f"Error sending notification: {e}")
+                server_ip = None
+
+            pico_led.toggle()
+            await asyncio.sleep(2)

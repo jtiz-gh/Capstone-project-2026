@@ -1,16 +1,15 @@
 # Calibration constants to fix errata in the RP2040 ADC from non linearities in integral non linearity (INL) and differential non linearity (DNL)
 
-# voltage = 0.0000788586x^{2}-0.285765x+270.04365
-VOLTAGE_A = 0.0000788586
-VOLTAGE_B = -0.285765
-VOLTAGE_C = 270.04365
+# voltage = 0.0161725x-19.75297
+VOLTAGE_A = 0.0161725
+VOLTAGE_B = -19.753
 
 # current = \left(7.30061\times10^{-14}\right)x^{4}-\left(2.07346\times10^{-10}\right)x^{3}+\left(1.64498\times10^{-7}\right)x^{2}+0.00189667x-0.0232733
 CURRENT_A = 7.30061e-14
 CURRENT_B = -2.07346e-10
 CURRENT_C = 1.64498e-7
 CURRENT_D = 0.00189667
-CURRENT_E = -0.0232733
+CURRENT_E = -0.0233
 
 # Delta percentages from https://pico-adc.markomo.me/INL-DNL/#why-does-the-dnl-spike
 rp2040_adc_correction_factors = [
@@ -46,8 +45,10 @@ def calibrate_voltage(raw_value):
     """
     Apply calibration to a raw voltage value.
     """
-    corrected_value = correct_adc_value(raw_value)
-    return VOLTAGE_A * corrected_value**2 + VOLTAGE_B * corrected_value + VOLTAGE_C
+    x = correct_adc_value(raw_value)
+    scaled = (VOLTAGE_A * x) + (VOLTAGE_B)
+
+    return scaled
 
 
 @micropython.native  # type: ignore  # noqa: F821
@@ -56,13 +57,15 @@ def calibrate_current(raw_value):
     Apply calibration to a raw current value.
     """
     x = correct_adc_value(raw_value)
-    return (
+    scaled = (
         CURRENT_A * x**4
         + CURRENT_B * x**3
         + CURRENT_C * x**2
         + CURRENT_D * x
         + CURRENT_E
     )
+
+    return scaled
 
 
 @micropython.native  # type: ignore  # noqa: F821

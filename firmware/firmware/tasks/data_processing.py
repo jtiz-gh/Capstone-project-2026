@@ -9,7 +9,11 @@ from drivers.adc_sampler import (
     timestamp_queue,
 )
 from lib.calculations import calculate_energy, find_peak
-from lib.calibration import calculate_power, calibrate_current, calibrate_voltage
+from lib.calibration import (
+    calculate_power,
+    calibrate_current,
+    calibrate_voltage,
+)
 from lib.packer import (
     PROCESSED_FRAME_SIZE,
     pack_processed_float_data,
@@ -17,6 +21,9 @@ from lib.packer import (
     unpack_voltage_current_measurement,
 )
 from lib.threadsafe.threadsafe_queue import ThreadSafeQueue
+
+# Minimum detectable value for voltage and current before we should clamp to zero
+MIN_DETECTABLE_VALUE = 0.02
 
 # Buffer size for processed data
 PROCESSED_BUFFER_MAX_DATA = 85
@@ -102,7 +109,9 @@ def process_data_thread(adc_queue, timestamp_queue, processed_queue):
 
                 avg_voltage = sum(voltages) / len(voltages) if voltages else 0
                 avg_current = sum(currents) / len(currents) if currents else 0
-                avg_power = sum(power_samples) / len(power_samples) if power_samples else 0
+                avg_power = (
+                    sum(power_samples) / len(power_samples) if power_samples else 0
+                )
 
                 # Find peak power and corresponding voltage/current
                 peak_power, (peak_voltage, peak_current) = find_peak(
@@ -111,6 +120,19 @@ def process_data_thread(adc_queue, timestamp_queue, processed_queue):
 
                 time_interval = float(SAMPLE_PERIOD_MS) / 1000
                 energy = calculate_energy(power_samples, time_interval)
+
+                # If both voltage and current are too low, skip processing
+                if (
+                    avg_voltage < MIN_DETECTABLE_VALUE
+                    or avg_current < MIN_DETECTABLE_VALUE
+                ):
+                    avg_current = 0.0
+                    avg_voltage = 0.0
+                    avg_power = 0.0
+                    peak_voltage = 0.0
+                    peak_current = 0.0
+                    peak_power = 0.0
+                    energy = 0.0
 
                 # Pack processed data packet with timestamp
                 processed_buffer = bytearray(PROCESSED_FRAME_SIZE)

@@ -119,7 +119,7 @@ def write_measurements(data_list: list[bytes]):
         # f_bsize (block size) * f_bavail (number of free blocks for unprivileged users)
         available_space = s[0] * s[4]
         print(f"Storage: {available_space} bytes free, writing {total_data_size} bytes")
-        if total_data_size > available_space:
+        if total_data_size > (available_space / 2):
             print(
                 f"Error: Not enough space to write {total_data_size} bytes. Available: {available_space} bytes."
             )

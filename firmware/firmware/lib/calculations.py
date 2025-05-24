@@ -2,10 +2,12 @@
 Helper functions for various calculations.
 """
 
+# power = 0.0161725x - 19.75297
+POWER_A = 1.11
 
 @micropython.native  # type: ignore  # noqa: F821
 def calculate_energy(power_samples, time_interval: float):
-    """Calculate energy using Simpson's rule for numerical integration.
+    """Calculate energy using the trapezoidal rule for numerical integration.
 
     Args:
         power_samples: List of power values
@@ -15,36 +17,17 @@ def calculate_energy(power_samples, time_interval: float):
         Total energy in joules (watt-seconds)
     """
     n = len(power_samples)
-    if n < 3:
-        # Not enough points for Simpson's rule, use trapezoidal rule instead
-        if n == 2:
-            return (power_samples[0] + power_samples[1]) * time_interval / 2
-        elif n == 1:
-            return power_samples[0] * time_interval
-        else:
-            return 0
-
-    # Simpson's rule for integration
-    # For odd number of intervals (even number of points)
-    if n % 2 == 1:
-        result: float = power_samples[0] + power_samples[-1]
-
-        # Add 4 times the odd-indexed points
-        for i in range(1, n, 2):
-            result += 4 * power_samples[i]
-
-        # Add 2 times the even-indexed points (excluding first and last)
-        for i in range(2, n - 1, 2):
-            result += 2 * power_samples[i]
-
-        return result * time_interval / 3
+    if n == 0:
+        return 0
+    elif n == 1:
+        return power_samples[0] * time_interval
     else:
-        # For even number of intervals, use composite Simpson's rule
-        # Use Simpson's rule for all but the last interval, then use trapezoidal rule for the last interval
-        result: float = calculate_energy(power_samples[:-1], time_interval)
-        # Add trapezoidal rule for the last interval
-        result += (power_samples[-2] + power_samples[-1]) * time_interval / 2
-        return result
+        result = 0.5 * (power_samples[0] + power_samples[-1])
+        for i in range(1, n - 1):
+            result += power_samples[i]
+        energy = result * time_interval
+
+        return energy * POWER_A
 
 
 @micropython.native  # type: ignore  # noqa: F821

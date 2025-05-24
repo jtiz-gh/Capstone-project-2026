@@ -1,14 +1,22 @@
 const dgram = require('dgram');
 const os = require('os');
 const http = require('http');
+const fs = require('fs');
+const path = require('path');
+const { spawnSync } = require('child_process');
 
 const UDP_BROADCAST_PORT = 5555;
 const UDP_LISTEN_PORT = 8888;
-const HTTP_SERVER_PORT = 3001;
+const HTTP_SERVER_PORT = 3000;
 const BROADCAST_INTERVAL_MS = 250;
+
+const cumulativeData = [];
+let cumulativeEnergy = 0;
 
 // Binary data format constants
 // const PROCESSED_DATA_FMT = "LLLfffffffff"; // 3 uint32 + 7 float values
+
+spawnSync('python', ['load-control.py', 'off'], { encoding: 'utf-8' });
 
 setupUdpBroadcast();
 setupHttpServer();
@@ -41,6 +49,8 @@ function unpackProcessedFloatDataToDict(frameData) {
 	const peak_current = frameData.readFloatLE(28);
 	const peak_power = frameData.readFloatLE(32);
 	const energy = frameData.readFloatLE(36);
+
+	cumulativeEnergy += energy;
 
 	return {
 		timestamp: timestamp,
@@ -92,13 +102,13 @@ function setupHttpServer() {
 	const server = http.createServer((req, res) => {
 		console.log(`HTTP Request: ${req.method} ${req.url}`);
 
-		if (req.method === 'GET' && req.url === '/ping') {
+		if (req.method === 'GET' && req.url === '/api/ping') {
 			res.writeHead(200, { 'Content-Type': 'text/plain' });
 			res.end('pong');
 			console.log('Responded to GET /ping');
-		} else if (req.method === 'POST' && req.url === '/data') {
+		} else if (req.method === 'POST' && req.url === '/api/sensor-data') {
 			handleDataRequest(req, res);
-		} else if (req.method === 'POST' && req.url === '/api/notification') {
+		} else if (req.method === 'POST' && req.url === '/api/notifications') {
 			let body = '';
 
 			req.on('data', chunk => {
@@ -112,7 +122,7 @@ function setupHttpServer() {
 
 					res.writeHead(200, { 'Content-Type': 'application/json' });
 					res.end(JSON.stringify({ status: 'success', message: 'Notification received' }));
-					console.log('Responded to POST /api/notification');
+					console.log('Responded to POST /api/notifications');
 				} catch (err) {
 					console.error('Invalid JSON received:', err);
 					res.writeHead(400, { 'Content-Type': 'application/json' });
@@ -144,7 +154,7 @@ function handleDataRequest(req, res) {
 
 	req.on('end', () => {
 		const buffer = Buffer.concat(data);
-		console.log('Received POST /data body length:', buffer.length);
+		console.log('Received POST /sensor-data body length:', buffer.length);
 		const decodedPackets = [];
 		let offset = 0;
 
@@ -159,7 +169,13 @@ function handleDataRequest(req, res) {
 
 			if (decodedPackets.length > 0) {
 				console.log('Parsed binary data (all packets):', decodedPackets);
+				console.log('Cumulative energy:', cumulativeEnergy, ' Joules');
 				console.log(`Successfully decoded ${decodedPackets.length} packets.`);
+
+				// Write decodedPackets to measurements.json as an array
+				const measurementsPath = path.join(__dirname, 'measurements.json');
+				cumulativeData.push(...decodedPackets);
+				fs.writeFileSync(measurementsPath, JSON.stringify(cumulativeData, null, 2));
 
 				res.writeHead(200, { 'Content-Type': 'application/json' });
 				res.end(JSON.stringify({ status: 'success', processed: decodedPackets.length }));

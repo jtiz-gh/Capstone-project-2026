@@ -56,42 +56,42 @@ async function main() {
   // 2. Add devices for teams
   const device1 = await prisma.device.create({
     data: {
-      serialNo: 1001,
+      serialNo: "1001",
       teamId: team1.id,
     },
   })
 
   const device2 = await prisma.device.create({
     data: {
-      serialNo: 1002,
+      serialNo: "1002",
       teamId: team2.id,
     },
   })
 
   const device3 = await prisma.device.create({
     data: {
-      serialNo: 1003,
+      serialNo: "1003",
       teamId: team3.id,
     },
   })
 
   const device4 = await prisma.device.create({
     data: {
-      serialNo: 1004,
+      serialNo: "1004",
       teamId: team4.id,
     },
   })
 
   const device5 = await prisma.device.create({
     data: {
-      serialNo: 1005,
+      serialNo: "1005",
       teamId: team5.id,
     },
   })
 
   const device6 = await prisma.device.create({
     data: {
-      serialNo: 1006,
+      serialNo: "1006",
       teamId: team6.id,
     },
   })
@@ -241,7 +241,6 @@ async function main() {
           peakVoltage: 14 + Math.random(),
           peakCurrent: 2.5 + Math.random(),
           energy: 50 + Math.random(),
-          temperature: 22 + Math.random(),
         },
         {
           timestamp: timestamp + offset * 2,
@@ -256,7 +255,6 @@ async function main() {
           peakVoltage: 14 + Math.random(),
           peakCurrent: 2.5 + Math.random(),
           energy: 50 + Math.random(),
-          temperature: 22 + Math.random(),
         },
         {
           timestamp: timestamp + offset * 3,
@@ -271,7 +269,6 @@ async function main() {
           peakVoltage: 14 + Math.random(),
           peakCurrent: 2.5 + Math.random(),
           energy: 50 + Math.random(),
-          temperature: 22 + Math.random(),
         },
       ],
     })
@@ -313,7 +310,6 @@ async function main() {
           peakVoltage: 14 + Math.random(),
           peakCurrent: 2.5 + Math.random(),
           energy: 50 + Math.random(),
-          temperature: 22 + Math.random(),
         },
         {
           timestamp: timestamp + offset * 2,
@@ -328,7 +324,6 @@ async function main() {
           peakVoltage: 14 + Math.random(),
           peakCurrent: 2.5 + Math.random(),
           energy: 50 + Math.random(),
-          temperature: 22 + Math.random(),
         },
         {
           timestamp: timestamp + offset * 3,
@@ -343,7 +338,6 @@ async function main() {
           peakVoltage: 14 + Math.random(),
           peakCurrent: 2.5 + Math.random(),
           energy: 50 + Math.random(),
-          temperature: 22 + Math.random(),
         },
       ],
     })
@@ -385,7 +379,6 @@ async function main() {
           peakVoltage: 14 + Math.random(),
           peakCurrent: 2.5 + Math.random(),
           energy: 50 + Math.random(),
-          temperature: 22 + Math.random(),
         },
         {
           timestamp: timestamp + offset * 2,
@@ -400,7 +393,6 @@ async function main() {
           peakVoltage: 14 + Math.random(),
           peakCurrent: 2.5 + Math.random(),
           energy: 50 + Math.random(),
-          temperature: 22 + Math.random(),
         },
         {
           timestamp: timestamp + offset * 3,
@@ -415,7 +407,6 @@ async function main() {
           peakVoltage: 14 + Math.random(),
           peakCurrent: 2.5 + Math.random(),
           energy: 50 + Math.random(),
-          temperature: 22 + Math.random(),
         },
       ],
     })

@@ -6,11 +6,11 @@ const { spawnSync } = require('child_process');
 
 const UDP_BROADCAST_PORT = 5555;
 const UDP_LISTEN_PORT = 8888;
-const HTTP_SERVER_PORT = 3001;
+const HTTP_SERVER_PORT = 3000;
 const BROADCAST_INTERVAL_MS = 250;
-const STOP = 100;
-const STEP = 1;
-const N_READINGS = 1;
+const STOP = 25;
+const STEP = 0.5;
+const N_READINGS = 5;
 
 let resistance = 4.0;
 let counter = 0;
@@ -81,7 +81,7 @@ function setupHttpServer() {
 	const server = http.createServer((req, res) => {
 		console.log(`HTTP Request: ${req.method} ${req.url}`);
 
-		if (req.method === 'POST' && req.url === '/data') {
+		if (req.method === 'POST' && req.url === '/api/sensor-data') {
 			let data = [];
 			req.on('data', chunk => data.push(chunk));
 			req.on('end', () => {
@@ -139,7 +139,7 @@ function setupHttpServer() {
 					res.end(JSON.stringify({ status: 'ok' }));
 				}
 			});
-		} else if (req.method === 'GET' && req.url === '/ping') {
+		} else if (req.method === 'GET' && req.url === '/api/ping') {
 			res.writeHead(200, { 'Content-Type': 'text/plain' });
 			res.end('pong');
 			console.log('Responded to GET /ping');

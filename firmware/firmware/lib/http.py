@@ -15,8 +15,8 @@ from lib.tcp import (
 )
 from lib.udp import udp_discover_server
 
-DATA_UPLOAD_PATH = "data"
-PING_PATH = "ping"
+DATA_UPLOAD_PATH = "api/sensor-data"
+PING_PATH = "api/ping"
 
 server_ip: str | None = None
 
@@ -39,12 +39,11 @@ async def is_server_online(server_ip):
 
 async def upload_data(frame_data_list: list[bytes]):
     """Unpacks binary frame data and attempts to upload to server."""
-    global server_ip
 
     if not frame_data_list:
         return True
 
-    success, status = await post_binary_data(DATA_UPLOAD_PATH, server_ip, frame_data_list)
+    success, status = await post_binary_data(DATA_UPLOAD_PATH, frame_data_list)
 
     if success:
         print(f"Data batch sent (Status: {status}, Count: {len(frame_data_list)}).")
@@ -70,13 +69,12 @@ async def post_binary_file_streaming(file_path, total_frames):
     try:
         headers = {
             "Content-Type": "application/octet-stream",
-            "Content-Length": str(content_length),
-            "Pico-ID": drivers.flash_storage.get_pico_id(),
+            "Content-Length": str(content_length)
         }
 
         host = server_ip
         port = SERVER_PORT
-        path = "data"
+        path = DATA_UPLOAD_PATH
 
         # Open connection
         reader, writer, conn_error = await open_connection(host, port)
@@ -116,8 +114,10 @@ async def post_binary_file_streaming(file_path, total_frames):
         return False
 
 
-async def post_binary_data(path, server_ip, data):
+async def post_binary_data(path, data):
     """Sends a POST request with binary data to the specified server IP and port."""
+    global server_ip
+
     headers = {
         "Content-Type": "application/octet-stream",
         "Content-Length": str(len(data)),
@@ -138,26 +138,6 @@ async def post_binary_data(path, server_ip, data):
             server_ip = None
 
         print(f"An unexpected error occurred during POST: {e}")
-        return False, str(e)
-
-
-async def post_json_data(path, server_ip, data_dict):
-    """Sends a POST request with JSON data to the specified server IP and port."""
-    headers = {
-        "Content-Type": "application/json",
-        "Connection": "close",
-    }
-    try:
-        body = json.dumps(data_dict)
-        headers["Content-Length"] = str(len(body))
-        success, status = await send_request_with_body(
-            path, server_ip, headers, body.encode("latin-1"), method="POST"
-        )
-        if success:
-            print(f"POST to /{path} (JSON), Status: {status}")
-        return success, status
-    except Exception as e:
-        print(f"An unexpected error occurred during JSON POST: {e}")
         return False, str(e)
 
 
