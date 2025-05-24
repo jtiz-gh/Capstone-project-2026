@@ -33,26 +33,26 @@ export default function Navbar() {
       <NavigationMenu>
         <NavigationMenuList>
           <NavigationMenuItem>
-            <Link href="/" legacyBehavior passHref>
+            <Link href="/" passHref>
               <NavigationMenuLink className={navigationMenuTriggerStyle()} data-testid="nav-home-link">Home</NavigationMenuLink>
             </Link>
           </NavigationMenuItem>
           <NavigationMenuItem>
-            <Link href="/teams" legacyBehavior passHref>
+            <Link href="/teams" passHref>
               <NavigationMenuLink className={navigationMenuTriggerStyle()} data-testid="nav-teams-link">
                 Teams
               </NavigationMenuLink>
             </Link>
           </NavigationMenuItem>
           <NavigationMenuItem>
-            <Link href="/competitions" legacyBehavior passHref>
+            <Link href="/competitions" passHref>
               <NavigationMenuLink className={navigationMenuTriggerStyle()} data-testid="nav-competitions-link">
                 Competitions
               </NavigationMenuLink>
             </Link>
           </NavigationMenuItem>
           <NavigationMenuItem>
-            <Link href="/event-types" legacyBehavior passHref>
+            <Link href="/event-types" passHref>
               <NavigationMenuLink className={navigationMenuTriggerStyle()} data-testid="nav-event-types-link">
                 Event Types
               </NavigationMenuLink>
