@@ -47,7 +47,7 @@ export function SynchronizedCharts({ chartData }: SynchronizedChartsProps) {
     return [(minValue | 0) - 1, (maxValue | 0) + 1]
   }
 
-  const topEnergy = 1000; // Example top energy value, can be adjusted as needed
+  const topEnergy = 1000 // Example top energy value, can be adjusted as needed
 
   // Initial Y domains
   const [initialVoltageDomain] = useState(() => calculateYDomain("voltage"))
@@ -207,7 +207,9 @@ export function SynchronizedCharts({ chartData }: SynchronizedChartsProps) {
 
   const handleMouseMove = (e: any) => {
     if (!zoomEnabled) return
-    refAreaLeft && setRefAreaRight(e?.activeLabel)
+    if (refAreaLeft) {
+      setRefAreaRight(e?.activeLabel)
+    }
   }
 
   const handleMouseUp = () => {

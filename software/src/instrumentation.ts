@@ -1,5 +1,5 @@
-const dgram = require("dgram")
-const os = require("os")
+import dgram from "dgram"
+import os from "os"
 
 const UDP_BROADCAST_PORT = 5555
 const UDP_LISTEN_PORT = 8888
@@ -10,20 +10,11 @@ export function register() {
 }
 
 function findLocalIpAddresses() {
-  const interfaces: {
-    string: {
-      address: string
-      netmask: string
-      family: string
-      mac: string
-      scopeid: number
-      internal: boolean
-      cidr: string
-    }[]
-  } = os.networkInterfaces()
+  const interfaces = os.networkInterfaces()
 
   const addresses = []
   for (const iface of Object.values(interfaces)) {
+    if (!iface) continue
     for (const details of iface) {
       if (details.family === "IPv4" && !details.internal && details.mac !== "00:00:00:00:00:00") {
         addresses.push(details.address)
