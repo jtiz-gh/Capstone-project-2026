@@ -24,6 +24,7 @@ const chartConfig = {
 
 type SynchronizedChartsProps = {
   chartData: { seconds: number; [key: string]: number }[]
+  deviceId?: string
 }
 
 // Define a type for domain values that can be either a number or special string values
@@ -216,21 +217,30 @@ export function SynchronizedCharts({ chartData }: SynchronizedChartsProps) {
 
   return (
     <div className={`space-y-6 ${zoomEnabled ? "select-none" : ""}`}>
-      <div className="flex justify-end gap-2 px-4">
-        <Button
-          variant="outline"
-          size="sm"
-          onClick={() => setZoomEnabled(!zoomEnabled)}
-          className={zoomEnabled ? "bg-blue-100 dark:bg-blue-900" : ""}
-        >
-          <ZoomIn className="mr-2 h-4 w-4" />
-          Zoom Mode
-        </Button>
-        <Button variant="outline" size="sm" onClick={zoomOut}>
-          <RefreshCw className="mr-2 h-4 w-4" />
-          Reset View
-        </Button>
+      <div className="flex justify-between items-center px-4 mb-2">
+        {/* Device ID on the left */}
+        <div className="text-sm font-medium text-muted-foreground">
+          Device ID: <span className="text-foreground">{chartData[0]?.device ?? "N/A"}</span>
+        </div>
+
+        {/* Zoom controls on the right */}
+        <div className="flex gap-2">
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => setZoomEnabled(!zoomEnabled)}
+            className={zoomEnabled ? "bg-blue-100 dark:bg-blue-900" : ""}
+          >
+            <ZoomIn className="mr-2 h-4 w-4" />
+            Zoom Mode
+          </Button>
+          <Button variant="outline" size="sm" onClick={zoomOut}>
+            <RefreshCw className="mr-2 h-4 w-4" />
+            Reset View
+          </Button>
+        </div>
       </div>
+
 
       <div className="grid grid-cols-2 gap-4">
         {/* Voltage Chart */}
