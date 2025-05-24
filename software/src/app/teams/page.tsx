@@ -19,9 +19,9 @@ export default function TeamsPage() {
   const [editingTeam, setEditingTeam] = useState<Team | null>(null)
   const [activeTab, setActiveTab] = useState("view")
   const [showDevicePopup, setShowDevicePopup] = useState(false)
-  const [availableDevices, setAvailableDevices] = useState<
-    { id: number; serialNo: number; teamId: number | null }[]
-  >([])
+  const [devices, setDevices] = useState<{ id: number; serialNo: number; teamId: number | null }[]>(
+    []
+  )
   const [selectedTeamId, setSelectedTeamId] = useState<number | null>(null)
 
   // Fetch teams on component mount
@@ -105,8 +105,7 @@ export default function TeamsPage() {
       const response = await fetch("/api/devices")
       if (response.ok) {
         const devices = await response.json()
-        const unassigned = devices.filter((device: Device) => !device.teamId)
-        setAvailableDevices(unassigned)
+        setDevices(devices)
         setShowDevicePopup(true)
       } else {
         alert("Failed to fetch devices")
@@ -126,9 +125,6 @@ export default function TeamsPage() {
       })
       if (response.ok) {
         const assignedDevice = await response.json()
-        alert("Device assigned to team!")
-        setShowDevicePopup(false)
-
         await fetch(`/api/teams/${selectedTeamId}`, {
           method: "PATCH",
           headers: { "Content-Type": "application/json" },
@@ -149,11 +145,52 @@ export default function TeamsPage() {
               : team
           )
         )
-      } else {
-        alert("Failed to assign device")
+        setDevices((prevDevices) => {
+          prevDevices.find((device) => device.id === deviceId)!.teamId = selectedTeamId
+          return [...prevDevices]
+        })
       }
     } catch (err) {
       alert("Error assigning device")
+    }
+  }
+
+  const handleUnassignDevice = async (deviceId: number, teamId: number) => {
+    if (!selectedTeamId) return
+    try {
+      const response = await fetch(`/api/devices/${deviceId}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ teamId }),
+      })
+      if (response.ok) {
+        await fetch(`/api/teams/${selectedTeamId}`, {
+          method: "PATCH",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            devices: {
+              disconnect: [{ id: deviceId }],
+            },
+          }),
+        })
+
+        setTeams((prevTeams) =>
+          prevTeams.map((team) =>
+            team.id === selectedTeamId
+              ? {
+                  ...team,
+                  devices: team.devices.filter((device) => device.id !== deviceId),
+                }
+              : team
+          )
+        )
+        setDevices((prevDevices) => {
+          prevDevices.find((device) => device.id === deviceId)!.teamId = null
+          return [...prevDevices]
+        })
+      }
+    } catch (err) {
+      alert("Error unassigning device")
     }
   }
 
@@ -168,24 +205,55 @@ export default function TeamsPage() {
       {showDevicePopup && (
         <div className="fixed inset-0 flex items-center justify-center">
           <div className="fixed inset-0 z-30 bg-black opacity-80"></div>
-          <div className="z-50 min-w-[300px] rounded-lg bg-white p-6 shadow-lg">
-            <h2 className="mb-4 text-lg font-bold">Assign Device to Team</h2>
-            {availableDevices.length === 0 ? (
-              <p className="mb-4">No unassigned devices available.</p>
+          <div className="z-50 min-h-[300px] min-w-[550px] rounded-lg bg-white p-6 shadow-lg">
+            <h2 className="mb-4 text-lg font-bold">
+              Assign Device to {teams.find((team) => team.id == selectedTeamId)?.teamName}
+            </h2>
+            {devices.length === 0 ? (
+              <p className="mb-4">No devices available.</p>
             ) : (
               <ul className="mb-4">
-                {availableDevices.map((device) => (
-                  <li key={device.id} className="mb-2 flex items-center justify-between">
-                    <span>Serial No: {device.serialNo}</span>
-                    <Button
-                      size="sm"
-                      onClick={() => handleAssignDevice(device.id)}
-                      className="hover:cursor-pointer"
-                    >
-                      Assign
-                    </Button>
-                  </li>
-                ))}
+                <table className="mb-4 min-w-full text-sm">
+                  <thead>
+                    <tr>
+                      <th className="px-4 py-2 text-left">Device Serial No</th>
+                      <th className="px-4 py-2 text-left">Assigned Team</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {devices.map((device) => (
+                      <tr key={device.id} className="border-t">
+                        <td className="px-4 py-2">{device.serialNo}</td>
+                        <td className="px-4 py-2">
+                          {device.teamId ? (
+                            teams.find((team) => team.id == device.teamId)?.teamName || "Unknown"
+                          ) : (
+                            <span className="text-gray-400">Unassigned</span>
+                          )}
+                        </td>
+                        <td className="px-4 py-2 text-right">
+                          {device.teamId ? (
+                            <Button
+                              size="sm"
+                              onClick={() => handleUnassignDevice(device.id, device.teamId!)}
+                              className="bg-red-600 text-white hover:cursor-pointer hover:bg-red-700 hover:text-white"
+                            >
+                              Unassign
+                            </Button>
+                          ) : (
+                            <Button
+                              size="sm"
+                              onClick={() => handleAssignDevice(device.id)}
+                              className="hover:cursor-pointer"
+                            >
+                              Assign
+                            </Button>
+                          )}
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
               </ul>
             )}
             <Button
@@ -193,7 +261,7 @@ export default function TeamsPage() {
               onClick={() => setShowDevicePopup(false)}
               className="hover:cursor-pointer"
             >
-              Cancel
+              Close
             </Button>
           </div>
         </div>

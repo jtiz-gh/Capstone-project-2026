@@ -42,7 +42,9 @@ export function TeamList({
               </div>
               <div className="mt-2 flex text-sm text-muted-foreground">
                 {team.devices && team.devices.length > 0 ? (
-                  <span>Assigned to ECU: {team.devices[0].serialNo}</span>
+                  <span>
+                    Assigned to ECU: {team.devices.map((device) => device.serialNo).join(", ")}
+                  </span>
                 ) : (
                   <span>Not assigned to an ECU.</span>
                 )}

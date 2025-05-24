@@ -55,6 +55,7 @@ export default function CompetitionsPage() {
   const [rankingsByCategory, setRankingsByCategory] = useState<
     Record<number, Record<string, any[]>>
   >({})
+  const [missingTeamIdsByRace, setMissingTeamIdsByRace] = useState<Record<number, number[]>>({})
 
   const [finishStatusUpdates, setFinishStatusUpdates] = useState<Record<number, boolean>>({})
 
@@ -88,8 +89,22 @@ export default function CompetitionsPage() {
       }
     }
 
+    const fetchCompetitions = async () => {
+      try {
+        const response = await fetch("/api/competitions")
+        if (!response.ok) {
+          console.log("Failed to fetch competitions")
+        }
+        const data = await response.json()
+        setCompetitions(data)
+      } catch (error) {
+        console.error("Error fetching competitions:", error)
+      }
+    }
+
     fetchTeams()
     fetchEvents()
+    fetchCompetitions()
   }, [])
 
   // Load selected competition details
@@ -103,8 +118,30 @@ export default function CompetitionsPage() {
     }
   }, [competitions, selectedCompetition])
 
+  function getInitials(name: string) {
+    return name
+      .split(" ")
+      .map((word) => word[0]?.toUpperCase() || "")
+      .join(".")
+  }
+
   const handleViewDetails = (competition: Competition) => {
     setSelectedCompetition(competition)
+    const missing: Record<number, number[]> = {}
+    competition.races.forEach((race) => {
+      const teamIdsWithRecord = new Set(
+        (race.records ?? [])
+          .map((record: RaceRecord) => record.device.teamId)
+          .filter((id): id is number => typeof id === "number" && !isNaN(id))
+      )
+      missing[race.id] = (competition.teams ?? [])
+        .map((team) => team.id)
+        .filter(
+          (teamId): teamId is number =>
+            typeof teamId === "number" && !isNaN(teamId) && !teamIdsWithRecord.has(teamId)
+        )
+    })
+    setMissingTeamIdsByRace(missing)
 
     // Check if rankings exist for each race in the competition
     const updatedRankings: Record<number, Record<string, any[]>> = {}
@@ -243,6 +280,19 @@ export default function CompetitionsPage() {
         toast.error("Load rankings failed")
         return
       }
+
+      const teamIdsWithRecord = new Set(
+        data
+          .filter((record: RaceRecord) => record.raceId === raceId)
+          .map((record: RaceRecord) => record.device.teamId)
+      )
+      const missingTeamIds = (selectedCompetition?.teams ?? [])
+        .map((team) => team.id)
+        .filter((teamId) => !teamIdsWithRecord.has(teamId))
+      setMissingTeamIdsByRace((prev) => ({
+        ...prev,
+        [raceId]: missingTeamIds,
+      }))
 
       const eventData = data.filter(
         (record: RaceRecord) =>
@@ -642,7 +692,33 @@ export default function CompetitionsPage() {
                             <p className="text-sm text-muted-foreground">
                               {team.vehicleClass} Class • {team.vehicleType}
                             </p>
+                            <div className="mt-1 flex flex-row gap-2">
+                              {selectedCompetition.races.map((race) => {
+                                if (!race.completed) return null
+                                const isMissing = missingTeamIdsByRace[race.id]?.includes(team.id)
+                                return (
+                                  <Badge
+                                    key={race.id + "valid team data badge"}
+                                    className={
+                                      isMissing
+                                        ? `border-red-200 bg-red-50 text-sm text-red-700`
+                                        : `border-green-200 bg-green-50 text-sm text-green-700`
+                                    }
+                                  >
+                                    {getInitials(
+                                      events.find((event) => event.id === race.eventId)
+                                        ?.eventName || ""
+                                    )}
+                                  </Badge>
+                                )
+                              })}
+                            </div>
                           </div>
+                          <Link href={`/teams/${team.id}/energy-monitors`}>
+                            <Button className="mr-3 hover:cursor-pointer" size="sm">
+                              View Graphs
+                            </Button>
+                          </Link>
                         </div>
                         <Separator />
                       </div>
@@ -794,13 +870,15 @@ export default function CompetitionsPage() {
               <h1 className="text-[30px] font-bold">Competitions</h1>
             </div>
 
-            <Button
-              onClick={loadPastCompetitions}
-              disabled={loading}
-              className="hover:cursor-pointer"
-            >
-              Load past competitions (Online Only)
-            </Button>
+            {selectedCompetition ? null : (
+              <Button
+                onClick={loadPastCompetitions}
+                disabled={loading}
+                className="hover:cursor-pointer"
+              >
+                Load past competitions (Online Only)
+              </Button>
+            )}
           </div>
 
           {selectedCompetition ? (

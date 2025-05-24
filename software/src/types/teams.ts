@@ -35,6 +35,7 @@ export type Race = {
   event: Event
   completed: boolean
   rankings: Ranking[]
+  records: RaceRecord[]
 }
 
 export type Result = {

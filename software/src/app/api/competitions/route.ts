@@ -13,7 +13,7 @@ export async function GET() {
         records: true,
         teams: true,
         races: {
-          include: { event: true, rankings: true },
+          include: { event: true, rankings: true, records: true },
         },
       }, // Include related records if needed
     })

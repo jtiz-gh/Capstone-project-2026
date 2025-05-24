@@ -15,10 +15,11 @@ export async function PATCH(req: NextRequest) {
     }
 
     const body = await req.json()
+    const { rankings, devices, id, ...teamData } = body
 
     const updatedTeam = await prisma.team.update({
       where: { id: teamId },
-      data: body,
+      data: teamData,
     })
 
     return NextResponse.json(updatedTeam)
