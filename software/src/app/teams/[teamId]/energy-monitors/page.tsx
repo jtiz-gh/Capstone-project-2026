@@ -4,39 +4,44 @@ import { SynchronizedCharts } from "@/components/MultiChartContainer"
 import Layout from "@/app/layout"
 import Navbar from "@/components/Navbar"
 import { useParams } from "next/navigation"
-import { mergeAndCalculateEnergy } from "@/lib/utils"
 import Link from "next/link"
 import { Button } from "@/components/ui/button"
 import { useEffect, useState } from "react"
 
-// Separate voltage and current datasets
-const voltageData = [
-  { seconds: 0, voltage: 186 },
-  { seconds: 1, voltage: 190 },
-  { seconds: 2, voltage: 195 },
-  { seconds: 3, voltage: 200 },
-  { seconds: 4, voltage: 188 },
-  { seconds: 5, voltage: 192 },
-]
-
-const currentData = [
-  { seconds: 0, current: 5 },
-  { seconds: 1, current: 5.2 },
-  { seconds: 2, current: 5.1 },
-  { seconds: 3, current: 4.9 },
-  { seconds: 4, current: 5.3 },
-  { seconds: 5, current: 5.0 },
-]
-
-// Merge datasets and calculate energy
-const mergedData = mergeAndCalculateEnergy(voltageData, currentData, 1)
+interface SensorDataEntry {
+  timestamp: string;
+  avgVoltage: number | null;
+  avgCurrent: number | null;
+  energy: number | null;
+  device: {
+    serialNo: string;
+  };
+}
 
 export default function Monitors() {
   const { teamId } = useParams()
   const [isClient, setIsClient] = useState(false)
+  const [mergedData, setMergedData] = useState<any[]>([])
 
   useEffect(() => {
     setIsClient(true)
+
+    const fetchData = async () => {
+      const res = await fetch("/api/sensor-data")
+      const rawData: SensorDataEntry[] = await res.json()
+
+      const processed = rawData.map((entry) => ({
+        timestamp: new Date(entry.timestamp).toISOString(),
+        voltage: entry.avgVoltage,
+        current: entry.avgCurrent,
+        energy: entry.energy,
+        device: entry.device.serialNo,
+      }))
+
+      setMergedData(processed)
+    }
+
+    fetchData()
   }, [])
 
   return (
@@ -53,7 +58,7 @@ export default function Monitors() {
           </Button>
         </Link>
         <h1 className="text-xl font-bold">Energy Monitors for {decodeURIComponent(teamId as string)}</h1>
-        <div className="w-[120px]"></div> {/* Spacer to balance the layout */}
+        <div className="w-[120px]"></div>
       </div>
       {isClient ? (
         <div className="container mx-auto px-4">
