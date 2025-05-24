@@ -48,6 +48,7 @@ build/
 npm-debug.log*
 
 # Testing
+cypress
 .coverage
 htmlcov/
 .pytest_cache/

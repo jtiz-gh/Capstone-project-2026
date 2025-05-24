@@ -67,7 +67,7 @@ export default function Home() {
         <main className="row-start-2 flex w-full max-w-3xl flex-col gap-8">
           <div className="flex items-center gap-4">
             <Link href="/">
-              <Button variant="ghost" size="icon" className="hover:cursor-pointer">
+              <Button variant="ghost" size="icon" className="hover:cursor-pointer" data-testid="back-button">
                 <ArrowLeft className="h-5 w-5" />
               </Button>
             </Link>
@@ -90,17 +90,12 @@ export default function Home() {
 
             <TabsContent value="add" className="mt-6">
               <Card>
-                <CardHeader>
-                  <CardTitle>
-                    {editingEvent ? "View/Edit EventType" : "Add New EventType"}
-                  </CardTitle>
-                </CardHeader>
                 <CardContent>
                   <EventTypeForm
                     onSubmit={handleAddEvent}
                     onCancel={editingEvent ? handleCancelEdit : undefined}
                     initialEvent={editingEvent || undefined}
-                    submitLabel={editingEvent ? "Update EventType" : "Add EventType"}
+                    submitLabel={editingEvent ? "Update Event Type" : "Add Event Type"}
                   />
                 </CardContent>
               </Card>

@@ -9,6 +9,7 @@
     "lint": "next lint",
     "format": "prettier --write .",
     "cypress:open": "cypress open",
+    "cypress:headless": "cypress run",
     "test": "vitest",
     "prisma:seed": "tsx prisma/seed.ts",
     "prisma:generate": "prisma generate",

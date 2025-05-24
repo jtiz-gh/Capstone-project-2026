@@ -57,12 +57,12 @@ export function EventTypeForm({
   return (
     <form onSubmit={handleSubmit} className="space-y-6">
       <div className="space-y-2">
-        <Label htmlFor="team-name">Team Name</Label>
+        <Label htmlFor="event-type-name">Event Type Name</Label>
         <Input
-          id="team-name"
+          id="event-type-name"
           value={eventName}
           onChange={(e) => setEventName(e.target.value)}
-          placeholder="Enter team name"
+          placeholder="Enter event type name"
           required
         />
       </div>

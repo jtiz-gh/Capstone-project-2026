@@ -33,27 +33,27 @@ export default function Navbar() {
       <NavigationMenu>
         <NavigationMenuList>
           <NavigationMenuItem>
-            <Link href="/" passHref>
-              <NavigationMenuLink className={navigationMenuTriggerStyle()}>Home</NavigationMenuLink>
+            <Link href="/" legacyBehavior passHref>
+              <NavigationMenuLink className={navigationMenuTriggerStyle()} data-testid="nav-home-link">Home</NavigationMenuLink>
             </Link>
           </NavigationMenuItem>
           <NavigationMenuItem>
-            <Link href="/teams" passHref>
-              <NavigationMenuLink className={navigationMenuTriggerStyle()}>
+            <Link href="/teams" legacyBehavior passHref>
+              <NavigationMenuLink className={navigationMenuTriggerStyle()} data-testid="nav-teams-link">
                 Teams
               </NavigationMenuLink>
             </Link>
           </NavigationMenuItem>
           <NavigationMenuItem>
-            <Link href="/competitions" passHref>
-              <NavigationMenuLink className={navigationMenuTriggerStyle()}>
+            <Link href="/competitions" legacyBehavior passHref>
+              <NavigationMenuLink className={navigationMenuTriggerStyle()} data-testid="nav-competitions-link">
                 Competitions
               </NavigationMenuLink>
             </Link>
           </NavigationMenuItem>
           <NavigationMenuItem>
-            <Link href="/event-types" passHref>
-              <NavigationMenuLink className={navigationMenuTriggerStyle()}>
+            <Link href="/event-types" legacyBehavior passHref>
+              <NavigationMenuLink className={navigationMenuTriggerStyle()} data-testid="nav-event-types-link">
                 Event Types
               </NavigationMenuLink>
             </Link>

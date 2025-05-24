@@ -270,7 +270,7 @@ export default function TeamsPage() {
         <main className="row-start-2 flex w-full max-w-3xl flex-col gap-8">
           <div className="flex items-center gap-4">
             <Link href="/">
-              <Button variant="ghost" size="icon" className="hover:cursor-pointer">
+              <Button variant="ghost" size="icon" className="hover:cursor-pointer" data-testid="back-button">
                 <ArrowLeft className="h-5 w-5" />
               </Button>
             </Link>
@@ -303,9 +303,6 @@ export default function TeamsPage() {
 
             <TabsContent value="add" className="mt-6">
               <Card>
-                <CardHeader>
-                  <CardTitle>{editingTeam ? "View/Edit Team" : "Add New Team"}</CardTitle>
-                </CardHeader>
                 <CardContent>
                   <TeamForm
                     addTeam={handleAddTeam}

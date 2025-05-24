@@ -863,7 +863,7 @@ export default function CompetitionsPage() {
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-4">
               <Link href="/">
-                <Button variant="ghost" size="icon" className="hover:cursor-pointer">
+                <Button variant="ghost" size="icon" className="hover:cursor-pointer" data-testid="back-button">
                   <ArrowLeft className="h-5 w-5" />
                 </Button>
               </Link>
@@ -966,7 +966,6 @@ export default function CompetitionsPage() {
               <TabsContent value="create" className="mt-6">
                 <Card>
                   <CardHeader>
-                    <CardTitle>Create New Competition</CardTitle>
                     <CardDescription>
                       Add a name, select at least 3 events, and choose teams to participate.
                     </CardDescription>
@@ -996,7 +995,7 @@ export default function CompetitionsPage() {
                           )}
                         </Label>
                         <div className="grid gap-2 sm:grid-cols-2">
-                          {events.map((event) => (
+                          {(events || []).map((event) => (
                             <div key={event.eventName} className="flex items-center space-x-2">
                               <Checkbox
                                 id={`event-${event.id}`}
