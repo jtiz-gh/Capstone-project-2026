@@ -8,7 +8,7 @@ SERVER_PORT = 3000
 STREAMING_BATCH_SIZE = 80
 
 # Number of items to batch together when clearing a backlog of previously measured data.
-BACKLOG_BATCH_SIZE = 80
+BACKLOG_BATCH_SIZE = 500
 
 # Cooldown period between connection attempts (in seconds)
 SERVER_CONNECT_COOLDOWN_SEC = 8

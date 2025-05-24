@@ -1,3 +1,4 @@
+import gc
 import json
 import os
 
@@ -175,17 +176,25 @@ def stream_file_data(filename, chunk_size=None):
     try:
         with open(filename, "rb") as f:
             while bytes_read < max_bytes:
+                gc.collect()
+
                 # Calculate remaining bytes within our limit
                 remaining = max_bytes - bytes_read
                 # Read the smaller of chunk_size or remaining bytes
                 read_size = min(chunk_size, remaining)
 
-                chunk = f.read(read_size)
-                if not chunk:
-                    break
+                while read_size > 0:
+                    try:
+                        chunk = f.read(read_size)
+                        if not chunk:
+                            return
+                        bytes_read += len(chunk)
 
-                bytes_read += len(chunk)
-                yield chunk
+                        yield chunk
+                        break 
+                    except MemoryError:
+                        # Try a smaller chunk if we run out of memory
+                        read_size //= 2
 
         print(f"Streamed {bytes_read} bytes from file '{filename}'")
     except OSError as e:

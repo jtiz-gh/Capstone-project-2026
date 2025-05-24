@@ -92,8 +92,6 @@ async def post_binary_file_streaming(file_path, total_frames):
         # Stream file data in chunks
         bytes_sent = 0
         for chunk in stream_file_data(file_path, total_frames * PROCESSED_FRAME_SIZE):
-            gc.collect()
-
             if not await send_data(writer, chunk):
                 await close_connection(writer)
                 return False
