@@ -171,7 +171,7 @@ export default function TeamsPage() {
           <div className="z-50 min-w-[300px] rounded-lg bg-white p-6 shadow-lg">
             <h2 className="mb-4 text-lg font-bold">Assign Device to Team</h2>
             {availableDevices.length === 0 ? (
-              <p>No unassigned devices available.</p>
+              <p className="mb-4">No unassigned devices available.</p>
             ) : (
               <ul className="mb-4">
                 {availableDevices.map((device) => (

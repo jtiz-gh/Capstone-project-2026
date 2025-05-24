@@ -1,6 +1,6 @@
 "use client"
 
-import ChartCard from "@/components/ChartCard"
+import { SynchronizedCharts } from "@/components/MultiChartContainer"
 import Layout from "@/app/layout"
 import Navbar from "@/components/Navbar"
 import { useParams } from "next/navigation"
@@ -52,45 +52,15 @@ export default function Monitors() {
             ← Back to Team View
           </Button>
         </Link>
-        <h1 className="text-xl font-bold">
-          Energy Monitors for {decodeURIComponent(teamId as string)}
-        </h1>
+        <h1 className="text-xl font-bold">Energy Monitors for {decodeURIComponent(teamId as string)}</h1>
         <div className="w-[120px]"></div> {/* Spacer to balance the layout */}
       </div>
       {isClient ? (
-        <div className="grid grid-cols-2 gap-4">
-          {/* Top row: Voltage and Current charts */}
-          <div className="flex justify-center">
-            <ChartCard
-              chartData={mergedData}
-              title="Average Voltage"
-              yAxisLabel="Voltage (V)"
-              dataKey="voltage"
-            />
-          </div>
-          <div className="flex justify-center">
-            <ChartCard
-              chartData={mergedData}
-              title="Average Current"
-              yAxisLabel="Current (A)"
-              dataKey="current"
-            />
-          </div>
-
-          {/* Bottom row: Energy chart */}
-          <div className="col-span-2 flex justify-center">
-            <ChartCard
-              chartData={mergedData}
-              title="Calculated Energy"
-              yAxisLabel="Energy (J)"
-              dataKey="energy"
-            />
-          </div>
+        <div className="container mx-auto px-4">
+          <SynchronizedCharts chartData={mergedData} />
         </div>
       ) : (
-        <div className="flex min-h-[200px] w-full items-center justify-center">
-          Loading charts...
-        </div>
+        <div className="flex min-h-[200px] w-full items-center justify-center">Loading charts...</div>
       )}
     </>
   )
