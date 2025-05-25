@@ -47,21 +47,23 @@ export default function Monitors() {
   return (
     <>
       <Navbar />
-      <div className="mt-4 mb-4 flex items-center justify-between border-b-2 border-gray-300 px-4 pb-2">
+      <div className="mt-4 mb-4 flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b-2 border-gray-300 px-4 pb-2">
         <Link href={`/teams/${teamId}`}>
           <Button
             variant="outline"
-            className="flex h-10 items-center justify-center gap-2 px-6 text-lg hover:cursor-pointer"
+            className="flex h-10 items-center justify-center gap-2 px-4 sm:px-6 text-sm sm:text-lg hover:cursor-pointer"
             data-testid="energy-monitors-button"
           >
-            ← Back to Team View
+            ← Back
           </Button>
         </Link>
-        <h1 className="text-xl font-bold">Energy Monitors for {decodeURIComponent(teamId as string)}</h1>
-        <div className="w-[120px]"></div>
+        <h1 className="text-lg sm:text-xl font-bold text-center sm:text-left">
+          Energy Monitors for {decodeURIComponent(teamId as string)}
+        </h1>
+        <div className="hidden sm:block w-[120px]"></div>
       </div>
       {isClient ? (
-        <div className="container mx-auto px-4">
+        <div className="container mx-auto px-2 sm:px-4">
           <SynchronizedCharts chartData={mergedData} />
         </div>
       ) : (

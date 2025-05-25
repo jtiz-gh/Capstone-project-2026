@@ -1,32 +1,18 @@
 "use client"
 
 import type React from "react"
-
+import { useMediaQuery } from "@/hooks/use-media-query"
 import { TeamSelector } from "@/app/teams/team-selector"
 import Navbar from "@/components/Navbar"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardFooter,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card"
+import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
 import { Checkbox } from "@/components/ui/checkbox"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { ScrollArea } from "@/components/ui/scroll-area"
 import { Separator } from "@/components/ui/separator"
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table"
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { calculateScore } from "@/lib/utils"
 import type { Competition, Event, RaceRecord, Team } from "@/types/teams"
@@ -36,29 +22,20 @@ import { useEffect, useMemo, useState } from "react"
 import { toast } from "sonner"
 
 export default function CompetitionsPage() {
+  const isMobile = useMediaQuery("(max-width: 768px)")
   const [teams, setTeams] = useState<Team[]>([])
   const [events, setEvents] = useState<Event[]>([])
   const [competitions, setCompetitions] = useState<Competition[]>([])
-
-  // State for form
   const [competitionName, setCompetitionName] = useState("")
   const [selectedEvents, setSelectedEvents] = useState<Event[]>([])
   const [selectedTeams, setSelectedTeams] = useState<Team[]>([])
   const [loading, setLoading] = useState(false)
-
-  // State for viewing competition details
   const [selectedCompetition, setSelectedCompetition] = useState<Competition | null>(null)
   const [activeTab, setActiveTab] = useState("view")
-
   const [loadingRaceId, setLoadingRaceId] = useState<number | null>(null)
-
-  const [rankingsByCategory, setRankingsByCategory] = useState<
-    Record<number, Record<string, any[]>>
-  >({})
+  const [rankingsByCategory, setRankingsByCategory] = useState<Record<number, Record<string, any[]>>>({})
   const [missingTeamIdsByRace, setMissingTeamIdsByRace] = useState<Record<number, number[]>>({})
-
   const [finishStatusUpdates, setFinishStatusUpdates] = useState<Record<number, boolean>>({})
-
   const [selectedLeaderboard, setSelectedLeaderboard] = useState<string>("overall")
 
   // Get initial data
@@ -604,47 +581,56 @@ export default function CompetitionsPage() {
     return overallScores
   }, [selectedCompetition, rankingsByCategory])
 
-  // View for competition details
   const renderCompetitionDetails = () => {
     if (!selectedCompetition) return null
 
     return (
-      <div className="space-y-6">
-        <div className="flex items-center justify-between">
-          <h2 className="text-2xl font-bold">{selectedCompetition.competitionName}</h2>
-          <Button
-            variant="outline"
-            className="hover:cursor-pointer"
-            onClick={() => setSelectedCompetition(null)}
-          >
-            Back to List
-          </Button>
+      <div className="space-y-4 md:space-y-6">
+        <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
+          <div className="flex items-center gap-2">
+            <Button
+              variant="ghost"
+              size={isMobile ? "sm" : "default"}
+              className="hover:cursor-pointer"
+              onClick={() => setSelectedCompetition(null)}
+            >
+              <ArrowLeft className="h-4 w-4" />
+            </Button>
+            <h2 className="text-xl font-bold md:text-2xl">{selectedCompetition.competitionName}</h2>
+          </div>
+          
+          {!isMobile && (
+            <Button
+              variant="outline"
+              onClick={loadPastCompetitions}
+              disabled={loading}
+            >
+              Refresh Data
+            </Button>
+          )}
         </div>
 
-        <div className="grid gap-6 md:grid-cols-2">
+        <div className="grid gap-4 md:grid-cols-2 md:gap-6">
           {/* Events Card */}
           <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <Activity className="h-5 w-5" />
+            <CardHeader className={isMobile ? "p-4" : undefined}>
+              <CardTitle className="flex items-center gap-2 text-base md:text-lg">
+                <Activity className="h-4 w-4" />
                 Events
               </CardTitle>
             </CardHeader>
-            <CardContent>
-              <ScrollArea className="h-[300px]">
-                <div className="space-y-4">
+            <CardContent className={isMobile ? "p-4" : undefined}>
+              <ScrollArea className="h-[200px] md:h-[300px]">
+                <div className="space-y-3">
                   {selectedCompetition.races.map((race) => (
                     <div key={race.id} className="space-y-2">
-                      <div className="flex items-center justify-between">
+                      <div className="flex flex-col gap-2 md:flex-row md:items-center md:justify-between">
                         <div className="flex items-center gap-2">
-                          <h3 className="font-medium">
+                          <h3 className="text-sm font-medium md:text-base">
                             {events.find((event) => event.id === race.eventId)?.eventName}
                           </h3>
                           {race.completed && (
-                            <Badge
-                              variant="outline"
-                              className="border-green-200 bg-green-50 text-green-700"
-                            >
+                            <Badge variant="outline" className="border-green-200 bg-green-50 text-green-700 text-xs">
                               Completed
                             </Badge>
                           )}
@@ -652,14 +638,15 @@ export default function CompetitionsPage() {
 
                         <Button
                           onClick={() => loadRankings(race.id)}
-                          className="hover:cursor-pointer"
+                          size={isMobile ? "sm" : "default"}
+                          className="w-full md:w-auto"
                         >
                           {loadingRaceId === race.id ? (
-                            <Loader2 className="mr-2 inline h-4 w-4 animate-spin" />
+                            <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                           ) : race.completed ? (
-                            "Retry?"
+                            "Recalculate"
                           ) : (
-                            "Finish and Score"
+                            "Score Race"
                           )}
                         </Button>
                       </div>
@@ -673,179 +660,196 @@ export default function CompetitionsPage() {
 
           {/* Teams Card */}
           <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <Users className="h-5 w-5" />
-                Participating Teams
+            <CardHeader className={isMobile ? "p-4" : undefined}>
+              <CardTitle className="flex items-center gap-2 text-base md:text-lg">
+                <Users className="h-4 w-4" />
+                Teams
               </CardTitle>
             </CardHeader>
-            <CardContent>
-              <ScrollArea className="h-[300px]">
-                <div className="space-y-4">
-                  {selectedCompetition.teams.map((team) => {
-                    if (!team) return null
-                    return (
-                      <div key={team.id} className="space-y-2">
-                        <div className="flex items-center justify-between">
-                          <div>
-                            <h3 className="font-medium">{team.teamName}</h3>
-                            <p className="text-sm text-muted-foreground">
-                              {team.vehicleClass} Class • {team.vehicleType}
-                            </p>
-                            <div className="mt-1 flex flex-row gap-2">
-                              {selectedCompetition.races.map((race) => {
-                                if (!race.completed) return null
-                                const isMissing = missingTeamIdsByRace[race.id]?.includes(team.id)
-                                return (
-                                  <Badge
-                                    key={race.id + "valid team data badge"}
-                                    className={
-                                      isMissing
-                                        ? `border-red-200 bg-red-50 text-sm text-red-700`
-                                        : `border-green-200 bg-green-50 text-sm text-green-700`
-                                    }
-                                  >
-                                    {getInitials(
-                                      events.find((event) => event.id === race.eventId)
-                                        ?.eventName || ""
-                                    )}
-                                  </Badge>
-                                )
-                              })}
-                            </div>
+            <CardContent className={isMobile ? "p-4" : undefined}>
+              <ScrollArea className="h-[200px] md:h-[300px]">
+                <div className="space-y-3">
+                  {selectedCompetition.teams.map((team) => (
+                    <div key={team.id} className="space-y-2">
+                      <div className="flex flex-col gap-2 md:flex-row md:items-center md:justify-between">
+                        <div>
+                          <h3 className="text-sm font-medium md:text-base">{team.teamName}</h3>
+                          <p className="text-xs text-muted-foreground md:text-sm">
+                            {team.vehicleClass} • {team.vehicleType}
+                          </p>
+                          <div className="mt-1 flex flex-wrap gap-1">
+                            {selectedCompetition.races.slice(0, isMobile ? 2 : undefined).map((race) => {
+                              if (!race.completed) return null
+                              const isMissing = missingTeamIdsByRace[race.id]?.includes(team.id)
+                              return (
+                                <Badge
+                                  key={race.id}
+                                  className={`text-xs ${isMissing ? 'bg-red-50 text-red-700' : 'bg-green-50 text-green-700'}`}
+                                >
+                                  {getInitials(events.find((e) => e.id === race.eventId)?.eventName || "")}
+                                  {isMobile && isMissing ? "!" : ""}
+                                </Badge>
+                              )
+                            })}
+                            {isMobile && selectedCompetition.races.length > 2 && (
+                              <Badge variant="outline" className="text-xs">
+                                +{selectedCompetition.races.length - 2}
+                              </Badge>
+                            )}
                           </div>
-                          <Link href={`/teams/${team.id}/energy-monitors`}>
-                            <Button className="mr-3 hover:cursor-pointer" size="sm">
-                              View Graphs
-                            </Button>
-                          </Link>
                         </div>
-                        <Separator />
+                        <Link href={`/teams/${team.id}/energy-monitors`} className="w-full md:w-auto">
+                          <Button size={isMobile ? "sm" : "default"} className="w-full mt-2 md:mt-0 md:w-auto">
+                            {isMobile ? "Graphs" : "View Graphs"}
+                          </Button>
+                        </Link>
                       </div>
-                    )
-                  })}
+                      <Separator />
+                    </div>
+                  ))}
                 </div>
               </ScrollArea>
             </CardContent>
           </Card>
         </div>
 
-        <select
-          value={selectedLeaderboard}
-          onChange={(e) => setSelectedLeaderboard(e.target.value)}
-          className="rounded border px-4 py-2"
-        >
-          <option value="overall">Overall Leaderboard</option>
-          {selectedCompetition.races.map((race) => (
-            <option key={race.id} value={`race-${race.id}`}>
-              {events.find((event) => event.id === race.eventId)?.eventName} Leaderboard
-            </option>
-          ))}
-        </select>
+        {/* Leaderboard Selector */}
+        <div className="w-full">
+          <select
+            value={selectedLeaderboard}
+            onChange={(e) => setSelectedLeaderboard(e.target.value)}
+            className="w-full rounded-md border p-2 text-sm md:text-base"
+          >
+            <option value="overall">Overall Leaderboard</option>
+            {selectedCompetition.races.map((race) => (
+              <option key={race.id} value={`race-${race.id}`}>
+                {events.find((event) => event.id === race.eventId)?.eventName}
+              </option>
+            ))}
+          </select>
+        </div>
 
+        {/* Leaderboard Content */}
         {selectedLeaderboard === "overall" ? (
-          // Render Overall Leaderboard
           <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <Trophy className="h-5 w-5" />
+            <CardHeader className={isMobile ? "p-4" : undefined}>
+              <CardTitle className="flex items-center gap-2 text-base md:text-lg">
+                <Trophy className="h-4 w-4" />
                 Overall Results
               </CardTitle>
             </CardHeader>
-            <CardContent>
+            <CardContent className={isMobile ? "p-0" : undefined}>
               {Object.keys(overallRankings).length === 0 ? (
-                <p>No rankings available yet. Complete a race to see results.</p>
+                <p className="p-4 text-sm text-muted-foreground">No rankings available yet.</p>
               ) : (
-                Object.entries(overallRankings).map(([vehicleCategory, rankings]) => (
-                  <div key={vehicleCategory} className="mb-6">
-                    <h3 className="text-lg font-bold">{vehicleCategory}</h3>
-                    <Table>
-                      <TableHeader>
-                        <TableRow>
-                          <TableHead>Position</TableHead>
-                          <TableHead>Team</TableHead>
-                          <TableHead>Total Score</TableHead>
-                        </TableRow>
-                      </TableHeader>
-                      <TableBody>
-                        {rankings.map((ranking, index) => (
-                          <TableRow key={ranking.teamId}>
-                            <TableCell>{index + 1}</TableCell>
-                            <TableCell>
-                              {teams.find((team) => team.id === ranking.teamId)?.teamName}
-                            </TableCell>
-                            <TableCell>{ranking.totalScore}</TableCell>
-                          </TableRow>
-                        ))}
-                      </TableBody>
-                    </Table>
-                  </div>
-                ))
+                <div className="space-y-6">
+                  {Object.entries(overallRankings).map(([vehicleCategory, rankings]) => (
+                    <div key={vehicleCategory} className="mb-4">
+                      <h3 className="px-4 text-sm font-bold md:text-base md:px-6">{vehicleCategory}</h3>
+                      <div className="overflow-x-auto">
+                        <Table>
+                          <TableHeader>
+                            <TableRow>
+                              <TableHead className="w-10">#</TableHead>
+                              <TableHead>Team</TableHead>
+                              {!isMobile && <TableHead>Class</TableHead>}
+                              <TableHead className="text-right">Score</TableHead>
+                            </TableRow>
+                          </TableHeader>
+                          <TableBody>
+                            {rankings.map((ranking, index) => {
+                              const team = teams.find((t) => t.id === ranking.teamId)
+                              return (
+                                <TableRow key={ranking.teamId}>
+                                  <TableCell>{index + 1}</TableCell>
+                                  <TableCell className="font-medium">
+                                    {isMobile ? team?.teamName?.split(' ')[0] : team?.teamName}
+                                  </TableCell>
+                                  {!isMobile && <TableCell>{team?.vehicleClass}</TableCell>}
+                                  <TableCell className="text-right">{ranking.totalScore}</TableCell>
+                                </TableRow>
+                              )
+                            })}
+                          </TableBody>
+                        </Table>
+                      </div>
+                    </div>
+                  ))}
+                </div>
               )}
             </CardContent>
           </Card>
         ) : (
-          // Render Race Leaderboard
           selectedCompetition.races.map((race) =>
             `race-${race.id}` === selectedLeaderboard ? (
               <Card key={race.id}>
-                <CardHeader>
-                  <CardTitle className="flex items-center gap-2">
-                    <Trophy className="h-5 w-5" />
-                    {events.find((event) => event.id === race.eventId)?.eventName} Results
+                <CardHeader className={isMobile ? "p-4" : undefined}>
+                  <CardTitle className="flex items-center gap-2 text-base md:text-lg">
+                    <Trophy className="h-4 w-4" />
+                    {events.find((event) => event.id === race.eventId)?.eventName}
                   </CardTitle>
                 </CardHeader>
-                <CardContent>
+                <CardContent className={isMobile ? "p-0" : undefined}>
                   {rankingsByCategory[race.id] ? (
-                    Object.entries(rankingsByCategory[race.id]).map(
-                      ([vehicleCategory, rankings]) => (
-                        <div key={vehicleCategory} className="mb-6">
-                          <h3 className="text-lg font-bold">{vehicleCategory}</h3>
-                          <Table>
-                            <TableHeader>
-                              <TableRow>
-                                <TableHead>DNF/DQ/DNS</TableHead>
-                                <TableHead>Position</TableHead>
-                                <TableHead>Team</TableHead>
-                                <TableHead>Score</TableHead>
-                              </TableRow>
-                            </TableHeader>
-                            <TableBody>
-                              {rankings.map((ranking, index) => (
-                                <TableRow key={ranking.id}>
-                                  <TableCell>
-                                    <Checkbox
-                                      id={`ranking-${ranking.id}`}
-                                      className="hover:cursor-pointer"
-                                      onCheckedChange={(checked) => {
-                                        handleFinishStatusChange(ranking.id, Boolean(checked))
-                                      }}
-                                    />
-                                  </TableCell>
-                                  <TableCell>{index + 1}</TableCell>
-                                  <TableCell>
-                                    {teams.find((team) => team.id === ranking.teamId)?.teamName}
-                                  </TableCell>
-                                  <TableCell>{ranking.score}</TableCell>
+                    <div className="space-y-6">
+                      {Object.entries(rankingsByCategory[race.id]).map(([vehicleCategory, rankings]) => (
+                        <div key={vehicleCategory} className="mb-4">
+                          <h3 className="px-4 text-sm font-bold md:text-base md:px-6">{vehicleCategory}</h3>
+                          <div className="overflow-x-auto">
+                            <Table>
+                              <TableHeader>
+                                <TableRow>
+                                  {!isMobile && <TableHead>Status</TableHead>}
+                                  <TableHead>#</TableHead>
+                                  <TableHead>Team</TableHead>
+                                  {!isMobile && <TableHead>Score</TableHead>}
                                 </TableRow>
-                              ))}
-                            </TableBody>
-                          </Table>
+                              </TableHeader>
+                              <TableBody>
+                                {rankings.map((ranking, index) => (
+                                  <TableRow key={ranking.id}>
+                                    {!isMobile && (
+                                      <TableCell>
+                                        <Checkbox
+                                          checked={finishStatusUpdates[ranking.id] || false}
+                                          onCheckedChange={(checked) => {
+                                            handleFinishStatusChange(ranking.id, Boolean(checked))
+                                          }}
+                                        />
+                                      </TableCell>
+                                    )}
+                                    <TableCell>{index + 1}</TableCell>
+                                    <TableCell>
+                                      {teams.find((t) => t.id === ranking.teamId)?.teamName}
+                                    </TableCell>
+                                    {!isMobile && <TableCell>{ranking.score}</TableCell>}
+                                  </TableRow>
+                                ))}
+                              </TableBody>
+                            </Table>
+                          </div>
                         </div>
-                      )
-                    )
+                      ))}
+                    </div>
                   ) : (
-                    <p>No rankings available yet. Complete this race to see results.</p>
+                    <p className="p-4 text-sm text-muted-foreground">No rankings available yet.</p>
                   )}
-                  {race.completed ? (
-                    <Button
-                      onClick={applyFinishStatus}
-                      disabled={loading}
-                      className="hover:cursor-pointer"
-                    >
-                      Apply Finish Status Changes
-                    </Button>
-                  ) : null}
+                  {race.completed && (
+                    <div className="p-4">
+                      <Button
+                        onClick={applyFinishStatus}
+                        disabled={loading}
+                        size={isMobile ? "sm" : "default"}
+                        className="w-full md:w-auto"
+                      >
+                        {loading ? (
+                          <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                        ) : (
+                          "Apply Status Changes"
+                        )}
+                      </Button>
+                    </div>
+                  )}
                 </CardContent>
               </Card>
             ) : null
@@ -858,25 +862,26 @@ export default function CompetitionsPage() {
   return (
     <>
       <Navbar />
-      <div className="grid min-h-screen grid-rows-[20px_1fr_20px] items-center justify-items-center gap-16 p-8 pb-20 font-[family-name:var(--font-geist-sans)] sm:p-20">
-        <main className="row-start-2 flex w-full max-w-4xl flex-col gap-8">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-4">
+      <div className="min-h-screen p-4 md:p-8">
+        <main className="mx-auto max-w-6xl space-y-6">
+          <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
+            <div className="flex items-center gap-2">
               <Link href="/">
-                <Button variant="ghost" size="icon" className="hover:cursor-pointer" data-testid="back-button">
-                  <ArrowLeft className="h-5 w-5" />
+                <Button variant="ghost" size={isMobile ? "sm" : "default"} className="hover:cursor-pointer">
+                  <ArrowLeft className="h-4 w-4" />
                 </Button>
               </Link>
-              <h1 className="text-[30px] font-bold">Competitions</h1>
+              <h1 className="text-xl font-bold md:text-2xl">Competitions</h1>
             </div>
 
-            {selectedCompetition ? null : (
+            {!selectedCompetition && (
               <Button
                 onClick={loadPastCompetitions}
                 disabled={loading}
-                className="hover:cursor-pointer"
+                size={isMobile ? "sm" : "default"}
+                className="font-semibold"
               >
-                Load past competitions (Online Only)
+                {isMobile ? "Refresh" : "Load Past Competitions"}
               </Button>
             )}
           </div>
@@ -886,73 +891,75 @@ export default function CompetitionsPage() {
           ) : (
             <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
               <TabsList className="grid w-full grid-cols-2">
-                <TabsTrigger value="view" className="hover:cursor-pointer">
-                  View Competitions
+                <TabsTrigger value="view" className="font-semibold hover:cursor-pointer">
+                  {isMobile ? "View" : "View Competitions"}
                 </TabsTrigger>
-                <TabsTrigger value="create" className="hover:cursor-pointer">
-                  Create Competition
+                <TabsTrigger value="create" className="font-semibold hover:cursor-pointer">
+                  {isMobile ? "Create" : "Create Competition"}
                 </TabsTrigger>
               </TabsList>
 
-              <TabsContent value="view" className="mt-6">
+              <TabsContent value="view" className="mt-4">
                 {competitions.length === 0 ? (
-                  <div className="flex h-40 flex-col items-center justify-center gap-4 rounded-lg border border-dashed p-8 text-center">
-                    <Trophy className="h-10 w-10 text-muted-foreground" />
-                    <p className="text-muted-foreground">
-                      No competitions created yet. Create your first competition!
+                  <div className="flex h-40 flex-col items-center justify-center gap-2 rounded-lg border border-dashed p-8 text-center">
+                    <Trophy className="h-8 w-8 text-muted-foreground" />
+                    <p className="text-sm text-muted-foreground md:text-base">
+                      No competitions created yet.
                     </p>
                   </div>
                 ) : (
                   <div className="grid gap-4 md:grid-cols-2">
                     {competitions.map((competition) => (
                       <Card key={competition.id} className="overflow-hidden">
-                        <CardHeader className="pb-3">
-                          <CardTitle>{competition.competitionName}</CardTitle>
-                          <CardDescription>
+                        <CardHeader className="p-4 md:p-6">
+                          <CardTitle className="text-base md:text-lg">
+                            {competition.competitionName}
+                          </CardTitle>
+                          <CardDescription className="text-xs md:text-sm">
                             {competition.races?.length} events • {competition.teams?.length} teams
                           </CardDescription>
                         </CardHeader>
-                        <CardContent className="pb-3">
-                          <div className="mb-4 flex flex-wrap gap-2">
-                            {competition.races.map((race) => (
+                        <CardContent className="p-4 md:p-6">
+                          <div className="mb-3 flex flex-wrap gap-1">
+                            {competition.races.slice(0, isMobile ? 2 : undefined).map((race) => (
                               <Badge
                                 key={race.id}
                                 variant="outline"
-                                className={
-                                  race.completed
-                                    ? "border-green-200 bg-green-50 text-green-700"
-                                    : ""
-                                }
+                                className={`text-xs ${race.completed ? 'bg-green-50 text-green-700' : ''}`}
                               >
-                                {events.find((event) => event.id === race.eventId)?.eventName}
+                                {events.find((e) => e.id === race.eventId)?.eventName?.split(' ')[0]}
                                 {race.completed && " ✓"}
                               </Badge>
                             ))}
+                            {isMobile && competition.races.length > 2 && (
+                              <Badge variant="outline" className="text-xs">
+                                +{competition.races.length - 2}
+                              </Badge>
+                            )}
                           </div>
-                          <div className="text-sm text-muted-foreground">
+                          <div className="text-xs text-muted-foreground md:text-sm">
                             <div className="mb-1 flex items-center gap-1">
-                              <Users className="h-4 w-4" />
+                              <Users className="h-3 w-3 md:h-4 md:w-4" />
                               <span>Teams:</span>
                             </div>
-                            <div className="flex flex-wrap gap-1">
+                            <div className="line-clamp-2">
                               {competition.teams.slice(0, 3).map((team) => (
                                 <span key={team.id} className="inline-block">
-                                  {team.teamName}
-                                  {competition.teams.indexOf(team) < competition.teams.length - 1
-                                    ? ", "
-                                    : ""}
+                                  {isMobile ? team.teamName.split(' ')[0] : team.teamName}
+                                  {competition.teams.indexOf(team) < competition.teams.length - 1 ? ", " : ""}
                                 </span>
                               ))}
                               {competition.teams.length > 3 && (
-                                <span>+{competition.teams.length - 3} more</span>
+                                <span> +{competition.teams.length - 3}</span>
                               )}
                             </div>
                           </div>
                         </CardContent>
-                        <CardFooter>
+                        <CardFooter className="p-4 md:p-6">
                           <Button
-                            className="w-full hover:cursor-pointer"
                             onClick={() => handleViewDetails(competition)}
+                            size={isMobile ? "sm" : "default"}
+                            className="w-full"
                           >
                             View Details
                           </Button>
@@ -963,34 +970,37 @@ export default function CompetitionsPage() {
                 )}
               </TabsContent>
 
-              <TabsContent value="create" className="mt-6">
+              <TabsContent value="create" className="mt-4">
                 <Card>
-                  <CardHeader>
-                    <CardDescription>
-                      Add a name, select at least 3 events, and choose teams to participate.
+                  <CardHeader className="p-4 md:p-6">
+                    <CardDescription className="text-sm md:text-base">
+                      Add a name, select at least 3 events, and choose teams.
                     </CardDescription>
                   </CardHeader>
-                  <CardContent>
-                    <form onSubmit={handleCreateCompetition} className="space-y-6">
+                  <CardContent className="p-4 md:p-6">
+                    <form onSubmit={handleCreateCompetition} className="space-y-4 md:space-y-6">
                       <div className="space-y-2">
-                        <Label htmlFor="competition-name">Competition Name</Label>
+                        <Label htmlFor="competition-name" className="text-sm md:text-base">
+                          Competition Name
+                        </Label>
                         <Input
                           id="competition-name"
                           value={competitionName}
                           onChange={(e) => setCompetitionName(e.target.value)}
-                          placeholder="Enter competition name"
+                          placeholder="Name"
                           disabled={loading}
                           required
+                          className="text-sm md:text-base"
                         />
                       </div>
 
-                      <div className="space-y-3">
-                        <Label className="mb-2 block">
-                          Select Events (minimum 3)
+                      <div className="space-y-2">
+                        <Label className="text-sm md:text-base">
+                          Select Events (min 3)
                           {selectedEvents.length < 3 && (
-                            <span className="ml-2 flex items-center gap-1 text-sm text-red-500">
+                            <span className="ml-2 inline-flex items-center gap-1 text-xs text-red-500 md:text-sm">
                               <AlertCircle className="h-3 w-3" />
-                              At least 3 events required
+                              {isMobile ? "Need 3+" : "At least 3 events required"}
                             </span>
                           )}
                         </Label>
@@ -999,13 +1009,12 @@ export default function CompetitionsPage() {
                             <div key={event.eventName} className="flex items-center space-x-2">
                               <Checkbox
                                 id={`event-${event.id}`}
-                                className="hover:cursor-pointer"
                                 checked={selectedEvents.includes(event)}
                                 onCheckedChange={() => toggleEvent(event)}
                                 disabled={loading}
                               />
-                              <Label htmlFor={`event-${event.id}`} className="cursor-pointer">
-                                {event.eventName}
+                              <Label htmlFor={`event-${event.id}`} className="text-xs md:text-sm">
+                                {isMobile ? event.eventName.split(' ')[0] : event.eventName}
                               </Label>
                             </div>
                           ))}
@@ -1022,16 +1031,17 @@ export default function CompetitionsPage() {
 
                       <Button
                         type="submit"
-                        className="w-full hover:cursor-pointer"
                         disabled={
                           !competitionName.trim() ||
                           selectedEvents.length < 3 ||
                           selectedTeams.length === 0 ||
                           loading
                         }
+                        className="w-full"
+                        size={isMobile ? "sm" : "default"}
                       >
                         {loading ? (
-                          <Loader2 className="mr-2 inline h-4 w-4 animate-spin" />
+                          <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                         ) : (
                           "Create Competition"
                         )}

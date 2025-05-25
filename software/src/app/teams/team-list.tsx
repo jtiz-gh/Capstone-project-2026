@@ -33,7 +33,7 @@ export function TeamList({
     <div className="grid gap-4">
       {teams.map((team) => (
         <Card key={team.id}>
-          <CardContent className="flex items-center justify-between p-6">
+          <CardContent className="flex flex-col sm:flex-row items-start sm:items-center justify-between p-4 sm:p-6 gap-2 sm:gap-0">
             <div>
               <h3 className="text-xl font-semibold">{team.teamName}</h3>
               <div className="mt-2 flex gap-4 text-sm text-muted-foreground">

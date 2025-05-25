@@ -63,8 +63,8 @@ export default function Home() {
   return (
     <>
       <Navbar />
-      <div className="grid min-h-screen grid-rows-[20px_1fr_20px] items-center justify-items-center gap-16 p-8 pb-20 font-[family-name:var(--font-geist-sans)] sm:p-20">
-        <main className="row-start-2 flex w-full max-w-3xl flex-col gap-8">
+      <div className="grid min-h-screen grid-rows-[20px_1fr_20px] items-center justify-items-center gap-8 p-2 sm:gap-16 sm:p-20 font-[family-name:var(--font-geist-sans)]">
+        <main className="row-start-2 flex w-full max-w-full sm:max-w-3xl flex-col gap-4 sm:gap-8">
           <div className="flex items-center gap-4">
             <Link href="/">
               <Button variant="ghost" size="icon" className="hover:cursor-pointer" data-testid="back-button">
@@ -90,7 +90,7 @@ export default function Home() {
 
             <TabsContent value="add" className="mt-6">
               <Card>
-                <CardContent>
+                <CardContent className="flex flex-col sm:flex-row items-start sm:items-center justify-between p-4 sm:p-6 gap-2 sm:gap-0">
                   <EventTypeForm
                     onSubmit={handleAddEvent}
                     onCancel={editingEvent ? handleCancelEdit : undefined}

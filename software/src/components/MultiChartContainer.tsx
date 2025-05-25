@@ -218,41 +218,40 @@ export function SynchronizedCharts({ chartData }: SynchronizedChartsProps) {
   }
 
   return (
-    <div className={`space-y-6 ${zoomEnabled ? "select-none" : ""}`}>
-      <div className="flex justify-between items-center px-4 mb-2">
-        {/* Device ID on the left */}
-        <div className="text-sm font-medium text-muted-foreground">
+    <div className={`space-y-4 sm:space-y-6 ${zoomEnabled ? "select-none" : ""}`}>
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center px-2 sm:px-4 mb-2 gap-2">
+        {/* Device ID */}
+        <div className="text-xs sm:text-sm font-semibold text-muted-foreground">
           Device ID: <span className="text-foreground">{chartData[0]?.device ?? "N/A"}</span>
         </div>
 
-        {/* Zoom controls on the right */}
-        <div className="flex gap-2">
+        {/* Zoom controls */}
+        <div className="flex gap-2 w-full sm:w-auto">
           <Button
             variant="outline"
             size="sm"
             onClick={() => setZoomEnabled(!zoomEnabled)}
-            className={zoomEnabled ? "bg-blue-100 dark:bg-blue-900" : ""}
+            className={`flex-1 sm:flex-initial ${zoomEnabled ? "bg-blue-100 dark:bg-blue-900" : ""}`}
           >
-            <ZoomIn className="mr-2 h-4 w-4" />
-            Zoom Mode
+            <ZoomIn className="mr-1 sm:mr-2 h-3 sm:h-4 w-3 sm:w-4" />
+            <span className="text-xs sm:text-sm font-semibold">Toggle Zoom</span>
           </Button>
-          <Button variant="outline" size="sm" onClick={zoomOut}>
-            <RefreshCw className="mr-2 h-4 w-4" />
-            Reset View
+          <Button variant="outline" size="sm" className="flex-1 sm:flex-initial" onClick={zoomOut}>
+            <RefreshCw className="mr-1 sm:mr-2 h-3 sm:h-4 w-3 sm:w-4" />
+            <span className="text-xs sm:text-sm font-semibold">Reset Zoom</span>
           </Button>
         </div>
       </div>
 
-
-      <div className="grid grid-cols-2 gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 sm:gap-4">
         {/* Voltage Chart */}
         <Card className="w-full">
-          <CardContent className="p-4">
-            <h3 className="mb-2 text-lg font-semibold">Average Voltage</h3>
-            <ChartContainer config={chartConfig} className="h-48">
+          <CardContent className="p-2 sm:p-4">
+            <h3 className="mb-1 sm:mb-2 text-sm sm:text-lg font-semibold">Average Voltage</h3>
+            <ChartContainer config={chartConfig} className="h-40 sm:h-48">
               <LineChart
                 data={chartData}
-                margin={{ left: 12, right: 12, top: 5, bottom: 5 }}
+                margin={{ left: 8, right: 8, top: 5, bottom: 5 }}
                 onMouseDown={handleMouseDown}
                 onMouseMove={handleMouseMove}
                 onMouseUp={handleMouseUp}
@@ -262,21 +261,24 @@ export function SynchronizedCharts({ chartData }: SynchronizedChartsProps) {
                   dataKey="seconds"
                   tickLine={false}
                   axisLine={false}
-                  tickMargin={8}
+                  tickMargin={6}
                   tickFormatter={(value) => `${value}s`}
                   domain={[left, right]}
                   type="number"
                   allowDataOverflow
+                  tick={{ fontSize: 10 }}
                 />
                 <YAxis
                   tickLine={false}
                   axisLine={false}
                   domain={[voltageBottom, voltageTop]}
                   allowDataOverflow
+                  tick={{ fontSize: 10 }}
                   label={{
                     value: "Voltage (V)",
                     angle: -90,
                     position: "insideLeft",
+                    fontSize: 10,
                   }}
                 />
                 <ChartTooltip cursor={false} content={<ChartTooltipContent hideLabel />} />
@@ -304,12 +306,12 @@ export function SynchronizedCharts({ chartData }: SynchronizedChartsProps) {
 
         {/* Current Chart */}
         <Card className="w-full">
-          <CardContent className="p-4">
-            <h3 className="mb-2 text-lg font-semibold">Average Current</h3>
-            <ChartContainer config={chartConfig} className="h-48">
+          <CardContent className="p-2 sm:p-4">
+            <h3 className="mb-1 sm:mb-2 text-sm sm:text-lg font-semibold">Average Current</h3>
+            <ChartContainer config={chartConfig} className="h-40 sm:h-48">
               <LineChart
                 data={chartData}
-                margin={{ left: 12, right: 12, top: 5, bottom: 5 }}
+                margin={{ left: 8, right: 8, top: 5, bottom: 5 }}
                 onMouseDown={handleMouseDown}
                 onMouseMove={handleMouseMove}
                 onMouseUp={handleMouseUp}
@@ -319,21 +321,24 @@ export function SynchronizedCharts({ chartData }: SynchronizedChartsProps) {
                   dataKey="seconds"
                   tickLine={false}
                   axisLine={false}
-                  tickMargin={8}
+                  tickMargin={6}
                   tickFormatter={(value) => `${value}s`}
                   domain={[left, right]}
                   type="number"
                   allowDataOverflow
+                  tick={{ fontSize: 10 }}
                 />
                 <YAxis
                   tickLine={false}
                   axisLine={false}
                   domain={[currentBottom, currentTop]}
                   allowDataOverflow
+                  tick={{ fontSize: 10 }}
                   label={{
                     value: "Current (A)",
                     angle: -90,
                     position: "insideLeft",
+                    fontSize: 10,
                   }}
                 />
                 <ChartTooltip cursor={false} content={<ChartTooltipContent hideLabel />} />
@@ -360,13 +365,13 @@ export function SynchronizedCharts({ chartData }: SynchronizedChartsProps) {
         </Card>
 
         {/* Energy Chart (spans full width) */}
-        <Card className="col-span-2 w-full">
-          <CardContent className="p-4 flex justify-center flex-col">
-            <h3 className="mb-2 text-lg font-semibold">Calculated Energy</h3>
-            <ChartContainer config={chartConfig} className="h-48">
+        <Card className="col-span-1 sm:col-span-2 w-full">
+          <CardContent className="p-2 sm:p-4 flex justify-center flex-col">
+            <h3 className="mb-1 sm:mb-2 text-sm sm:text-lg font-semibold">Calculated Energy</h3>
+            <ChartContainer config={chartConfig} className="h-40 sm:h-48">
               <LineChart
                 data={chartData}
-                margin={{ left: 12, right: 12, top: 5, bottom: 5 }}
+                margin={{ left: 8, right: 8, top: 5, bottom: 5 }}
                 onMouseDown={handleMouseDown}
                 onMouseMove={handleMouseMove}
                 onMouseUp={handleMouseUp}
@@ -376,21 +381,24 @@ export function SynchronizedCharts({ chartData }: SynchronizedChartsProps) {
                   dataKey="seconds"
                   tickLine={false}
                   axisLine={false}
-                  tickMargin={8}
+                  tickMargin={6}
                   tickFormatter={(value) => `${value}s`}
                   domain={[left, right]}
                   type="number"
                   allowDataOverflow
+                  tick={{ fontSize: 10 }}
                 />
                 <YAxis
                   tickLine={false}
                   axisLine={false}
                   domain={[energyBottom, energyTop]}
                   allowDataOverflow
+                  tick={{ fontSize: 10 }}
                   label={{
                     value: "Energy (J)",
                     angle: -90,
                     position: "insideLeft",
+                    fontSize: 10,
                   }}
                 />
                 <ChartTooltip cursor={false} content={<ChartTooltipContent hideLabel />} />
@@ -418,13 +426,13 @@ export function SynchronizedCharts({ chartData }: SynchronizedChartsProps) {
       </div>
 
       {/* Shared Brush Component */}
-      <div className="h-16 mt-4 border-t pt-4">
+      <div className="h-12 sm:h-16 mt-2 sm:mt-4 border-t pt-2 sm:pt-4">
         <ResponsiveContainer width="100%" height="100%">
-          <LineChart data={chartData} margin={{ left: 12, right: 35, top: 5, bottom: 5 }}>
+          <LineChart data={chartData} margin={{ left: 8, right: 8, top: 5, bottom: 5 }}>
             <CartesianGrid strokeDasharray="3 3" />
             <Brush
               dataKey="seconds"
-              height={30}
+              height={20}
               stroke="#3b82f6"
               fill="#e2e8f0"
               fillOpacity={0.5}
@@ -432,7 +440,7 @@ export function SynchronizedCharts({ chartData }: SynchronizedChartsProps) {
               startIndex={brushIndices.startIndex}
               endIndex={brushIndices.endIndex}
               onChange={handleBrushChange}
-              travellerWidth={10}
+              travellerWidth={8}
               className="recharts-brush"
               tickFormatter={() => ""}
             />
