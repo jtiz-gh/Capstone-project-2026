@@ -28,10 +28,7 @@ export async function POST(request: Request) {
     const { serialNo } = body
 
     if (!serialNo) {
-      return NextResponse.json(
-        { error: "Missing required field: serialNo" },
-        { status: 400 }
-      )
+      return NextResponse.json({ error: "Missing required field: serialNo" }, { status: 400 })
     }
 
     // // Ensure the team exists

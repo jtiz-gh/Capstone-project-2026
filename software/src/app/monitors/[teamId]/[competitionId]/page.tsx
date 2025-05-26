@@ -9,13 +9,13 @@ import { Button } from "@/components/ui/button"
 import { useEffect, useState } from "react"
 
 interface SensorDataEntry {
-  timestamp: string;
-  avgVoltage: number | null;
-  avgCurrent: number | null;
-  energy: number | null;
+  timestamp: string
+  avgVoltage: number | null
+  avgCurrent: number | null
+  energy: number | null
   device: {
-    serialNo: string;
-  };
+    serialNo: string
+  }
 }
 
 export default function Monitors() {
@@ -74,7 +74,7 @@ export default function Monitors() {
         <Link href={`/competitions/${competitionId}`}>
           <Button
             variant="outline"
-            className="flex h-10 items-center justify-center gap-2 px-4 sm:px-6 text-sm sm:text-lg hover:cursor-pointer"
+            className="flex h-10 items-center justify-center gap-2 px-4 text-sm hover:cursor-pointer sm:px-6 sm:text-lg"
             data-testid="energy-monitors-button"
           >
             ← Back
@@ -83,14 +83,16 @@ export default function Monitors() {
         <h1 className="text-lg sm:text-xl font-bold text-center sm:text-left">
           Energy Monitors for {teamName || decodeURIComponent(teamId as string)}{" "} competing in {competitionName || decodeURIComponent(competitionId as string)}
         </h1>
-        <div className="hidden sm:block w-[120px]"></div>
+        <div className="hidden w-[120px] sm:block"></div>
       </div>
       {isClient ? (
         <div className="container mx-auto px-2 sm:px-4">
           <SynchronizedCharts chartData={mergedData} />
         </div>
       ) : (
-        <div className="flex min-h-[200px] w-full items-center justify-center">Loading charts...</div>
+        <div className="flex min-h-[200px] w-full items-center justify-center">
+          Loading charts...
+        </div>
       )}
     </>
   )

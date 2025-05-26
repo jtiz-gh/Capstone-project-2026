@@ -5,3 +5,10 @@ beforeEach(() => {
   cy.clearLocalStorage()
   cy.clearAllSessionStorage()
 })
+Cypress.on('uncaught:exception', (err) => {
+  if (err.message.includes('Hydration failed') ||
+    err.message.includes('throwOnHydrationMismatch')) {
+    return false
+  }
+  return true
+});

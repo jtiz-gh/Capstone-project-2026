@@ -35,7 +35,7 @@ export async function GET(request: Request) {
               id: {
                 gt: clientLastNotificationId,
               },
-              read: false
+              read: false,
             },
             orderBy: {
               id: "asc",

@@ -7,7 +7,7 @@ const prisma = new PrismaClient()
 export async function PATCH(req: Request, context: { params: Promise<{ id: string }> }) {
   try {
     const body = await req.json()
-    const { id } = (await context.params)
+    const { id } = await context.params
     const rankingId = parseInt(id)
 
     if (isNaN(rankingId)) {

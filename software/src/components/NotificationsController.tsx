@@ -20,10 +20,10 @@ export function NotificationsController() {
           },
           body: JSON.stringify({
             id: notificationId,
-            read: true
-          })
+            read: true,
+          }),
         })
-        
+
         if (!response.ok) {
           console.error("Failed to mark notification as read:", await response.text())
         }
@@ -39,10 +39,10 @@ export function NotificationsController() {
           // Optionally show welcome toast
         } else if (data.type === "NEW_NOTIFICATION" && data.payload) {
           const notification = data.payload
-          
+
           // Get additional data if available
           const notificationData = notification.data ? notification.data : {}
-          
+
           // Show toast with message (default content to display)
           toast.success(notification.message, {
             description: `${new Date(notification.createdAt).toLocaleTimeString()}`,
@@ -53,8 +53,8 @@ export function NotificationsController() {
             },
             action: {
               label: "Dismiss",
-              onClick: () => markAsRead(notification.id)
-            }
+              onClick: () => markAsRead(notification.id),
+            },
           })
         } else if (data.type === "HEARTBEAT") {
           // Heartbeat, can be ignored or logged

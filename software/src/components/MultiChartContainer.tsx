@@ -1,11 +1,25 @@
 "use client"
 
 import { useState } from "react"
-import { Brush, CartesianGrid, Line, LineChart, ResponsiveContainer, ReferenceArea, XAxis, YAxis } from "recharts"
+import {
+  Brush,
+  CartesianGrid,
+  Line,
+  LineChart,
+  ResponsiveContainer,
+  ReferenceArea,
+  XAxis,
+  YAxis,
+} from "recharts"
 import { Card, CardContent } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { ZoomIn, RefreshCw } from "lucide-react"
-import { type ChartConfig, ChartContainer, ChartTooltip, ChartTooltipContent } from "@/components/ui/chart"
+import {
+  type ChartConfig,
+  ChartContainer,
+  ChartTooltip,
+  ChartTooltipContent,
+} from "@/components/ui/chart"
 
 const chartConfig = {
   voltage: {
@@ -78,7 +92,7 @@ export function SynchronizedCharts({ chartData }: SynchronizedChartsProps) {
     // Find valid indices, ensuring they exist in the data
     const fromIndex = Math.max(
       0,
-      chartData.findIndex((d) => d.seconds >= from),
+      chartData.findIndex((d) => d.seconds >= from)
     )
     const toIndex = chartData.findIndex((d) => d.seconds > to)
 
@@ -113,7 +127,8 @@ export function SynchronizedCharts({ chartData }: SynchronizedChartsProps) {
     }
 
     // Ensure left is always less than right
-    const [fromX, toX] = refAreaLeft < refAreaRight ? [refAreaLeft, refAreaRight] : [refAreaRight, refAreaLeft]
+    const [fromX, toX] =
+      refAreaLeft < refAreaRight ? [refAreaLeft, refAreaRight] : [refAreaRight, refAreaLeft]
 
     // Get new domain for Y axis for all charts
     const [newVoltageBottom, newVoltageTop] = getAxisYDomain(fromX, toX, "voltage", 1)
@@ -134,7 +149,7 @@ export function SynchronizedCharts({ chartData }: SynchronizedChartsProps) {
     // Update brush indices to match the new domain
     const startIndex = Math.max(
       0,
-      chartData.findIndex((d) => d.seconds >= fromX),
+      chartData.findIndex((d) => d.seconds >= fromX)
     )
     const endIndex = chartData.findIndex((d) => d.seconds > toX)
     const validEndIndex = endIndex === -1 ? chartData.length - 1 : endIndex - 1
@@ -219,35 +234,35 @@ export function SynchronizedCharts({ chartData }: SynchronizedChartsProps) {
 
   return (
     <div className={`space-y-4 sm:space-y-6 ${zoomEnabled ? "select-none" : ""}`}>
-      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center px-2 sm:px-4 mb-2 gap-2">
+      <div className="mb-2 flex flex-col items-start justify-between gap-2 px-2 sm:flex-row sm:items-center sm:px-4">
         {/* Device ID */}
-        <div className="text-xs sm:text-sm font-semibold text-muted-foreground">
+        <div className="text-xs font-semibold text-muted-foreground sm:text-sm">
           Device ID: <span className="text-foreground">{chartData[0]?.device ?? "N/A"}</span>
         </div>
 
         {/* Zoom controls */}
-        <div className="flex gap-2 w-full sm:w-auto">
+        <div className="flex w-full gap-2 sm:w-auto">
           <Button
             variant="outline"
             size="sm"
             onClick={() => setZoomEnabled(!zoomEnabled)}
             className={`flex-1 sm:flex-initial ${zoomEnabled ? "bg-blue-100 dark:bg-blue-900" : ""}`}
           >
-            <ZoomIn className="mr-1 sm:mr-2 h-3 sm:h-4 w-3 sm:w-4" />
-            <span className="text-xs sm:text-sm font-semibold">Toggle Zoom</span>
+            <ZoomIn className="mr-1 h-3 w-3 sm:mr-2 sm:h-4 sm:w-4" />
+            <span className="text-xs font-semibold sm:text-sm">Toggle Zoom</span>
           </Button>
           <Button variant="outline" size="sm" className="flex-1 sm:flex-initial" onClick={zoomOut}>
-            <RefreshCw className="mr-1 sm:mr-2 h-3 sm:h-4 w-3 sm:w-4" />
-            <span className="text-xs sm:text-sm font-semibold">Reset Zoom</span>
+            <RefreshCw className="mr-1 h-3 w-3 sm:mr-2 sm:h-4 sm:w-4" />
+            <span className="text-xs font-semibold sm:text-sm">Reset Zoom</span>
           </Button>
         </div>
       </div>
 
-      <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 sm:gap-4">
+      <div className="grid grid-cols-1 gap-2 sm:grid-cols-2 sm:gap-4">
         {/* Voltage Chart */}
         <Card className="w-full">
           <CardContent className="p-2 sm:p-4">
-            <h3 className="mb-1 sm:mb-2 text-sm sm:text-lg font-semibold">Average Voltage</h3>
+            <h3 className="mb-1 text-sm font-semibold sm:mb-2 sm:text-lg">Average Voltage</h3>
             <ChartContainer config={chartConfig} className="h-40 sm:h-48">
               <LineChart
                 data={chartData}
@@ -307,7 +322,7 @@ export function SynchronizedCharts({ chartData }: SynchronizedChartsProps) {
         {/* Current Chart */}
         <Card className="w-full">
           <CardContent className="p-2 sm:p-4">
-            <h3 className="mb-1 sm:mb-2 text-sm sm:text-lg font-semibold">Average Current</h3>
+            <h3 className="mb-1 text-sm font-semibold sm:mb-2 sm:text-lg">Average Current</h3>
             <ChartContainer config={chartConfig} className="h-40 sm:h-48">
               <LineChart
                 data={chartData}
@@ -365,9 +380,9 @@ export function SynchronizedCharts({ chartData }: SynchronizedChartsProps) {
         </Card>
 
         {/* Energy Chart (spans full width) */}
-        <Card className="col-span-1 sm:col-span-2 w-full">
-          <CardContent className="p-2 sm:p-4 flex justify-center flex-col">
-            <h3 className="mb-1 sm:mb-2 text-sm sm:text-lg font-semibold">Calculated Energy</h3>
+        <Card className="col-span-1 w-full sm:col-span-2">
+          <CardContent className="flex flex-col justify-center p-2 sm:p-4">
+            <h3 className="mb-1 text-sm font-semibold sm:mb-2 sm:text-lg">Calculated Energy</h3>
             <ChartContainer config={chartConfig} className="h-40 sm:h-48">
               <LineChart
                 data={chartData}
@@ -426,7 +441,7 @@ export function SynchronizedCharts({ chartData }: SynchronizedChartsProps) {
       </div>
 
       {/* Shared Brush Component */}
-      <div className="h-12 sm:h-16 mt-2 sm:mt-4 border-t pt-2 sm:pt-4">
+      <div className="mt-2 h-12 border-t pt-2 sm:mt-4 sm:h-16 sm:pt-4">
         <ResponsiveContainer width="100%" height="100%">
           <LineChart data={chartData} margin={{ left: 8, right: 8, top: 5, bottom: 5 }}>
             <CartesianGrid strokeDasharray="3 3" />

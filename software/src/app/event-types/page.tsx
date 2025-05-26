@@ -63,11 +63,16 @@ export default function Home() {
   return (
     <>
       <Navbar />
-      <div className="grid min-h-screen grid-rows-[20px_1fr_20px] items-center justify-items-center gap-8 p-2 sm:gap-16 sm:p-20 font-[family-name:var(--font-geist-sans)]">
-        <main className="row-start-2 flex w-full max-w-full sm:max-w-3xl flex-col gap-4 sm:gap-8">
+      <div className="grid min-h-screen grid-rows-[20px_1fr_20px] items-center justify-items-center gap-8 p-2 font-[family-name:var(--font-geist-sans)] sm:gap-16 sm:p-20">
+        <main className="row-start-2 flex w-full max-w-full flex-col gap-4 sm:max-w-3xl sm:gap-8">
           <div className="flex items-center gap-4">
             <Link href="/">
-              <Button variant="ghost" size="icon" className="hover:cursor-pointer" data-testid="back-button">
+              <Button
+                variant="ghost"
+                size="icon"
+                className="hover:cursor-pointer"
+                data-testid="back-button"
+              >
                 <ArrowLeft className="h-5 w-5" />
               </Button>
             </Link>
@@ -90,7 +95,7 @@ export default function Home() {
 
             <TabsContent value="add" className="mt-6">
               <Card>
-                <CardContent className="flex flex-col sm:flex-row items-start sm:items-center justify-between p-4 sm:p-6 gap-2 sm:gap-0">
+                <CardContent className="flex flex-col items-start justify-between gap-2 p-4 sm:flex-row sm:items-center sm:gap-0 sm:p-6">
                   <EventTypeForm
                     onSubmit={handleAddEvent}
                     onCancel={editingEvent ? handleCancelEdit : undefined}

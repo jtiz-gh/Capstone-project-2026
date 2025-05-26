@@ -205,73 +205,78 @@ export default function TeamsPage() {
       {showDevicePopup && (
         <div className="fixed inset-0 flex items-center justify-center">
           <div className="fixed inset-0 z-30 bg-black opacity-80"></div>
-            <div className="z-50 w-full max-w-[95vw] sm:max-w-lg rounded-lg bg-white p-2 sm:p-6 shadow-lg relative">
-              <button
-                onClick={() => setShowDevicePopup(false)}
-                className="absolute top-2 right-2 rounded-full p-2 text-gray-500 hover:text-gray-700"
-                aria-label="Close"
-                >
-                  <X className="h-5 w-5" />
-                </button>
-              <h2 className="mb-4 text-lg font-bold">
-                Assign Device to {teams.find((team) => team.id == selectedTeamId)?.teamName}
-              </h2>
-              {devices.length === 0 ? (
-                <p className="mb-4">No devices available.</p>
-              ) : (
-                <div className="mb-4 overflow-x-auto">
-                  <table className="min-w-[320px] w-full text-xs sm:text-sm">
-                    <thead>
-                      <tr>
-                        <th className="px-1 sm:px-4 py-2 text-left">Device Serial No</th>
-                        <th className="px-1 sm:px-4 py-2 text-left">Assigned Team</th>
-                        <th className="px-1 sm:px-2 py-2"></th>
+          <div className="relative z-50 w-full max-w-[95vw] rounded-lg bg-white p-2 shadow-lg sm:max-w-lg sm:p-6">
+            <button
+              onClick={() => setShowDevicePopup(false)}
+              className="absolute top-2 right-2 rounded-full p-2 text-gray-500 hover:text-gray-700"
+              aria-label="Close"
+            >
+              <X className="h-5 w-5" />
+            </button>
+            <h2 className="mb-4 text-lg font-bold">
+              Assign Device to {teams.find((team) => team.id == selectedTeamId)?.teamName}
+            </h2>
+            {devices.length === 0 ? (
+              <p className="mb-4">No devices available.</p>
+            ) : (
+              <div className="mb-4 overflow-x-auto">
+                <table className="w-full min-w-[320px] text-xs sm:text-sm">
+                  <thead>
+                    <tr>
+                      <th className="px-1 py-2 text-left sm:px-4">Device Serial No</th>
+                      <th className="px-1 py-2 text-left sm:px-4">Assigned Team</th>
+                      <th className="px-1 py-2 sm:px-2"></th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {devices.map((device) => (
+                      <tr key={device.id} className="border-t">
+                        <td className="px-1 py-2 sm:px-4">{device.serialNo}</td>
+                        <td className="px-1 py-2 sm:px-4">
+                          {device.teamId ? (
+                            teams.find((team) => team.id == device.teamId)?.teamName || "Unknown"
+                          ) : (
+                            <span className="text-gray-400">Unassigned</span>
+                          )}
+                        </td>
+                        <td className="px-1 py-2 text-right sm:px-2">
+                          {device.teamId ? (
+                            <Button
+                              size="sm"
+                              onClick={() => handleUnassignDevice(device.id, device.teamId!)}
+                              className="bg-red-600 text-white hover:cursor-pointer hover:bg-red-700 hover:text-white"
+                            >
+                              Unassign
+                            </Button>
+                          ) : (
+                            <Button
+                              size="sm"
+                              onClick={() => handleAssignDevice(device.id)}
+                              className="hover:cursor-pointer"
+                            >
+                              Assign
+                            </Button>
+                          )}
+                        </td>
                       </tr>
-                    </thead>
-                    <tbody>
-                      {devices.map((device) => (
-                        <tr key={device.id} className="border-t">
-                          <td className="px-1 sm:px-4 py-2">{device.serialNo}</td>
-                          <td className="px-1 sm:px-4 py-2">
-                            {device.teamId ? (
-                              teams.find((team) => team.id == device.teamId)?.teamName || "Unknown"
-                            ) : (
-                              <span className="text-gray-400">Unassigned</span>
-                            )}
-                          </td>
-                          <td className="px-1 sm:px-2 py-2 text-right">
-                            {device.teamId ? (
-                              <Button
-                                size="sm"
-                                onClick={() => handleUnassignDevice(device.id, device.teamId!)}
-                                className="bg-red-600 text-white hover:cursor-pointer hover:bg-red-700 hover:text-white"
-                              >
-                                Unassign
-                              </Button>
-                            ) : (
-                              <Button
-                                size="sm"
-                                onClick={() => handleAssignDevice(device.id)}
-                                className="hover:cursor-pointer"
-                              >
-                                Assign
-                              </Button>
-                            )}
-                          </td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                </div>
-              )}
-            </div>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            )}
+          </div>
         </div>
       )}
       <div className="grid min-h-screen grid-rows-[20px_1fr_20px] items-center justify-items-center gap-16 p-8 pb-20 font-[family-name:var(--font-geist-sans)] sm:p-20">
         <main className="row-start-2 flex w-full max-w-3xl flex-col gap-8">
           <div className="flex items-center gap-4">
             <Link href="/">
-              <Button variant="ghost" size="icon" className="hover:cursor-pointer" data-testid="back-button">
+              <Button
+                variant="ghost"
+                size="icon"
+                className="hover:cursor-pointer"
+                data-testid="back-button"
+              >
                 <ArrowLeft className="h-5 w-5" />
               </Button>
             </Link>
@@ -283,7 +288,7 @@ export default function TeamsPage() {
               <TabsTrigger value="view" className="font-semibold hover:cursor-pointer">
                 View Teams
               </TabsTrigger>
-              <TabsTrigger value="add" className=" font-semibold hover:cursor-pointer">
+              <TabsTrigger value="add" className="font-semibold hover:cursor-pointer">
                 {editingTeam ? "Edit Team" : "Add Team"}
               </TabsTrigger>
             </TabsList>

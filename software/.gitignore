@@ -6,6 +6,7 @@
 # next.js
 /.next/
 /out/
+standalone/
 
 # Node.js
 node_modules/
@@ -49,7 +50,6 @@ build/
 npm-debug.log*
 
 # Testing
-cypress
 .coverage
 htmlcov/
 .pytest_cache/

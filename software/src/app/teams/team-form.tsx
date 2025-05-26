@@ -51,7 +51,7 @@ export function TeamForm({
 
     if (!teamName.trim()) return
 
-      if (initialTeam && editTeam) {
+    if (initialTeam && editTeam) {
       await Promise.resolve(
         editTeam({
           id: initialTeam.id,
