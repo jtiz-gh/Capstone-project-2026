@@ -19,9 +19,11 @@ interface SensorDataEntry {
 }
 
 export default function Monitors() {
-  const { teamId } = useParams()
+  const { teamId, competitionId } = useParams()
   const [isClient, setIsClient] = useState(false)
   const [mergedData, setMergedData] = useState<any[]>([])
+  const [teamName, setTeamName] = useState<string>("")
+  const [competitionName, setCompetitionName] = useState<string>("")
 
   useEffect(() => {
     setIsClient(true)
@@ -41,14 +43,35 @@ export default function Monitors() {
       setMergedData(processed)
     }
 
+    const fetchTeam = async () => {
+      if (!teamId) return
+      const res = await fetch(`/api/teams/${teamId}`)
+      if (res.ok) {
+        const data = await res.json()
+        setTeamName(data.teamName)
+      }
+    }
+
+    // Fetch competition name
+    const fetchCompetition = async () => {
+      if (!competitionId) return
+      const res = await fetch(`/api/competitions/${competitionId}`)
+      if (res.ok) {
+        const data = await res.json()
+        setCompetitionName(data.competitionName)
+      }
+    }
+
     fetchData()
-  }, [])
+    fetchTeam()
+    fetchCompetition()
+  }, [teamId, competitionId])
 
   return (
     <>
       <Navbar />
       <div className="mt-4 mb-4 flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b-2 border-gray-300 px-4 pb-2">
-        <Link href={`/teams/${teamId}`}>
+        <Link href={`/competitions/${competitionId}`}>
           <Button
             variant="outline"
             className="flex h-10 items-center justify-center gap-2 px-4 sm:px-6 text-sm sm:text-lg hover:cursor-pointer"
@@ -58,7 +81,7 @@ export default function Monitors() {
           </Button>
         </Link>
         <h1 className="text-lg sm:text-xl font-bold text-center sm:text-left">
-          Energy Monitors for {decodeURIComponent(teamId as string)}
+          Energy Monitors for {teamName || decodeURIComponent(teamId as string)}{" "} competing in {competitionName || decodeURIComponent(competitionId as string)}
         </h1>
         <div className="hidden sm:block w-[120px]"></div>
       </div>
