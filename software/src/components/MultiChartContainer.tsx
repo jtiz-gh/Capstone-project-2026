@@ -1,25 +1,13 @@
 "use client"
 
-import { useState } from "react"
-import {
-  Brush,
-  CartesianGrid,
-  Line,
-  LineChart,
-  ResponsiveContainer,
-  ReferenceArea,
-  XAxis,
-  YAxis,
-} from "recharts"
-import { Card, CardContent } from "@/components/ui/card"
+import { useMemo, useState, useRef, useEffect, useCallback } from "react"
+import UplotReact from "uplot-react"
+import "uplot/dist/uPlot.min.css"
 import { Button } from "@/components/ui/button"
-import { ZoomIn, RefreshCw } from "lucide-react"
-import {
-  type ChartConfig,
-  ChartContainer,
-  ChartTooltip,
-  ChartTooltipContent,
-} from "@/components/ui/chart"
+import { RefreshCw } from "lucide-react"
+import { type ChartConfig } from "@/components/ui/chart"
+import Slider from "rc-slider"
+import "rc-slider/assets/index.css"
 
 const chartConfig = {
   voltage: {
@@ -36,431 +24,365 @@ const chartConfig = {
   },
 } satisfies ChartConfig
 
+interface SensorDataEntry {
+  measurementId: number
+  deviceId: number
+  timestamp: number
+  sessionId: number
+  recordId: number
+  avgVoltage: number | null
+  avgCurrent: number | null
+  avgPower: number | null
+  peakVoltage: number | null
+  peakCurrent: number | null
+  peakPower: number | null
+  energy: number | null // cumulative energy in kWh or similar unit
+}
+
 type SynchronizedChartsProps = {
-  chartData: { seconds: number; [key: string]: number }[]
+  chartData: SensorDataEntry[]
   deviceId?: string
 }
 
-// Define a type for domain values that can be either a number or special string values
-type DomainValue = number | "auto" | "dataMin" | "dataMax" | "dataMin-1" | "dataMax+1"
-
 export function SynchronizedCharts({ chartData }: SynchronizedChartsProps) {
-  // Calculate initial Y-axis domains for all charts
-  const calculateYDomain = (dataKey: string) => {
-    if (!chartData.length) return [0, 100]
+  // Filter out rows with missing/invalid timestamp and handle nulls
+  const filteredData = useMemo(
+    () => chartData.filter((d) => typeof d.timestamp === "number" && !isNaN(d.timestamp)),
+    [chartData]
+  )
+  // Convert ms to seconds for x axis so numbers are smaller and easier to read
+  const x = useMemo(
+    () => Float64Array.from(filteredData.map((d) => d.timestamp / 1000)),
+    [filteredData]
+  )
+  const voltage = useMemo(
+    () => Float64Array.from(filteredData.map((d) => d.avgVoltage ?? NaN)),
+    [filteredData]
+  )
+  const current = useMemo(
+    () => Float64Array.from(filteredData.map((d) => d.avgCurrent ?? NaN)),
+    [filteredData]
+  )
+  const powerAvg = useMemo(
+    () => Float64Array.from(filteredData.map((d) => d.avgPower ?? NaN)),
+    [filteredData]
+  )
+  const powerPeak = useMemo(
+    () => Float64Array.from(filteredData.map((d) => d.peakPower ?? NaN)),
+    [filteredData]
+  )
 
-    let minValue = chartData[0][dataKey]
-    let maxValue = chartData[0][dataKey]
-
-    for (const item of chartData) {
-      if (item[dataKey] < minValue) minValue = item[dataKey]
-      if (item[dataKey] > maxValue) maxValue = item[dataKey]
+  // Use energy from DB, sum cumulatively (energy is delta since previous point)
+  const energy = useMemo(() => {
+    const arr = new Float64Array(filteredData.length)
+    let acc = 0
+    for (let i = 0; i < filteredData.length; ++i) {
+      const e = filteredData[i].energy ?? 0
+      acc += e
+      arr[i] = acc
     }
+    return arr
+  }, [filteredData])
 
-    // Add some padding to the domain
-    return [(minValue | 0) - 1, (maxValue | 0) + 1]
-  }
+  // Shared zoom state for both charts
+  const [zoom, setZoom] = useState<[number, number] | null>(null)
 
-  const topEnergy = 1000 // Example top energy value, can be adjusted as needed
+  // Brush (range slider) state
+  const minX = x.length > 0 ? x[0] : 0
+  const maxX = x.length > 0 ? x[x.length - 1] : 1
+  const [brush, setBrush] = useState<[number, number] | null>(null)
 
-  // Initial Y domains
-  const [initialVoltageDomain] = useState(() => calculateYDomain("voltage"))
-  const [initialCurrentDomain] = useState(() => calculateYDomain("current"))
-  const [initialEnergyDomain] = useState(() => calculateYDomain("energy"))
+  // Keep brush and zoom in sync
+  useEffect(() => {
+    if (zoom) setBrush(zoom)
+    else setBrush([minX, maxX])
+  }, [zoom, minX, maxX])
 
-  // Shared state for all charts - properly typed to accept both numbers and special string values
-  const [left, setLeft] = useState<DomainValue>("dataMin")
-  const [right, setRight] = useState<DomainValue>("dataMax")
-  const [voltageTop, setVoltageTop] = useState<number>(initialVoltageDomain[1])
-  const [voltageBottom, setVoltageBottom] = useState<number>(initialVoltageDomain[0])
-  const [currentTop, setCurrentTop] = useState<number>(initialCurrentDomain[1])
-  const [currentBottom, setCurrentBottom] = useState<number>(initialCurrentDomain[0])
-  const [energyTop, setEnergyTop] = useState<number>(Math.min(initialEnergyDomain[1], topEnergy))
-  const [energyBottom, setEnergyBottom] = useState<number>(initialEnergyDomain[0])
-  const [refAreaLeft, setRefAreaLeft] = useState<number | null>(null)
-  const [refAreaRight, setRefAreaRight] = useState<number | null>(null)
-  const [zoomEnabled, setZoomEnabled] = useState(true)
+  // When brush changes, update zoom
+  const handleBrushChange = useCallback(
+    (newBrush: [number, number]) => {
+      setBrush(newBrush)
+      setZoom(newBrush[0] === minX && newBrush[1] === maxX ? null : newBrush)
+    },
+    [minX, maxX]
+  )
 
-  // Track brush indices separately from the chart domains
-  const [brushIndices, setBrushIndices] = useState<{ startIndex: number; endIndex: number }>({
-    startIndex: 0,
-    endIndex: chartData.length - 1,
-  })
+  // Calculate total energy for display (in J) in the zoomed region, or full if not zoomed
+  const zoomedEnergy = useMemo(() => {
+    if (energy.length === 0 || x.length === 0) return 0
+    if (!zoom) return energy[energy.length - 1]
 
-  // Get the data extremes for the y-axis
-  const getAxisYDomain = (from: number, to: number, dataKey: string, offset: number) => {
-    // Find valid indices, ensuring they exist in the data
-    const fromIndex = Math.max(
-      0,
-      chartData.findIndex((d) => d.seconds >= from)
-    )
-    const toIndex = chartData.findIndex((d) => d.seconds > to)
-
-    // If toIndex is -1, set it to the last index of the data so we can slice correctly
-    const validToIndex = toIndex === -1 ? chartData.length - 1 : toIndex
-
-    // Ensure we have a valid slice with at least one element
-    const refData = chartData.slice(fromIndex, validToIndex + 1)
-
-    // Handle empty data case
-    if (refData.length === 0) {
-      return [0, 100] // Default domain if no data
-    }
-
-    // Find min and max values safely
-    let minValue = refData[0][dataKey]
-    let maxValue = refData[0][dataKey]
-
-    for (const item of refData) {
-      if (item[dataKey] < minValue) minValue = item[dataKey]
-      if (item[dataKey] > maxValue) maxValue = item[dataKey]
-    }
-
-    return [(minValue | 0) - offset, (maxValue | 0) + offset]
-  }
-
-  const zoom = () => {
-    if (refAreaLeft === refAreaRight || refAreaRight === null || refAreaLeft === null) {
-      setRefAreaLeft(null)
-      setRefAreaRight(null)
-      return
-    }
-
-    // Ensure left is always less than right
-    const [fromX, toX] =
-      refAreaLeft < refAreaRight ? [refAreaLeft, refAreaRight] : [refAreaRight, refAreaLeft]
-
-    // Get new domain for Y axis for all charts
-    const [newVoltageBottom, newVoltageTop] = getAxisYDomain(fromX, toX, "voltage", 1)
-    const [newCurrentBottom, newCurrentTop] = getAxisYDomain(fromX, toX, "current", 1)
-    const [newEnergyBottom, newEnergyTop] = getAxisYDomain(fromX, toX, "energy", 1)
-
-    setRefAreaLeft(null)
-    setRefAreaRight(null)
-    setLeft(fromX)
-    setRight(toX)
-    setVoltageBottom(newVoltageBottom)
-    setVoltageTop(newVoltageTop)
-    setCurrentBottom(newCurrentBottom)
-    setCurrentTop(newCurrentTop)
-    setEnergyBottom(newEnergyBottom)
-    setEnergyTop(Math.min(newEnergyTop, topEnergy))
-
-    // Update brush indices to match the new domain
-    const startIndex = Math.max(
-      0,
-      chartData.findIndex((d) => d.seconds >= fromX)
-    )
-    const endIndex = chartData.findIndex((d) => d.seconds > toX)
-    const validEndIndex = endIndex === -1 ? chartData.length - 1 : endIndex - 1
-
-    setBrushIndices({
-      startIndex,
-      endIndex: validEndIndex,
-    })
-  }
-
-  const zoomOut = () => {
-    setLeft("dataMin")
-    setRight("dataMax")
-
-    // Use the initial calculated domains instead of arbitrary values
-    setVoltageTop(initialVoltageDomain[1])
-    setVoltageBottom(initialVoltageDomain[0])
-    setCurrentTop(initialCurrentDomain[1])
-    setCurrentBottom(initialCurrentDomain[0])
-    setEnergyTop(Math.min(initialEnergyDomain[1], topEnergy))
-    setEnergyBottom(initialEnergyDomain[0])
-
-    // Reset brush to full range
-    setBrushIndices({
-      startIndex: 0,
-      endIndex: chartData.length - 1,
-    })
-  }
-
-  const handleBrushChange = (brushArea: any) => {
-    if (!brushArea || brushArea.startIndex === undefined || brushArea.endIndex === undefined) return
-
-    // Store the brush indices
-    setBrushIndices({
-      startIndex: brushArea.startIndex,
-      endIndex: brushArea.endIndex,
-    })
-
-    // Only update the chart domains if we have valid indices
-    if (brushArea.startIndex === brushArea.endIndex) return
-
-    const start = chartData[brushArea.startIndex]?.seconds
-    const end = chartData[brushArea.endIndex]?.seconds
-
-    if (start !== undefined && end !== undefined) {
-      setLeft(start)
-      setRight(end)
-      try {
-        const [newVoltageBottom, newVoltageTop] = getAxisYDomain(start, end, "voltage", 1)
-        const [newCurrentBottom, newCurrentTop] = getAxisYDomain(start, end, "current", 1)
-        const [newEnergyBottom, newEnergyTop] = getAxisYDomain(start, end, "energy", 1)
-
-        setVoltageBottom(newVoltageBottom)
-        setVoltageTop(newVoltageTop)
-        setCurrentBottom(newCurrentBottom)
-        setCurrentTop(newCurrentTop)
-        setEnergyBottom(newEnergyBottom)
-        setEnergyTop(Math.min(newEnergyTop, topEnergy))
-      } catch (error) {
-        console.error("Error calculating axis domain:", error)
+    let startIdx = 0
+    let endIdx = energy.length - 1
+    for (let i = 0; i < x.length; ++i) {
+      if (x[i] >= zoom[0]) {
+        startIdx = i
+        break
       }
     }
-  }
-
-  // Common event handlers for all charts
-  const handleMouseDown = (e: any) => {
-    if (!zoomEnabled) return
-    setRefAreaLeft(e?.activeLabel)
-  }
-
-  const handleMouseMove = (e: any) => {
-    if (!zoomEnabled) return
-    if (refAreaLeft) {
-      setRefAreaRight(e?.activeLabel)
+    for (let i = x.length - 1; i >= 0; --i) {
+      if (x[i] <= zoom[1]) {
+        endIdx = i
+        break
+      }
     }
+
+    startIdx = Math.max(0, Math.min(startIdx, energy.length - 1))
+    endIdx = Math.max(0, Math.min(endIdx, energy.length - 1))
+    if (endIdx < startIdx) [startIdx, endIdx] = [endIdx, startIdx]
+    return energy[endIdx] - energy[startIdx]
+  }, [energy, x, zoom])
+
+  // Responsive chart width
+  const containerRef = useRef<HTMLDivElement>(null)
+  const [chartWidth, setChartWidth] = useState(800)
+
+  useEffect(() => {
+    function updateWidth() {
+      if (containerRef.current) {
+        setChartWidth(containerRef.current.offsetWidth * 0.9)
+      }
+    }
+
+    updateWidth()
+
+    const resizeObserver = new window.ResizeObserver(updateWidth)
+    if (containerRef.current) resizeObserver.observe(containerRef.current)
+
+    return () => resizeObserver.disconnect()
+  }, [])
+
+  function formatTime(self: unknown, rawValue: number) {
+    if (rawValue === null || isNaN(rawValue)) return "??"
+    return `${rawValue.toFixed(1)}s`
   }
 
-  const handleMouseUp = () => {
-    if (!zoomEnabled) return
-    zoom()
+  function formatValue(rawValue: number) {
+    if (rawValue === null || isNaN(rawValue)) return ""
+    if (rawValue >= 1e6) return `${(rawValue / 1e6).toFixed(2)}M`
+    if (rawValue >= 1e3) return `${(rawValue / 1e3).toFixed(2)}k`
+    return rawValue.toFixed(2)
   }
+
+  // uPlot options for metrics chart
+  const metricsOpts = useMemo(
+    () => ({
+      width: chartWidth,
+      height: 500,
+      title: "Voltage, Current, Power (Avg/Peak)",
+      scales: { x: { time: false, range: zoom ? () => zoom : undefined }, y: { auto: true } },
+      series: [
+        { label: "Time (s)", value: formatTime },
+        {
+          label: "Voltage",
+          stroke: chartConfig.voltage.color,
+          value: (_self: unknown, value: number) => `${formatValue(value)}V`,
+        },
+        {
+          label: "Current",
+          stroke: chartConfig.current.color,
+          value: (_self: unknown, value: number) => `${formatValue(value)}A`,
+        },
+        {
+          label: "Power (Avg)",
+          stroke: "#e11d48",
+          value: (_self: unknown, value: number) => `${formatValue(value)}W`,
+        },
+        {
+          label: "Power (Peak)",
+          stroke: "#f472b6",
+          dash: [5, 5],
+          value: (_self: unknown, value: number) => `${formatValue(value)}W`,
+        },
+      ],
+      axes: [
+        {
+          stroke: "#888",
+          grid: { show: true },
+          values: (self: unknown, ticks: number[]) => ticks.map((t) => formatTime(self, t)),
+          size: 60,
+          label: "Time (s)",
+        },
+        {
+          stroke: "#888",
+          grid: { show: true },
+          values: (self: unknown, ticks: number[]) => ticks.map((t) => formatValue(t)),
+          size: 60,
+        },
+      ],
+      legend: { show: true },
+      cursor: {
+        drag: { x: true, y: true, uni: 30 },
+        focus: { prox: 16 },
+      },
+      hooks: {
+        setSelect: [
+          function (u: unknown) {
+            const uu = u as {
+              select: { width: number; left: number }
+              posToVal: (px: number, scale: string) => number
+            }
+            if (uu.select.width > 0) {
+              const min = uu.posToVal(uu.select.left, "x")
+              const max = uu.posToVal(uu.select.left + uu.select.width, "x")
+              setZoom([min, max])
+            } else {
+              setZoom(null)
+            }
+          },
+        ],
+        init: [
+          function (u: unknown) {
+            const uPlotInstance = u as { over: HTMLElement }
+            if (uPlotInstance && uPlotInstance.over) {
+              uPlotInstance.over.addEventListener("dblclick", () => setZoom(null))
+            }
+          },
+        ],
+      },
+      select: { show: true, over: true, left: 0, top: 0, width: 0, height: 0 },
+    }),
+    [setZoom, zoom, chartWidth]
+  )
+
+  // uPlot options for energy chart
+  const energyOpts = useMemo(
+    () => ({
+      width: chartWidth,
+      height: 500,
+      title: `Energy (Total in view: ${zoomedEnergy.toFixed(3)} J)`,
+      scales: { x: { time: false, range: zoom ? () => zoom : undefined }, y: { auto: true } },
+      series: [
+        { label: "Time (s)", value: formatTime },
+        {
+          label: "Energy",
+          stroke: chartConfig.energy.color,
+          value: (_self: unknown, value: number) => `${formatValue(value)}J`,
+        },
+      ],
+      axes: [
+        {
+          stroke: "#888",
+          grid: { show: true },
+          values: (self: unknown, ticks: number[]) => ticks.map((t) => formatTime(null, t)),
+          size: 60,
+          label: "Time (s)",
+        },
+        {
+          stroke: "#888",
+          grid: { show: true },
+          values: (self: unknown, ticks: number[]) => ticks.map((t) => formatValue(t)),
+          size: 60,
+        },
+      ],
+      legend: { show: true },
+      cursor: {
+        drag: { x: true, y: true, uni: 30 },
+        focus: { prox: 16 },
+      },
+      hooks: {
+        setSelect: [
+          function (u: unknown) {
+            const uu = u as {
+              select: { width: number; left: number }
+              posToVal: (px: number, scale: string) => number
+            }
+            if (uu.select.width > 0) {
+              const min = uu.posToVal(uu.select.left, "x")
+              const max = uu.posToVal(uu.select.left + uu.select.width, "x")
+              setZoom([min, max])
+            } else {
+              setZoom(null)
+            }
+          },
+        ],
+        init: [
+          function (u: unknown) {
+            const uPlotInstance = u as { over: HTMLElement }
+            if (uPlotInstance && uPlotInstance.over) {
+              uPlotInstance.over.addEventListener("dblclick", () => setZoom(null))
+            }
+          },
+        ],
+      },
+      select: { show: true, over: true, left: 0, top: 0, width: 0, height: 0 },
+    }),
+    [setZoom, zoom, chartWidth, zoomedEnergy]
+  )
+
+  const metricsData = useMemo(
+    () => [x, voltage, current, powerAvg, powerPeak],
+    [x, voltage, current, powerAvg, powerPeak]
+  )
+  const energyData = useMemo(() => [x, energy], [x, energy])
 
   return (
-    <div className={`space-y-4 sm:space-y-6 ${zoomEnabled ? "select-none" : ""}`}>
-      <div className="mb-2 flex flex-col items-start justify-between gap-2 px-2 sm:flex-row sm:items-center sm:px-4">
-        {/* Device ID */}
-        <div className="text-xs font-semibold text-muted-foreground sm:text-sm">
-          Device ID: <span className="text-foreground">{chartData[0]?.device ?? "N/A"}</span>
+    <div ref={containerRef} className="w-full max-w-full space-y-6 px-1 sm:px-2 md:px-4">
+      <div className="mb-2 text-xs font-semibold text-muted-foreground">
+        Device ID: <span className="text-foreground">{filteredData[0]?.deviceId ?? "N/A"}</span>
+      </div>
+      <div className="flex flex-col items-center gap-6">
+        <div className="flex w-full justify-center overflow-x-auto rounded bg-white p-1 shadow sm:p-2 dark:bg-black">
+          <UplotReact options={metricsOpts} data={metricsData} />
         </div>
 
-        {/* Zoom controls */}
-        <div className="flex w-full gap-2 sm:w-auto">
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={() => setZoomEnabled(!zoomEnabled)}
-            className={`flex-1 sm:flex-initial ${zoomEnabled ? "bg-blue-100 dark:bg-blue-900" : ""}`}
-          >
-            <ZoomIn className="mr-1 h-3 w-3 sm:mr-2 sm:h-4 sm:w-4" />
-            <span className="text-xs font-semibold sm:text-sm">Toggle Zoom</span>
-          </Button>
-          <Button variant="outline" size="sm" className="flex-1 sm:flex-initial" onClick={zoomOut}>
-            <RefreshCw className="mr-1 h-3 w-3 sm:mr-2 sm:h-4 sm:w-4" />
-            <span className="text-xs font-semibold sm:text-sm">Reset Zoom</span>
-          </Button>
+        <div className="mb-2 flex w-full flex-col items-center justify-center overflow-x-auto rounded bg-white p-1 shadow sm:p-2 dark:bg-black">
+          <div className="mt-1 mb-2 max-w-full text-center text-xs text-muted-foreground">
+            <b>Tip:</b> Drag the handles to zoom time axis. Alternatively, drag along one axis of
+            the graph to zoom that axis or drag diagonally to zoom into a rectangle. Double-click to
+            reset zoom.
+          </div>
+          <div className="flex w-full items-center justify-center pb-4">
+            <div style={{ width: "100%", maxWidth: chartWidth, margin: "0 24px" }}>
+              <Slider
+                range
+                min={minX}
+                max={maxX}
+                step={(maxX - minX) / 500 || 0.01}
+                value={brush ?? [minX, maxX]}
+                allowCross={false}
+                onChange={(vals: number[] | number) => {
+                  const arr = Array.isArray(vals) ? vals : [minX, maxX]
+                  handleBrushChange([Number(arr[0]), Number(arr[1])])
+                }}
+                trackStyle={[{ backgroundColor: "#000000", height: 18 }]}
+                handleStyle={[
+                  {
+                    borderColor: "#000000",
+                    backgroundColor: "#fff",
+                    height: 28,
+                    width: 28,
+                    marginTop: -5.25,
+                    opacity: 1,
+                  },
+                  {
+                    borderColor: "#000000",
+                    backgroundColor: "#ffffff",
+                    height: 28,
+                    width: 28,
+                    marginTop: -5.25,
+                    opacity: 1,
+                  },
+                ]}
+                railStyle={{ backgroundColor: "#e5e7eb", height: 20, borderRadius: 8 }}
+              />
+            </div>
+
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setZoom(null)}
+              style={{ marginTop: 13.5 }}
+              className="ml-2"
+            >
+              <RefreshCw className="mr-1 h-3 w-3" />
+              <span className="text-xs font-semibold">Reset Zoom</span>
+            </Button>
+          </div>
         </div>
-      </div>
-
-      <div className="grid grid-cols-1 gap-2 sm:grid-cols-2 sm:gap-4">
-        {/* Voltage Chart */}
-        <Card className="w-full">
-          <CardContent className="p-2 sm:p-4">
-            <h3 className="mb-1 text-sm font-semibold sm:mb-2 sm:text-lg">Average Voltage</h3>
-            <ChartContainer config={chartConfig} className="h-40 sm:h-48">
-              <LineChart
-                data={chartData}
-                margin={{ left: 8, right: 8, top: 5, bottom: 5 }}
-                onMouseDown={handleMouseDown}
-                onMouseMove={handleMouseMove}
-                onMouseUp={handleMouseUp}
-              >
-                <CartesianGrid vertical={false} />
-                <XAxis
-                  dataKey="seconds"
-                  tickLine={false}
-                  axisLine={false}
-                  tickMargin={6}
-                  tickFormatter={(value) => `${value}s`}
-                  domain={[left, right]}
-                  type="number"
-                  allowDataOverflow
-                  tick={{ fontSize: 10 }}
-                />
-                <YAxis
-                  tickLine={false}
-                  axisLine={false}
-                  domain={[voltageBottom, voltageTop]}
-                  allowDataOverflow
-                  tick={{ fontSize: 10 }}
-                  label={{
-                    value: "Voltage (V)",
-                    angle: -90,
-                    position: "insideLeft",
-                    fontSize: 10,
-                  }}
-                />
-                <ChartTooltip cursor={false} content={<ChartTooltipContent hideLabel />} />
-                <Line
-                  dataKey="voltage"
-                  type="natural"
-                  stroke={chartConfig.voltage.color}
-                  strokeWidth={2}
-                  dot={false}
-                  isAnimationActive={false}
-                />
-                {refAreaLeft && refAreaRight && (
-                  <ReferenceArea
-                    x1={refAreaLeft}
-                    x2={refAreaRight}
-                    strokeOpacity={0.3}
-                    fill="#3b82f6"
-                    fillOpacity={0.3}
-                  />
-                )}
-              </LineChart>
-            </ChartContainer>
-          </CardContent>
-        </Card>
-
-        {/* Current Chart */}
-        <Card className="w-full">
-          <CardContent className="p-2 sm:p-4">
-            <h3 className="mb-1 text-sm font-semibold sm:mb-2 sm:text-lg">Average Current</h3>
-            <ChartContainer config={chartConfig} className="h-40 sm:h-48">
-              <LineChart
-                data={chartData}
-                margin={{ left: 8, right: 8, top: 5, bottom: 5 }}
-                onMouseDown={handleMouseDown}
-                onMouseMove={handleMouseMove}
-                onMouseUp={handleMouseUp}
-              >
-                <CartesianGrid vertical={false} />
-                <XAxis
-                  dataKey="seconds"
-                  tickLine={false}
-                  axisLine={false}
-                  tickMargin={6}
-                  tickFormatter={(value) => `${value}s`}
-                  domain={[left, right]}
-                  type="number"
-                  allowDataOverflow
-                  tick={{ fontSize: 10 }}
-                />
-                <YAxis
-                  tickLine={false}
-                  axisLine={false}
-                  domain={[currentBottom, currentTop]}
-                  allowDataOverflow
-                  tick={{ fontSize: 10 }}
-                  label={{
-                    value: "Current (A)",
-                    angle: -90,
-                    position: "insideLeft",
-                    fontSize: 10,
-                  }}
-                />
-                <ChartTooltip cursor={false} content={<ChartTooltipContent hideLabel />} />
-                <Line
-                  dataKey="current"
-                  type="natural"
-                  stroke={chartConfig.current.color}
-                  strokeWidth={2}
-                  dot={false}
-                  isAnimationActive={false}
-                />
-                {refAreaLeft && refAreaRight && (
-                  <ReferenceArea
-                    x1={refAreaLeft}
-                    x2={refAreaRight}
-                    strokeOpacity={0.3}
-                    fill="#3b82f6"
-                    fillOpacity={0.3}
-                  />
-                )}
-              </LineChart>
-            </ChartContainer>
-          </CardContent>
-        </Card>
-
-        {/* Energy Chart (spans full width) */}
-        <Card className="col-span-1 w-full sm:col-span-2">
-          <CardContent className="flex flex-col justify-center p-2 sm:p-4">
-            <h3 className="mb-1 text-sm font-semibold sm:mb-2 sm:text-lg">Calculated Energy</h3>
-            <ChartContainer config={chartConfig} className="h-40 sm:h-48">
-              <LineChart
-                data={chartData}
-                margin={{ left: 8, right: 8, top: 5, bottom: 5 }}
-                onMouseDown={handleMouseDown}
-                onMouseMove={handleMouseMove}
-                onMouseUp={handleMouseUp}
-              >
-                <CartesianGrid vertical={false} />
-                <XAxis
-                  dataKey="seconds"
-                  tickLine={false}
-                  axisLine={false}
-                  tickMargin={6}
-                  tickFormatter={(value) => `${value}s`}
-                  domain={[left, right]}
-                  type="number"
-                  allowDataOverflow
-                  tick={{ fontSize: 10 }}
-                />
-                <YAxis
-                  tickLine={false}
-                  axisLine={false}
-                  domain={[energyBottom, energyTop]}
-                  allowDataOverflow
-                  tick={{ fontSize: 10 }}
-                  label={{
-                    value: "Energy (J)",
-                    angle: -90,
-                    position: "insideLeft",
-                    fontSize: 10,
-                  }}
-                />
-                <ChartTooltip cursor={false} content={<ChartTooltipContent hideLabel />} />
-                <Line
-                  dataKey="energy"
-                  type="natural"
-                  stroke={chartConfig.energy.color}
-                  strokeWidth={2}
-                  dot={false}
-                  isAnimationActive={false}
-                />
-                {refAreaLeft && refAreaRight && (
-                  <ReferenceArea
-                    x1={refAreaLeft}
-                    x2={refAreaRight}
-                    strokeOpacity={0.3}
-                    fill="#3b82f6"
-                    fillOpacity={0.3}
-                  />
-                )}
-              </LineChart>
-            </ChartContainer>
-          </CardContent>
-        </Card>
-      </div>
-
-      {/* Shared Brush Component */}
-      <div className="mt-2 h-12 border-t pt-2 sm:mt-4 sm:h-16 sm:pt-4">
-        <ResponsiveContainer width="100%" height="100%">
-          <LineChart data={chartData} margin={{ left: 8, right: 8, top: 5, bottom: 5 }}>
-            <CartesianGrid strokeDasharray="3 3" />
-            <Brush
-              dataKey="seconds"
-              height={20}
-              stroke="#3b82f6"
-              fill="#e2e8f0"
-              fillOpacity={0.5}
-              strokeWidth={1}
-              startIndex={brushIndices.startIndex}
-              endIndex={brushIndices.endIndex}
-              onChange={handleBrushChange}
-              travellerWidth={8}
-              className="recharts-brush"
-              tickFormatter={() => ""}
-            />
-          </LineChart>
-        </ResponsiveContainer>
+        <div className="mb-6 flex w-full justify-center overflow-x-auto rounded bg-white p-1 shadow sm:p-2 dark:bg-black">
+          <UplotReact options={energyOpts} data={energyData} />
+        </div>
       </div>
     </div>
   )

@@ -54,7 +54,7 @@ export default function CompetitionDetailPage() {
   }, [id])
 
   function getInitials(name: string) {
-    return name.split(' ').map(word => word[0]?.toUpperCase() || '').join('.')
+    return name.split(" ").map(word => word[0]?.toUpperCase() || "").join(".")
   }
 
   const handleFinishStatusChange = (rankId: number, checked: boolean) => {
@@ -363,7 +363,7 @@ export default function CompetitionDetailPage() {
                                 return (
                                   <Badge
                                     key={race.id}
-                                    className={`text-xs ${isMissing ? 'bg-red-50 text-red-700' : 'bg-green-50 text-green-700'}`}
+                                    className={`text-xs ${isMissing ? "bg-red-50 text-red-700" : "bg-green-50 text-green-700"}`}
                                   >
                                     {getInitials(events.find(e => e.id === race.eventId)?.eventName || "")}
                                     {isMobile && isMissing ? "!" : ""}
@@ -435,7 +435,7 @@ export default function CompetitionDetailPage() {
                                 <TableRow key={ranking.teamId}>
                                   <TableCell>{index + 1}</TableCell>
                                   <TableCell className="font-medium">
-                                    {isMobile ? ranking.teamName.split(' ')[0] : ranking.teamName}
+                                    {isMobile ? ranking.teamName.split(" ")[0] : ranking.teamName}
                                   </TableCell>
                                   {!isMobile && (
                                     <TableCell>{teams.find(t => t.id === ranking.teamId)?.vehicleClass}</TableCell>

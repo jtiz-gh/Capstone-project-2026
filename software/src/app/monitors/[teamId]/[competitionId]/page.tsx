@@ -1,7 +1,6 @@
 "use client"
 
 import { SynchronizedCharts } from "@/components/MultiChartContainer"
-import Layout from "@/app/layout"
 import Navbar from "@/components/Navbar"
 import { useParams } from "next/navigation"
 import Link from "next/link"
@@ -9,19 +8,25 @@ import { Button } from "@/components/ui/button"
 import { useEffect, useState } from "react"
 
 interface SensorDataEntry {
-  timestamp: string
+  measurementId: number
+  deviceId: number
+  timestamp: number
+  sessionId: number
+  recordId: number
   avgVoltage: number | null
   avgCurrent: number | null
+  avgPower: number | null
+  peakVoltage: number | null
+  peakCurrent: number | null
+  peakPower: number | null
   energy: number | null
-  device: {
-    serialNo: string
-  }
 }
+
 
 export default function Monitors() {
   const { teamId, competitionId } = useParams()
   const [isClient, setIsClient] = useState(false)
-  const [mergedData, setMergedData] = useState<any[]>([])
+  const [mergedData, setMergedData] = useState<SensorDataEntry[]>([])
   const [teamName, setTeamName] = useState<string>("")
   const [competitionName, setCompetitionName] = useState<string>("")
 
@@ -29,18 +34,24 @@ export default function Monitors() {
     setIsClient(true)
 
     const fetchData = async () => {
-      const res = await fetch("/api/sensor-data")
+      if (!teamId) return
+
+      const res = await fetch(`/api/records/${teamId}/sensor-data`)
       const rawData: SensorDataEntry[] = await res.json()
 
-      const processed = rawData.map((entry) => ({
-        timestamp: new Date(entry.timestamp).toISOString(),
-        voltage: entry.avgVoltage,
-        current: entry.avgCurrent,
-        energy: entry.energy,
-        device: entry.device.serialNo,
+      if (!Array.isArray(rawData) || rawData.length === 0) {
+        setMergedData([])
+        return
+      }
+
+      // Convert to relative time in ms
+      const firstTimestamp = rawData[0].timestamp
+      const mutatedData = rawData.map((entry) => ({
+        ...entry,
+        timestamp: entry.timestamp - firstTimestamp,
       }))
 
-      setMergedData(processed)
+      setMergedData(mutatedData)
     }
 
     const fetchTeam = async () => {

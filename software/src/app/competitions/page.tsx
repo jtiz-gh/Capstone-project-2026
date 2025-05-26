@@ -216,9 +216,9 @@ export default function CompetitionsListPage() {
                             <Badge
                               key={race.id}
                               variant="outline"
-                              className={`text-xs ${race.completed ? 'bg-green-50 text-green-700' : ''}`}
+                              className={`text-xs ${race.completed ? "bg-green-50 text-green-700" : ""}`}
                             >
-                               {events.find((e) => e.id === race.eventId)?.eventName?.split(' ')[0]}
+                               {events.find((e) => e.id === race.eventId)?.eventName?.split(" ")[0]}
                               {race.completed && " ✓"}
                             </Badge>
                           ))}
@@ -231,7 +231,7 @@ export default function CompetitionsListPage() {
                           <div className="line-clamp-2">
                             {competition.teams.slice(0, 3).map((team) => (
                               <span key={team.id} className="inline-block">
-                                {isMobile ? team.teamName.split(' ')[0] : team.teamName}
+                                {isMobile ? team.teamName.split(" ")[0] : team.teamName}
                                 {competition.teams.indexOf(team) < competition.teams.length - 1 ? ", " : ""}
                               </span>
                             ))}
@@ -294,7 +294,7 @@ export default function CompetitionsListPage() {
                               disabled={loading}
                             />
                             <Label htmlFor={`event-${event.id}`} className="text-xs md:text-sm">
-                              {isMobile ? event.eventName.split(' ')[0] : event.eventName}
+                              {isMobile ? event.eventName.split(" ")[0] : event.eventName}
                             </Label>
                           </div>
                         ))}

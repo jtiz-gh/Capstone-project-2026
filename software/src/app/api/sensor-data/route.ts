@@ -90,23 +90,29 @@ export async function POST(request: Request) {
       }
 
       if (decodedPackets.length > 0) {
+        const recordCache: { [key: number]: number } = {}
         const readings = decodedPackets.map(async (packet) => {
-          //Create record from session id if does not exist
-          const record = await prisma.record.upsert({
-            where: { id: packet.sessionId },
-            update: {},
-            create: {
-              id: packet.sessionId,
-              deviceId: device.id,
-            },
-          })
+          // Create record from session id if does not exist
+          if (!recordCache[packet.sessionId]) {
+            const searchRecord = await prisma.record.upsert({
+              where: { id: packet.sessionId },
+              update: {},
+              create: {
+                id: packet.sessionId,
+                deviceId: device.id,
+              },
+            })
+            recordCache[packet.sessionId] = searchRecord.id
+          }
+
+          const recordId = recordCache[packet.sessionId]
 
           return {
             measurementId: packet.measurementId,
             deviceId: device.id,
             timestamp: packet.timestamp,
             sessionId: packet.sessionId,
-            recordId: record.id,
+            recordId: recordId,
             avgVoltage: packet.avgVoltage,
             avgCurrent: packet.avgCurrent,
             avgPower: packet.avgPower,
@@ -120,6 +126,10 @@ export async function POST(request: Request) {
         await prisma.sensorData.createMany({
           data: await Promise.all(readings),
         })
+
+        console.log(
+          `Uploaded ${decodedPackets.length} sensor data packets for device ${serialNo}. Record IDs: ${Object.values(recordCache).join(", ")}`
+        )
       } else {
         console.warn("No valid packets found in the data")
         return NextResponse.json(

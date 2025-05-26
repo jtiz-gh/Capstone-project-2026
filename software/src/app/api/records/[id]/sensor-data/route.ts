@@ -16,11 +16,6 @@ export async function GET(_: NextRequest, context: { params: Promise<{ id: strin
     const data = await prisma.sensorData.findMany({
       where: { recordId },
       orderBy: { timestamp: "asc" },
-      select: {
-        timestamp: true,
-        avgVoltage: true,
-        avgCurrent: true,
-      },
     })
 
     return NextResponse.json(data)
