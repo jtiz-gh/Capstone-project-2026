@@ -54,6 +54,7 @@ export async function POST(request: Request) {
     const serialNo = request.headers.get("Pico-ID")
 
     if (!serialNo) {
+      console.error("Missing required header: Pico-ID")
       return NextResponse.json(
         {
           error: "Missing required header: Pico-ID",
@@ -120,6 +121,7 @@ export async function POST(request: Request) {
           data: await Promise.all(readings),
         })
       } else {
+        console.warn("No valid packets found in the data")
         return NextResponse.json(
           {
             error: "No valid packets found in the data",

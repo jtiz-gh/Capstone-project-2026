@@ -42,7 +42,7 @@ def unpack_voltage_current_measurement(buffer):  # type: ignore
 @micropython.viper  # type: ignore
 def pack_timestamp(buffer):  # type: ignore
     # Pack current timestamp directly (uint32)
-    timestamp: uint = uint(time.ticks_ms()) - uint(start_time)  # type: ignore
+    timestamp: uint = uint(time.ticks_diff(time.ticks_ms(), start_time))  # type: ignore
     struct.pack_into("<I", buffer, 0, timestamp)
 
 

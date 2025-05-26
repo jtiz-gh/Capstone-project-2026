@@ -88,11 +88,11 @@ def process_data_thread(adc_queue, timestamp_queue, processed_queue):
                     except IndexError:
                         # No timestamp available
                         print("Warning: No timestamp available, using fallback")
-                        timestamp = time.ticks_ms() - start_time
+                        timestamp = time.ticks_diff(time.ticks_ms(), start_time)
                 else:
                     # No timestamp available
                     print("Warning: No timestamp available, using fallback")
-                    timestamp = time.ticks_ms() - start_time
+                    timestamp = time.ticks_diff(time.ticks_ms(), start_time)
 
                 samples_to_process = accumulated_measurements[:CHUNK_SIZE]
                 accumulated_measurements = accumulated_measurements[CHUNK_SIZE:]
