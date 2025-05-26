@@ -34,7 +34,7 @@ describe("Home", () => {
   it("renders three navigation links", () => {
     render(<Home />)
     const links = screen.getAllByRole("link")
-    expect(links).toHaveLength(3) // 3 main links + 12 from the buttons
+    expect(links).toHaveLength(15) // 3 main links + 12 from the buttons
   })
 })
 
