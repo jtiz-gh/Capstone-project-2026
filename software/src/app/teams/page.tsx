@@ -1,15 +1,15 @@
 "use client"
 
-import { useEffect, useState } from "react"
+import { TeamForm } from "@/app/teams/team-form"
+import { TeamList } from "@/app/teams/team-list"
+import Navbar from "@/components/Navbar"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent } from "@/components/ui/card"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import Link from "next/link"
-import { ArrowLeft, X } from "lucide-react"
 import type { Team } from "@/types/teams"
-import { TeamList } from "@/app/teams/team-list"
-import { TeamForm } from "@/app/teams/team-form"
-import Navbar from "@/components/Navbar"
+import { ArrowLeft, X } from "lucide-react"
+import Link from "next/link"
+import { useEffect, useState } from "react"
 
 export default function TeamsPage() {
   const [teams, setTeams] = useState<Team[]>([])
@@ -23,6 +23,7 @@ export default function TeamsPage() {
     []
   )
   const [selectedTeamId, setSelectedTeamId] = useState<number | null>(null)
+  const [search, setSearch] = useState("")
 
   // Fetch teams on component mount
   useEffect(() => {
@@ -299,15 +300,27 @@ export default function TeamsPage() {
             </TabsList>
 
             <TabsContent value="view" className="mt-6">
+              <div className="mb-4 flex w-full">
+                <input
+                  type="text"
+                  placeholder="Search teams..."
+                  value={search}
+                  onChange={(e) => setSearch(e.target.value)}
+                  className="w-full rounded-md border px-3 py-2 text-sm shadow-sm focus:border-blue-500 focus:outline-none"
+                />
+              </div>
               {loading ? (
                 <div className="flex h-40 items-center justify-center">
                   <p>Loading teams...</p>
                 </div>
               ) : (
                 <TeamList
-                  teams={teams}
+                  teams={teams.filter((team) =>
+                    team.teamName.toLowerCase().includes(search.toLowerCase())
+                  )}
                   onEditTeam={handleEditingMode}
                   onConfigureECU={handleConfigureECU}
+                  searchTerm={search}
                 />
               )}
             </TabsContent>

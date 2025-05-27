@@ -1,15 +1,15 @@
 "use client"
 
-import { Button } from "@/components/ui/button"
-import Link from "next/link"
+import { EventTypeForm } from "@/app/event-types/event-type-form"
+import { EventTypeList } from "@/app/event-types/event-type-list"
 import Navbar from "@/components/Navbar"
+import { Button } from "@/components/ui/button"
 import { Card, CardContent } from "@/components/ui/card"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import { EventTypeList } from "@/app/event-types/event-type-list"
-import { EventTypeForm } from "@/app/event-types/event-type-form"
-import { useState } from "react"
-import { ArrowLeft } from "lucide-react"
 import { Event } from "@/types/teams"
+import { ArrowLeft } from "lucide-react"
+import Link from "next/link"
+import { useState } from "react"
 
 export default function Home() {
   // Placeholder data for events until we connect to backend
@@ -23,6 +23,7 @@ export default function Home() {
   // State for determining editing vs creating
   const [editingEvent, setEditingEvent] = useState<Event | null>(null)
   const [activeTab, setActiveTab] = useState("view")
+  const [search, setSearch] = useState("")
 
   const handleAddEvent = (eventData: Omit<Event, "id">) => {
     if (editingEvent) {
@@ -90,7 +91,22 @@ export default function Home() {
             </TabsList>
 
             <TabsContent value="view" className="mt-6">
-              <EventTypeList events={events} onEditEvent={handleEditEvent} />
+              <div className="mb-4 flex w-full">
+                <input
+                  type="text"
+                  placeholder="Search event types..."
+                  value={search}
+                  onChange={(e) => setSearch(e.target.value)}
+                  className="w-full rounded-md border px-3 py-2 text-sm shadow-sm focus:border-blue-500 focus:outline-none"
+                />
+              </div>
+              <EventTypeList
+                events={events.filter((event) =>
+                  event.eventName.toLowerCase().includes(search.toLowerCase())
+                )}
+                onEditEvent={handleEditEvent}
+                searchTerm={search} // <-- Pass search term here
+              />
             </TabsContent>
 
             <TabsContent value="add" className="mt-6">

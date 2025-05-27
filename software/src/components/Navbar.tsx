@@ -1,5 +1,7 @@
 "use client"
 
+import logo from "@/assets/detailed_logo.png"
+import { Button } from "@/components/ui/button"
 import {
   NavigationMenu,
   NavigationMenuItem,
@@ -8,12 +10,9 @@ import {
   navigationMenuTriggerStyle,
 } from "@/components/ui/navigation-menu"
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet"
-import Link from "next/link"
+import { Menu, RefreshCw } from "lucide-react"
 import Image from "next/image"
-import { Menu } from "lucide-react"
-import logo from "@/assets/detailed_logo.png"
-import { Button } from "@/components/ui/button"
-import { RefreshCw } from "lucide-react"
+import Link from "next/link"
 import { useState } from "react"
 
 export default function Navbar() {
@@ -77,7 +76,7 @@ export default function Navbar() {
       </NavigationMenu>
       <Image src={logo} alt="Logo" width={160} height={70} className="absolute left-5" />
       <Button
-        className="absolute right-5 hover:cursor-pointer"
+        className="absolute right-5 hidden md:flex hover:cursor-pointer"
         onClick={handleSync}
         disabled={syncing}
       >
@@ -107,6 +106,10 @@ export default function Navbar() {
             <Link href="/event-types" className="text-lg font-medium hover:text-gray-600">
               Event Types
             </Link>
+            <Button className="mt-6 md:hidden" onClick={handleSync} disabled={syncing}>
+              <RefreshCw className={`mr-2 h-4 w-4 ${syncing ? "animate-spin" : ""}`} />
+              {syncing ? "Syncing..." : "Sync"}
+            </Button>
           </nav>
         </SheetContent>
       </Sheet>

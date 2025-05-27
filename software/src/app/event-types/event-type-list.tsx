@@ -2,14 +2,15 @@
 
 import { Button } from "@/components/ui/button"
 import { Card, CardContent } from "@/components/ui/card"
-import { Users } from "lucide-react"
 import type { Event } from "@/types/teams"
+import { CalendarCog } from "lucide-react"
 
 interface EventTypeListProps {
   events: Event[]
   onEditEvent?: (Event: Event) => void
   emptyMessage?: string
   showActions?: boolean
+  searchTerm?: string
 }
 
 export function EventTypeList({
@@ -17,12 +18,21 @@ export function EventTypeList({
   onEditEvent,
   emptyMessage = "No eventTypes added yet. Add your first EventType!",
   showActions = true,
+  searchTerm = "",
 }: Readonly<EventTypeListProps>) {
   if (events.length === 0) {
     return (
       <div className="flex h-40 flex-col items-center justify-center gap-4 rounded-lg border border-dashed p-8 text-center">
-        <Users className="h-10 w-10 text-muted-foreground" />
-        <p className="text-muted-foreground">{emptyMessage}</p>
+        <CalendarCog className="h-10 w-10 text-muted-foreground" />
+        <p className="text-muted-foreground">
+          {searchTerm ? (
+            <>
+              No results found for search &quot;<span className="font-semibold">{searchTerm}</span>&quot;.
+            </>
+          ) : (
+            emptyMessage
+          )}
+        </p>
       </div>
     )
   }

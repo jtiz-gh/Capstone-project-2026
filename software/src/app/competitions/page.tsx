@@ -1,6 +1,6 @@
 "use client"
 
-import { useMediaQuery } from "@/hooks/use-media-query"
+import { TeamSelector } from "@/app/teams/team-selector"
 import Navbar from "@/components/Navbar"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
@@ -12,16 +12,15 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card"
-import { ArrowLeft, Trophy, Users } from "lucide-react"
-import Link from "next/link"
-import { useEffect, useState } from "react"
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
+import { Checkbox } from "@/components/ui/checkbox"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
-import { Checkbox } from "@/components/ui/checkbox"
-import { TeamSelector } from "@/app/teams/team-selector"
-import { AlertCircle, Loader2 } from "lucide-react"
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
+import { useMediaQuery } from "@/hooks/use-media-query"
 import type { Competition, Event, Team } from "@/types/teams"
+import { AlertCircle, ArrowLeft, Loader2, Trophy, Users } from "lucide-react"
+import Link from "next/link"
+import { useEffect, useState } from "react"
 
 export default function CompetitionsListPage() {
   const isMobile = useMediaQuery("(max-width: 768px)")
@@ -33,6 +32,7 @@ export default function CompetitionsListPage() {
   const [selectedTeams, setSelectedTeams] = useState<Team[]>([])
   const [loading, setLoading] = useState(false)
   const [activeTab, setActiveTab] = useState("view")
+  const [competitionSearch, setCompetitionSearch] = useState("")
 
   // Fetch initial data
   useEffect(() => {
@@ -201,16 +201,39 @@ export default function CompetitionsListPage() {
             </TabsList>
 
             <TabsContent value="view" className="mt-4">
-              {competitions.length === 0 ? (
+              <div className="mb-4 flex w-full">
+                <input
+                  type="text"
+                  placeholder="Search competitions..."
+                  value={competitionSearch}
+                  onChange={(e) => setCompetitionSearch(e.target.value)}
+                  className="w-full rounded-md border px-3 py-2 text-sm shadow-sm focus:border-blue-500 focus:outline-none"
+                />
+              </div>
+              {competitions.filter((competition) =>
+                competition.competitionName.toLowerCase().includes(competitionSearch.toLowerCase())
+              ).length === 0 ? (
                 <div className="flex h-40 flex-col items-center justify-center gap-2 rounded-lg border border-dashed p-8 text-center">
                   <Trophy className="h-8 w-8 text-muted-foreground" />
                   <p className="text-sm text-muted-foreground md:text-base">
-                    No competitions created yet.
+                    {competitionSearch ? (
+                      <>
+                        No results found for search &quot;<span className="font-semibold">{competitionSearch}</span>&quot;.
+                      </>
+                    ) : (
+                      "No competitions created yet."
+                    )}
                   </p>
                 </div>
               ) : (
                 <div className="grid gap-4 md:grid-cols-2">
-                  {competitions.map((competition) => (
+                  {competitions
+                    .filter((competition) =>
+                      competition.competitionName
+                        .toLowerCase()
+                        .includes(competitionSearch.toLowerCase())
+                    )
+                    .map((competition) => (
                     <Card key={competition.id} className="overflow-hidden">
                       <CardHeader className="p-4 md:p-6">
                         <CardTitle className="text-base md:text-lg">

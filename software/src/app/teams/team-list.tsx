@@ -2,8 +2,8 @@
 
 import { Button } from "@/components/ui/button"
 import { Card, CardContent } from "@/components/ui/card"
-import { Users } from "lucide-react"
 import type { Team } from "@/types/teams"
+import { Users } from "lucide-react"
 
 interface TeamListProps {
   teams: Team[]
@@ -11,6 +11,7 @@ interface TeamListProps {
   onConfigureECU?: (teamId: number) => void
   emptyMessage?: string
   showActions?: boolean
+  searchTerm?: string
 }
 
 export function TeamList({
@@ -19,12 +20,21 @@ export function TeamList({
   onConfigureECU,
   emptyMessage = "No teams added yet. Add your first team!",
   showActions = true,
+  searchTerm = "",
 }: TeamListProps) {
   if (teams.length === 0) {
     return (
       <div className="flex h-40 flex-col items-center justify-center gap-4 rounded-lg border border-dashed p-8 text-center">
         <Users className="h-10 w-10 text-muted-foreground" />
-        <p className="text-muted-foreground">{emptyMessage}</p>
+        <p className="text-muted-foreground">
+          {searchTerm ? (
+            <>
+              No results found for search &quot;<span className="font-semibold">{searchTerm}</span>&quot;.
+            </>
+          ) : (
+            emptyMessage
+          )}
+        </p>
       </div>
     )
   }
