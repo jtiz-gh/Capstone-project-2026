@@ -10,7 +10,7 @@
     "format:check": "prettier --write . && next lint --fix",
     "format": "prettier --write .",
     "cypress:open": "cypress open",
-    "cypress:headless": "cypress run",
+    "cypress:headless": "cypress run --headless",
     "test": "vitest",
     "prisma:seed": "tsx prisma/seed.ts",
     "prisma:generate": "prisma generate",
