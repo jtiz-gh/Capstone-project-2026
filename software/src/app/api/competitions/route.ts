@@ -35,6 +35,22 @@ export async function POST(request: Request) {
       )
     }
 
+    // Check for existing competition with the same name
+    const existingCompetition = await prisma.competition.findFirst({
+      where: {
+        competitionName: {
+          equals: competitionName,
+        },
+      },
+    })
+
+    if (existingCompetition) {
+      return NextResponse.json(
+        { error: "A competition with this name already exists" },
+        { status: 400 }
+      )
+    }
+
     const newCompetition = await prisma.competition.create({
       data: {
         competitionName: competitionName,

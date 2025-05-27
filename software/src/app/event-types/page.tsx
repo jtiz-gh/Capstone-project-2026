@@ -10,6 +10,7 @@ import { Event } from "@/types/teams"
 import { ArrowLeft } from "lucide-react"
 import Link from "next/link"
 import { useEffect, useState } from "react"
+import { toast } from "sonner"
 
 export default function Home() {
   const [events, setEvents] = useState<Event[]>([])
@@ -43,6 +44,11 @@ export default function Home() {
         if (res.ok) {
           const updated = await res.json()
           setEvents(events.map((e) => (e.id === updated.id ? updated : e)))
+        } else {
+          let errorMsg = "Failed to edit event"
+          const errorJson = await res.json()
+          errorMsg = errorJson.error || errorMsg
+          toast.error(errorMsg)
         }
       } catch (error) {
         console.error("Error updating event:", error)
@@ -58,6 +64,11 @@ export default function Home() {
         if (res.ok) {
           const newEvent = await res.json()
           setEvents([...events, newEvent])
+        } else {
+          let errorMsg = "Failed to create event"
+          const errorJson = await res.json()
+          errorMsg = errorJson.error || errorMsg
+          toast.error(errorMsg)
         }
       } catch (error) {
         console.error("Error creating event:", error)

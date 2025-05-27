@@ -10,6 +10,7 @@ import type { Team } from "@/types/teams"
 import { ArrowLeft, X } from "lucide-react"
 import Link from "next/link"
 import { useEffect, useState } from "react"
+import { toast } from "sonner"
 
 export default function TeamsPage() {
   const [teams, setTeams] = useState<Team[]>([])
@@ -64,8 +65,10 @@ export default function TeamsPage() {
         const newTeam = await response.json()
         setTeams([...teams, newTeam])
       } else {
-        const errorText = await response.text()
-        console.error("Failed to create team:", response.status, errorText)
+        let errorMsg = "Failed to create team"
+        const errorJson = await response.json()
+        errorMsg = errorJson.error || errorMsg
+        toast.error(errorMsg)
       }
     } catch (error) {
       console.error("Error creating team:", error)
@@ -87,7 +90,10 @@ export default function TeamsPage() {
         setTeams(teams.map((team) => (team.id === editingTeam!.id ? updatedTeam : team)))
         setEditingTeam(null)
       } else {
-        console.error("Failed to update team")
+        let errorMsg = "Failed to update team"
+        const errorJson = await response.json()
+        errorMsg = errorJson.error || errorMsg
+        toast.error(errorMsg)
       }
     } catch (error) {
       console.error("Error updating team:", error)

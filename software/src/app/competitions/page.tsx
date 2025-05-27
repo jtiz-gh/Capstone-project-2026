@@ -21,6 +21,7 @@ import type { Competition, Event, Team } from "@/types/teams"
 import { AlertCircle, ArrowLeft, Loader2, Trophy, Users } from "lucide-react"
 import Link from "next/link"
 import { useEffect, useState } from "react"
+import { toast } from "sonner"
 
 export default function CompetitionsListPage() {
   const isMobile = useMediaQuery("(max-width: 768px)")
@@ -110,6 +111,11 @@ export default function CompetitionsListPage() {
         setSelectedEvents([])
         setSelectedTeams([])
         setActiveTab("view")
+      } else {
+        let errorMsg = "Failed to create competition"
+        const errorJson = await response.json()
+        errorMsg = errorJson.error || errorMsg
+        toast.error(errorMsg)
       }
     } catch (error) {
       console.error("Error creating competition:", error)
@@ -218,7 +224,8 @@ export default function CompetitionsListPage() {
                   <p className="text-sm text-muted-foreground md:text-base">
                     {competitionSearch ? (
                       <>
-                        No results found for search &quot;<span className="font-semibold">{competitionSearch}</span>&quot;.
+                        No results found for search &quot;
+                        <span className="font-semibold">{competitionSearch}</span>&quot;.
                       </>
                     ) : (
                       "No competitions created yet."
@@ -234,57 +241,61 @@ export default function CompetitionsListPage() {
                         .includes(competitionSearch.toLowerCase())
                     )
                     .map((competition) => (
-                    <Card key={competition.id} className="overflow-hidden">
-                      <CardHeader className="p-4 md:p-6">
-                        <CardTitle className="text-base md:text-lg">
-                          {competition.competitionName}
-                        </CardTitle>
-                        <CardDescription className="text-xs md:text-sm">
-                          {competition.races?.length} events • {competition.teams?.length} teams
-                        </CardDescription>
-                      </CardHeader>
-                      <CardContent className="p-4 md:p-6">
-                        <div className="mb-3 flex flex-wrap gap-1">
-                          {competition.races.slice(0, isMobile ? 2 : undefined).map((race) => (
-                            <Badge
-                              key={race.id}
-                              variant="outline"
-                              className={`text-xs ${race.completed ? "bg-green-50 text-green-700" : ""}`}
-                            >
-                              {events.find((e) => e.id === race.eventId)?.eventName?.split(" ")[0]}
-                              {race.completed && " ✓"}
-                            </Badge>
-                          ))}
-                        </div>
-                        <div className="text-xs text-muted-foreground md:text-sm">
-                          <div className="mb-1 flex items-center gap-1">
-                            <Users className="h-3 w-3 md:h-4 md:w-4" />
-                            <span>Teams:</span>
-                          </div>
-                          <div className="line-clamp-2">
-                            {competition.teams.slice(0, 3).map((team) => (
-                              <span key={team.id} className="inline-block">
-                                {isMobile ? team.teamName.split(" ")[0] : team.teamName}
-                                {competition.teams.indexOf(team) < competition.teams.length - 1
-                                  ? ", "
-                                  : ""}
-                              </span>
+                      <Card key={competition.id} className="overflow-hidden">
+                        <CardHeader className="p-4 md:p-6">
+                          <CardTitle className="text-base md:text-lg">
+                            {competition.competitionName}
+                          </CardTitle>
+                          <CardDescription className="text-xs md:text-sm">
+                            {competition.races?.length} events • {competition.teams?.length} teams
+                          </CardDescription>
+                        </CardHeader>
+                        <CardContent className="p-4 md:p-6">
+                          <div className="mb-3 flex flex-wrap gap-1">
+                            {competition.races.slice(0, isMobile ? 2 : undefined).map((race) => (
+                              <Badge
+                                key={race.id}
+                                variant="outline"
+                                className={`text-xs ${race.completed ? "bg-green-50 text-green-700" : ""}`}
+                              >
+                                {
+                                  events
+                                    .find((e) => e.id === race.eventId)
+                                    ?.eventName?.split(" ")[0]
+                                }
+                                {race.completed && " ✓"}
+                              </Badge>
                             ))}
                           </div>
-                        </div>
-                      </CardContent>
-                      <CardFooter className="p-4 md:p-6">
-                        <Link href={`/competitions/${competition.id}`} className="w-full">
-                          <Button
-                            size={isMobile ? "sm" : "default"}
-                            className="w-full hover:cursor-pointer"
-                          >
-                            View Details
-                          </Button>
-                        </Link>
-                      </CardFooter>
-                    </Card>
-                  ))}
+                          <div className="text-xs text-muted-foreground md:text-sm">
+                            <div className="mb-1 flex items-center gap-1">
+                              <Users className="h-3 w-3 md:h-4 md:w-4" />
+                              <span>Teams:</span>
+                            </div>
+                            <div className="line-clamp-2">
+                              {competition.teams.slice(0, 3).map((team) => (
+                                <span key={team.id} className="inline-block">
+                                  {isMobile ? team.teamName.split(" ")[0] : team.teamName}
+                                  {competition.teams.indexOf(team) < competition.teams.length - 1
+                                    ? ", "
+                                    : ""}
+                                </span>
+                              ))}
+                            </div>
+                          </div>
+                        </CardContent>
+                        <CardFooter className="p-4 md:p-6">
+                          <Link href={`/competitions/${competition.id}`} className="w-full">
+                            <Button
+                              size={isMobile ? "sm" : "default"}
+                              className="w-full hover:cursor-pointer"
+                            >
+                              View Details
+                            </Button>
+                          </Link>
+                        </CardFooter>
+                      </Card>
+                    ))}
                 </div>
               )}
             </TabsContent>

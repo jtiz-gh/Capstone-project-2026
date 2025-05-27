@@ -29,6 +29,27 @@ const eventId = parseInt(id, 10)
       return NextResponse.json({ error: "Invalid event ID" }, { status: 400 })
     }
     const body = await req.json()
+
+    if (body.eventName) {
+      const existingEvent = await prisma.event.findFirst({
+        where: {
+          eventName: {
+            equals: body.eventName,
+          },
+          id: {
+            not: eventId, // Exclude current event from the check
+          },
+        },
+      })
+
+      if (existingEvent) {
+        return NextResponse.json(
+          { error: "An event with this name already exists" },
+          { status: 400 }
+        )
+      }
+    }
+
     const updatedEvent = await prisma.event.update({
       where: { id: eventId },
       data: body,

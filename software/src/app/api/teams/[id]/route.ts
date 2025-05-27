@@ -35,6 +35,26 @@ export async function PATCH(req: NextRequest) {
     const body = await req.json()
     const { rankings, devices, id, ...teamData } = body
 
+    if (teamData.teamName) {
+      const existingTeam = await prisma.team.findFirst({
+        where: {
+          teamName: {
+            equals: teamData.teamName,
+          },
+          id: {
+            not: teamId, // Exclude current team from the check
+          },
+        },
+      })
+
+      if (existingTeam) {
+        return NextResponse.json(
+          { error: "A team with this name already exists" },
+          { status: 400 }
+        )
+      }
+    }
+
     const updatedTeam = await prisma.team.update({
       where: { id: teamId },
       data: teamData,

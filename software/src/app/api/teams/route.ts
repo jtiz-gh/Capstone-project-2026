@@ -33,6 +33,22 @@ export async function POST(request: Request) {
       )
     }
 
+    // Check for existing team with the same name
+    const existingTeam = await prisma.team.findFirst({
+        where: {
+            teamName: {
+                equals: teamName,
+            },
+        },
+    })
+
+    if (existingTeam) {
+        return NextResponse.json(
+            { error: "A team with this name already exists" },
+            { status: 400 }
+        )
+    }
+
     const newTeam = await prisma.team.create({
       data: {
         teamName,

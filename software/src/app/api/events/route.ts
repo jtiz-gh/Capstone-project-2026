@@ -22,6 +22,22 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: "Missing required fields" }, { status: 400 })
     }
 
+     // Check for existing event with the same name
+    const existingEvent = await prisma.event.findFirst({
+      where: {
+        eventName: {
+          equals: eventName,
+        },
+      },
+    })
+
+    if (existingEvent) {
+      return NextResponse.json(
+        { error: "An event with this name already exists" },
+        { status: 400 }
+      )
+    }
+
     const newEvent = await prisma.event.create({
       data: {
         eventName,
