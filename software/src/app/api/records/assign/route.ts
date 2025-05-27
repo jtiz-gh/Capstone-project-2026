@@ -32,6 +32,11 @@ export async function POST(request: Request) {
             team: true,
           },
         },
+        _count: {
+          select: {
+            sensorData: true,
+          },
+        },
       },
     })
 
