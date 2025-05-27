@@ -1,6 +1,5 @@
 "use client"
 
-import { useMediaQuery } from "@/hooks/use-media-query"
 import Navbar from "@/components/Navbar"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
@@ -16,13 +15,14 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table"
+import { useMediaQuery } from "@/hooks/use-media-query"
+import { calculateScore } from "@/lib/utils"
+import type { Competition, Event, RaceRecord, Team } from "@/types/teams"
 import { Activity, ArrowLeft, Loader2, Trophy, Users } from "lucide-react"
 import Link from "next/link"
 import { useParams, useRouter } from "next/navigation"
 import { useEffect, useMemo, useState } from "react"
 import { toast } from "sonner"
-import { calculateScore } from "@/lib/utils"
-import type { Competition, Event, RaceRecord, Team } from "@/types/teams"
 
 export default function CompetitionDetailPage() {
   const { competitionId } = useParams()
@@ -109,6 +109,21 @@ export default function CompetitionDetailPage() {
       console.error("Error applying finish status:", error)
     }
     setLoading(false)
+  }
+  const handleDeleteCompetition = async () => {
+    if (!confirm("Delete this competition?")) return
+    try {
+      const res = await fetch(`/api/competitions/${id}`, {
+        method: "DELETE",
+      })
+      if (res.ok) {
+        router.push("/competitions")
+      } else {
+        console.error("Failed to delete competition")
+      }
+    } catch (error) {
+      console.error("Error deleting competition:", error)
+    }
   }
 
   const fetchRaceTimesForEvent = async (eventData: RaceRecord[]) => {
@@ -295,16 +310,15 @@ export default function CompetitionDetailPage() {
               <h1 className="text-xl font-bold md:text-2xl">{competition.competitionName}</h1>
             </div>
 
-            <Button
-              variant="outline"
-              onClick={() => window.location.reload()}
-              disabled={loading}
-              className="hover:cursor-pointer"
-            >
-              Refresh
-            </Button>
+            <div className="flex gap-2">
+              <Button variant="outline" className="hover:cursor-pointer" onClick={() => window.location.reload()} disabled={loading}>
+                Refresh
+              </Button>
+              <Button variant="destructive" className="hover:cursor-pointer" onClick={handleDeleteCompetition} disabled={loading}>
+                Delete
+              </Button>
+            </div>
           </div>
-
           <div className="grid gap-4 md:grid-cols-2 md:gap-6">
             {/* Events Card */}
             <Card>

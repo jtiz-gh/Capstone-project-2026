@@ -2,13 +2,13 @@
 
 import type React from "react"
 
-import { useState, useEffect } from "react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group"
-import { LineChartIcon as ChartLine, Loader2 } from "lucide-react"
 import type { Team } from "@/types/teams"
+import { LineChartIcon as ChartLine, Loader2 } from "lucide-react"
+import { useEffect, useState } from "react"
 
 interface TeamFormProps {
   addTeam: (team: Omit<Team, "id">) => void
@@ -18,6 +18,7 @@ interface TeamFormProps {
   submitLabel?: string
   loading?: boolean
   setLoading?: (arg0: boolean) => void
+  onDeleteTeam?: (teamId: number) => void
 }
 
 export function TeamForm({
@@ -28,6 +29,7 @@ export function TeamForm({
   submitLabel = "Add Team",
   loading,
   setLoading,
+  onDeleteTeam,
 }: Readonly<TeamFormProps>) {
   const [teamName, setTeamName] = useState("")
   const [vehicleClass, setVehicleClass] = useState<"Open" | "Standard">("Open")
@@ -176,6 +178,17 @@ export function TeamForm({
             onClick={onCancel}
           >
             Cancel
+          </Button>
+        )}
+        {initialTeam && onDeleteTeam && (
+          <Button
+            type="button"
+            variant="destructive"
+            className="hover:cursor-pointer"
+            disabled={loading}
+            onClick={() => onDeleteTeam(initialTeam.id)}
+          >
+            Delete Team
           </Button>
         )}
       </div>

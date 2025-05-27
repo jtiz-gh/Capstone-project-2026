@@ -100,6 +100,24 @@ export default function TeamsPage() {
     setActiveTab("add")
   }
 
+  const handleDeleteTeam = async (teamId: number) => {
+    if (!confirm("Delete this team?")) return
+    try {
+      const response = await fetch(`/api/teams/${teamId}`, {
+        method: "DELETE",
+      })
+      if (response.ok) {
+        setTeams((prev) => prev.filter((t) => t.id !== teamId))
+        setEditingTeam(null)
+        setActiveTab("view")
+      } else {
+        console.error("Failed to delete team")
+      }
+    } catch (error) {
+      console.error("Error deleting team:", error)
+    }
+  }
+
   const handleConfigureECU = async (teamId: number) => {
     setSelectedTeamId(teamId)
     try {
@@ -336,6 +354,7 @@ export default function TeamsPage() {
                     submitLabel={editingTeam ? "Update Team" : "Add Team"}
                     loading={loading}
                     setLoading={setLoading}
+                    onDeleteTeam={editingTeam ? handleDeleteTeam : undefined}
                   />
                 </CardContent>
               </Card>

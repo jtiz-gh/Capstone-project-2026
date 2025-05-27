@@ -9,43 +9,59 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Event } from "@/types/teams"
 import { ArrowLeft } from "lucide-react"
 import Link from "next/link"
-import { useState } from "react"
+import { useEffect, useState } from "react"
 
 export default function Home() {
-  // Placeholder data for events until we connect to backend
-  // Defaults are "Gymkhana" | "Drag Race" | "Endurance & Efficiency"
-  const [events, setEvents] = useState<Event[]>([
-    { id: 1, eventName: "Gymkhana", eventType: "Dynamic", completed: false },
-    { id: 2, eventName: "Drag Race", eventType: "Dynamic", completed: false },
-    { id: 3, eventName: "Endurance & Efficiency", eventType: "Dynamic", completed: false },
-  ])
-
-  // State for determining editing vs creating
+  const [events, setEvents] = useState<Event[]>([])
   const [editingEvent, setEditingEvent] = useState<Event | null>(null)
   const [activeTab, setActiveTab] = useState("view")
   const [search, setSearch] = useState("")
 
-  const handleAddEvent = (eventData: Omit<Event, "id">) => {
+  useEffect(() => {
+    const fetchEvents = async () => {
+      try {
+        const res = await fetch("/api/events")
+        if (res.ok) {
+          setEvents(await res.json())
+        }
+      } catch (error) {
+        console.error("Error fetching events:", error)
+      }
+    }
+
+    fetchEvents()
+  }, [])
+
+  const handleAddEvent = async (eventData: Omit<Event, "id">) => {
     if (editingEvent) {
-      // Update existing Event
-      setEvents(
-        events.map((Event) =>
-          Event.id === editingEvent.id
-            ? {
-                ...Event,
-                ...eventData,
-              }
-            : Event
-        )
-      )
+      try {
+        const res = await fetch(`/api/events/${editingEvent.id}`, {
+          method: "PATCH",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(eventData),
+        })
+        if (res.ok) {
+          const updated = await res.json()
+          setEvents(events.map((e) => (e.id === updated.id ? updated : e)))
+        }
+      } catch (error) {
+        console.error("Error updating event:", error)
+      }
       setEditingEvent(null)
     } else {
-      // Add new Event
-      const newTeam: Event = {
-        id: Date.now(),
-        ...eventData,
+      try {
+        const res = await fetch("/api/events", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(eventData),
+        })
+        if (res.ok) {
+          const newEvent = await res.json()
+          setEvents([...events, newEvent])
+        }
+      } catch (error) {
+        console.error("Error creating event:", error)
       }
-      setEvents([...events, newTeam])
     }
 
     setActiveTab("view")
@@ -54,6 +70,22 @@ export default function Home() {
   const handleEditEvent = (Event: Event) => {
     setEditingEvent(Event)
     setActiveTab("add")
+  }
+
+  const handleDeleteEvent = async (eventId: number) => {
+    if (!confirm("Delete this event type?")) return
+    try {
+      const res = await fetch(`/api/events/${eventId}`, { method: "DELETE" })
+      if (res.ok) {
+        setEvents(events.filter((e) => e.id !== eventId))
+        setEditingEvent(null)
+        setActiveTab("view")
+      } else {
+        console.error("Failed to delete event type")
+      }
+    } catch (error) {
+      console.error("Error deleting event type:", error)
+    }
   }
 
   const handleCancelEdit = () => {
@@ -117,6 +149,7 @@ export default function Home() {
                     onCancel={editingEvent ? handleCancelEdit : undefined}
                     initialEvent={editingEvent || undefined}
                     submitLabel={editingEvent ? "Update Event Type" : "Add Event Type"}
+                    onDeleteEvent={editingEvent ? handleDeleteEvent : undefined}
                   />
                 </CardContent>
               </Card>

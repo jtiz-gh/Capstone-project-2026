@@ -2,17 +2,18 @@
 
 import type React from "react"
 
-import { useState, useEffect } from "react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import type { Event } from "@/types/teams"
+import { useEffect, useState } from "react"
 
 interface EventTypeFormProps {
   onSubmit: (team: Omit<Event, "id">) => void
   onCancel?: () => void
   initialEvent?: Event
   submitLabel?: string
+  onDeleteEvent?: (eventId: number) => void
 }
 
 export function EventTypeForm({
@@ -20,6 +21,7 @@ export function EventTypeForm({
   onCancel,
   initialEvent,
   submitLabel = "Add Team",
+  onDeleteEvent,
 }: EventTypeFormProps) {
   const [eventName, setEventName] = useState("")
 
@@ -72,6 +74,16 @@ export function EventTypeForm({
             onClick={onCancel}
           >
             Cancel
+          </Button>
+        )}
+        {initialEvent && onDeleteEvent && (
+          <Button
+            type="button"
+            variant="destructive"
+            className="hover:cursor-pointer"
+            onClick={() => onDeleteEvent(initialEvent.id)}
+          >
+            Delete
           </Button>
         )}
       </div>

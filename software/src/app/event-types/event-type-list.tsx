@@ -8,6 +8,7 @@ import { CalendarCog } from "lucide-react"
 interface EventTypeListProps {
   events: Event[]
   onEditEvent?: (Event: Event) => void
+  onDeleteEvent?: (eventId: number) => void
   emptyMessage?: string
   showActions?: boolean
   searchTerm?: string
@@ -16,6 +17,7 @@ interface EventTypeListProps {
 export function EventTypeList({
   events,
   onEditEvent,
+  onDeleteEvent,
   emptyMessage = "No eventTypes added yet. Add your first EventType!",
   showActions = true,
   searchTerm = "",
@@ -55,6 +57,16 @@ export function EventTypeList({
                     onClick={() => onEditEvent(Event)}
                   >
                     View/Edit
+                  </Button>
+                )}
+                {onDeleteEvent && (
+                  <Button
+                    variant="destructive"
+                    size="sm"
+                    className="hover:cursor-pointer"
+                    onClick={() => onDeleteEvent(Event.id)}
+                  >
+                    Delete
                   </Button>
                 )}
               </div>
