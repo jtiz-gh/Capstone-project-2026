@@ -4,7 +4,7 @@ describe("Homepage navigation", () => {
     cy.visit("http://localhost:3000/")
 
     // Find a link with an href attribute containing "teams" and click it
-    cy.get('a[href*="teams"]').click()
+    cy.get('[data-testid="homepage-teams"]').click()
 
     // The new url should include "/teams"
     cy.url().should("include", "/teams")
@@ -18,7 +18,7 @@ describe("Homepage navigation", () => {
     cy.visit("http://localhost:3000/")
 
     // Find a link with an href attribute containing "competitions" and click it
-    cy.get('a[href*="competitions"]').click()
+    cy.get('[data-testid="homepage-competitions"]').click()
 
     // The new url should include "/competitions"
     cy.url().should("include", "/competitions")
@@ -31,8 +31,8 @@ describe("Homepage navigation", () => {
     // Start from the home page
     cy.visit("http://localhost:3000/")
 
-    // Find a link with an href attribute containing "event types" and click it
-    cy.get('a[href*="event-types"]').click()
+    // Use the data-testid selector as in your navbar tests
+    cy.get('[data-testid="homepage-event-types"]').click()
 
     // The new url should include "/event-types"
     cy.url().should("include", "/event-types")
@@ -46,33 +46,37 @@ describe("Navbar navigation", () => {
   beforeEach(() => {
     // Start from the event types page so we can see the navbar
     cy.visit("http://localhost:3000/event-types")
-  });
+  })
 
   it("should display all navbar links", () => {
-    cy.get('[data-testid="nav-home-link"]').should("be.visible").and("contain", "Home");
-    cy.get('[data-testid="nav-teams-link"]').should("be.visible").and("contain", "Teams");
-    cy.get('[data-testid="nav-competitions-link"]').should("be.visible").and("contain", "Competitions");
-    cy.get('[data-testid="nav-event-types-link"]').should("be.visible").and("contain", "Event Types");
-  });
+    cy.get('[data-testid="nav-home-link"]').should("be.visible").and("contain", "Home")
+    cy.get('[data-testid="nav-teams-link"]').should("be.visible").and("contain", "Teams")
+    cy.get('[data-testid="nav-competitions-link"]')
+      .should("be.visible")
+      .and("contain", "Competitions")
+    cy.get('[data-testid="nav-event-types-link"]')
+      .should("be.visible")
+      .and("contain", "Event Types")
+  })
 
   it("should navigate to Teams page when clicked", () => {
-    cy.get('[data-testid="nav-teams-link"]').click();
-    cy.location("pathname").should("eq", "/teams");
-  });
+    cy.get('[data-testid="nav-teams-link"]').click()
+    cy.location("pathname").should("eq", "/teams")
+  })
 
   it("should navigate to Competitions page", () => {
-    cy.get('[data-testid="nav-competitions-link"]').click();
-    cy.location("pathname").should("eq", "/competitions");
-  });
+    cy.get('[data-testid="nav-competitions-link"]').click()
+    cy.location("pathname").should("eq", "/competitions")
+  })
 
   it("should navigate to Home page", () => {
-    cy.get('[data-testid="nav-home-link"]').click();
-    cy.location("pathname").should("eq", "/");
-  });
+    cy.get('[data-testid="nav-home-link"]').click()
+    cy.location("pathname").should("eq", "/")
+  })
 
   it("should navigate to Event Types page", () => {
-    cy.get('[data-testid="nav-teams-link"]').click();
-    cy.get('[data-testid="nav-event-types-link"]').click();
-    cy.location("pathname").should("eq", "/event-types");
-  });
-});
+    cy.get('[data-testid="nav-teams-link"]').click()
+    cy.get('[data-testid="nav-event-types-link"]').click()
+    cy.location("pathname").should("eq", "/event-types")
+  })
+})

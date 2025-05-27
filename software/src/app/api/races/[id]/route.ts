@@ -1,7 +1,5 @@
 import { NextResponse } from "next/server"
-import { PrismaClient } from "@prisma/client"
-
-const prisma = new PrismaClient()
+import { prisma } from "@/lib/prisma"
 
 // PATCH /api/races/:id
 export async function PATCH(req: Request, props: { params: Promise<{ id: string }> }) {

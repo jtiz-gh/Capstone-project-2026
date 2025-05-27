@@ -1,7 +1,5 @@
-import { PrismaClient } from "@prisma/client"
 import { NextResponse } from "next/server"
-
-const prisma = new PrismaClient()
+import { prisma } from "@/lib/prisma"
 
 // PATCH /api/rankings/:id
 export async function PATCH(req: Request, context: { params: Promise<{ id: string }> }) {

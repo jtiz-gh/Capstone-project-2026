@@ -1,7 +1,5 @@
-import { PrismaClient } from "@prisma/client"
 import { NextResponse } from "next/server"
-
-const prisma = new PrismaClient()
+import { prisma } from "@/lib/prisma"
 
 // GET /api/races/:id/records
 export async function GET(_: Request, props: { params: Promise<{ id: string }> }) {

@@ -103,6 +103,10 @@ model Record {
   competition   Competition?  @relation(fields: [competitionId], references: [id])
   sensorData    SensorData[]
   stopTime      DateTime?
+  disabled      Boolean      @default(false)
+  mergedFromIds Json?        // Array of record IDs that were merged into this record
+  timeOffset    Int          @default(0) // Time offset in milliseconds for merged records
+  sortOrder     Int?         // For custom sorting in merged records
 }
 
 model SensorData {

@@ -1,9 +1,7 @@
 // app/api/sensor-data/route.ts
 
-import { PrismaClient } from "@prisma/client"
 import { NextResponse } from "next/server"
-
-const prisma = new PrismaClient()
+import { prisma } from "@/lib/prisma"
 
 interface DecodedMeasurements {
   timestamp: number
@@ -90,22 +88,50 @@ export async function POST(request: Request) {
       }
 
       if (decodedPackets.length > 0) {
-        const recordCache: { [key: number]: number } = {}
-        const readings = decodedPackets.map(async (packet) => {
-          // Create record from session id if does not exist
-          if (!recordCache[packet.sessionId]) {
-            const searchRecord = await prisma.record.upsert({
-              where: { id: packet.sessionId },
-              update: {},
-              create: {
-                id: packet.sessionId,
+        // Create a cache map for handling sessionId and deviceId combinations
+        const recordCache: { [key: string]: number } = {}
+
+        // Collect all unique session-device combinations
+        const sessionDevicePairs = new Set<string>()
+        decodedPackets.forEach((packet) => {
+          const cacheKey = `${packet.sessionId}-${device.id}`
+          sessionDevicePairs.add(cacheKey)
+        })
+
+        // Create or find existing Record for each sessionId
+        for (const pairKey of sessionDevicePairs) {
+          const sessionId = parseInt(pairKey.split("-")[0])
+
+          // Look for existing SensorData records with the same sessionId
+          const existingSensorData = await prisma.sensorData.findFirst({
+            where: {
+              sessionId: sessionId,
+              deviceId: device.id,
+            },
+            select: {
+              recordId: true,
+            },
+          })
+
+          if (existingSensorData) {
+            // If found, use the existing recordId
+            recordCache[pairKey] = existingSensorData.recordId
+          } else {
+            // If not exists, create a new Record
+            const newRecord = await prisma.record.create({
+              data: {
                 deviceId: device.id,
+                stopTime: new Date(),
               },
             })
-            recordCache[packet.sessionId] = searchRecord.id
+            recordCache[pairKey] = newRecord.id
           }
+        }
 
-          const recordId = recordCache[packet.sessionId]
+        // Prepare sensor data for batch creation
+        const sensorDataToCreate = decodedPackets.map((packet) => {
+          const cacheKey = `${packet.sessionId}-${device.id}`
+          const recordId = recordCache[cacheKey]
 
           return {
             measurementId: packet.measurementId,
@@ -123,9 +149,62 @@ export async function POST(request: Request) {
           }
         })
 
+        // Batch create all sensor data
         await prisma.sensorData.createMany({
-          data: await Promise.all(readings),
+          data: sensorDataToCreate,
         })
+
+        // Calculate and update Record summary values
+        const recordIds = Array.from(new Set(Object.values(recordCache)))
+        await Promise.all(
+          recordIds.map(async (recordId) => {
+            // Get all sensor data for this record
+            const recordSensorData = await prisma.sensorData.findMany({
+              where: { recordId },
+              select: {
+                avgVoltage: true,
+                avgCurrent: true,
+                energy: true,
+              },
+            })
+
+            if (recordSensorData.length > 0) {
+              // Calculate averages and total energy
+              const validVoltages = recordSensorData
+                .filter((d) => d.avgVoltage !== null)
+                .map((d) => d.avgVoltage!)
+              const validCurrents = recordSensorData
+                .filter((d) => d.avgCurrent !== null)
+                .map((d) => d.avgCurrent!)
+              const validEnergies = recordSensorData
+                .filter((d) => d.energy !== null)
+                .map((d) => d.energy!)
+
+              const avgVoltage =
+                validVoltages.length > 0
+                  ? validVoltages.reduce((sum, v) => sum + v, 0) / validVoltages.length
+                  : null
+
+              const avgCurrent =
+                validCurrents.length > 0
+                  ? validCurrents.reduce((sum, c) => sum + c, 0) / validCurrents.length
+                  : null
+
+              const totalEnergy =
+                validEnergies.length > 0 ? validEnergies.reduce((sum, e) => sum + e, 0) : null
+
+              // Update the record with calculated values
+              await prisma.record.update({
+                where: { id: recordId },
+                data: {
+                  avgVoltage,
+                  avgCurrent,
+                  energy: totalEnergy,
+                },
+              })
+            }
+          })
+        )
 
         console.log(
           `Uploaded ${decodedPackets.length} sensor data packets for device ${serialNo}. Record IDs: ${Object.values(recordCache).join(", ")}`
@@ -156,8 +235,21 @@ export async function POST(request: Request) {
   }
 }
 
-export async function GET() {
+export async function GET(request: Request) {
   try {
+    const url = new URL(request.url)
+    const recordId = url.searchParams.get("recordId")
+
+    if (recordId) {
+      // Get sensor data for a specific record
+      const sensorData = await prisma.sensorData.findMany({
+        where: { recordId: parseInt(recordId) },
+        orderBy: { timestamp: "asc" },
+      })
+      return NextResponse.json(sensorData)
+    }
+
+    // Default behavior - get all sensor data with limit
     const sensorData = await prisma.sensorData.findMany({
       take: 1000, // optional: limit results
       orderBy: { timestamp: "asc" },

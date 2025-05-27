@@ -1,13 +1,8 @@
 import { NextRequest, NextResponse } from "next/server"
-import { PrismaClient } from "@prisma/client"
-
-const prisma = new PrismaClient()
+import { prisma } from "@/lib/prisma"
 
 // GET /api/competitions/:id
-export async function GET(
-  request: NextRequest,
-  context: { params: Promise<{ id: string }> }
-) {
+export async function GET(request: NextRequest, context: { params: Promise<{ id: string }> }) {
   try {
     const { id } = await context.params
     const competitionId = parseInt(id)
@@ -41,18 +36,12 @@ export async function GET(
     return NextResponse.json(competition)
   } catch (error) {
     console.error("Error fetching competition:", error)
-    return NextResponse.json(
-      { error: "Error fetching competition" },
-      { status: 500 }
-    )
+    return NextResponse.json({ error: "Error fetching competition" }, { status: 500 })
   }
 }
 
 // PATCH /api/competitions/:id
-export async function PATCH(
-  request: Request,
-  { params }: { params: { id: string } }
-) {
+export async function PATCH(request: Request, { params }: { params: { id: string } }) {
   try {
     const competitionId = parseInt(params.id)
     const body = await request.json()
@@ -72,18 +61,12 @@ export async function PATCH(
     return NextResponse.json(updatedCompetition)
   } catch (error) {
     console.error("Error updating competition:", error)
-    return NextResponse.json(
-      { error: "Error updating competition" },
-      { status: 500 }
-    )
+    return NextResponse.json({ error: "Error updating competition" }, { status: 500 })
   }
 }
 
 // DELETE /api/competitions/:id
-export async function DELETE(
-  request: Request,
-  { params }: { params: { id: string } }
-) {
+export async function DELETE(request: Request, { params }: { params: { id: string } }) {
   try {
     const competitionId = parseInt(params.id)
 
@@ -98,9 +81,6 @@ export async function DELETE(
     return NextResponse.json({ message: "Competition deleted successfully" })
   } catch (error) {
     console.error("Error deleting competition:", error)
-    return NextResponse.json(
-      { error: "Error deleting competition" },
-      { status: 500 }
-    )
+    return NextResponse.json({ error: "Error deleting competition" }, { status: 500 })
   }
 }

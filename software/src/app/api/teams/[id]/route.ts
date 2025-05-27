@@ -1,7 +1,5 @@
 import { NextRequest, NextResponse } from "next/server"
-import { PrismaClient } from "@prisma/client"
-
-const prisma = new PrismaClient()
+import { prisma } from "@/lib/prisma"
 
 export async function GET(_: NextRequest, props: { params: Promise<{ id: string }> }) {
   const params = await props.params
@@ -13,6 +11,7 @@ export async function GET(_: NextRequest, props: { params: Promise<{ id: string 
 
   const team = await prisma.team.findUnique({
     where: { id: teamId },
+    include: { devices: true },
   })
 
   if (!team) {

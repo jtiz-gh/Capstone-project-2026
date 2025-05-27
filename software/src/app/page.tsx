@@ -20,6 +20,7 @@ export default function Home() {
           <Link href="/teams">
             <Button
               variant="outline"
+              data-testid="homepage-teams"
               className="flex aspect-square h-40 w-full flex-col items-center justify-center gap-2 text-lg hover:cursor-pointer"
             >
               <span>Teams</span>
@@ -28,6 +29,7 @@ export default function Home() {
           </Link>
           <Link href="/competitions">
             <Button
+              data-testid="homepage-competitions"
               variant="outline"
               className="flex aspect-square h-40 w-full flex-col items-center justify-center gap-2 text-lg hover:cursor-pointer"
             >
@@ -42,7 +44,8 @@ export default function Home() {
             </Button>
           </Link>
           <Link href="/event-types" className="col-span-2">
-            <Button variant="outline" className="col-span-2 w-full text-lg">
+            <Button 
+              data-testid="homepage-event-types" variant="outline" className="col-span-2 w-full text-lg">
               Event Types
             </Button>
           </Link>

@@ -8,7 +8,14 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Checkbox } from "@/components/ui/checkbox"
 import { ScrollArea } from "@/components/ui/scroll-area"
 import { Separator } from "@/components/ui/separator"
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table"
 import { Activity, AlertCircle, ArrowLeft, Loader2, Trophy, Users } from "lucide-react"
 import Link from "next/link"
 import { useParams, useRouter } from "next/navigation"
@@ -25,7 +32,9 @@ export default function CompetitionDetailPage() {
   const [teams, setTeams] = useState<Team[]>([])
   const [events, setEvents] = useState<Event[]>([])
   const [loadingRaceId, setLoadingRaceId] = useState<number | null>(null)
-  const [rankingsByCategory, setRankingsByCategory] = useState<Record<number, Record<string, any[]>>>({})
+  const [rankingsByCategory, setRankingsByCategory] = useState<
+    Record<number, Record<string, any[]>>
+  >({})
   const [missingTeamIdsByRace, setMissingTeamIdsByRace] = useState<Record<number, number[]>>({})
   const [finishStatusUpdates, setFinishStatusUpdates] = useState<Record<number, boolean>>({})
   const [selectedLeaderboard, setSelectedLeaderboard] = useState<string>("overall")
@@ -39,9 +48,9 @@ export default function CompetitionDetailPage() {
         const [competitionRes, teamsRes, eventsRes] = await Promise.all([
           fetch(`/api/competitions/${id}`),
           fetch("/api/teams"),
-          fetch("/api/events")
+          fetch("/api/events"),
         ])
-        
+
         if (competitionRes.ok) setCompetition(await competitionRes.json())
         if (teamsRes.ok) setTeams(await teamsRes.json())
         if (eventsRes.ok) setEvents(await eventsRes.json())
@@ -54,11 +63,14 @@ export default function CompetitionDetailPage() {
   }, [id])
 
   function getInitials(name: string) {
-    return name.split(" ").map(word => word[0]?.toUpperCase() || "").join(".")
+    return name
+      .split(" ")
+      .map((word) => word[0]?.toUpperCase() || "")
+      .join(".")
   }
 
   const handleFinishStatusChange = (rankId: number, checked: boolean) => {
-    setFinishStatusUpdates(prev => ({ ...prev, [rankId]: checked }))
+    setFinishStatusUpdates((prev) => ({ ...prev, [rankId]: checked }))
   }
 
   const applyFinishStatus = async () => {
@@ -69,22 +81,22 @@ export default function CompetitionDetailPage() {
         .map(([rankId]) => parseInt(rankId, 10))
 
       await Promise.all(
-        updates.map(rankId => 
+        updates.map((rankId) =>
           fetch(`/api/rankings/${rankId}`, {
             method: "PATCH",
             headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ finishStatus: "DNF", score: 0 })
+            body: JSON.stringify({ finishStatus: "DNF", score: 0 }),
           })
         )
       )
 
-      setRankingsByCategory(prev => {
+      setRankingsByCategory((prev) => {
         const updated = { ...prev }
         for (const raceId in updated) {
           for (const category in updated[raceId]) {
-            updated[raceId][category] = updated[raceId][category].map(ranking => 
-              finishStatusUpdates[ranking.id] 
-                ? { ...ranking, finishStatus: "DNF", score: 0 } 
+            updated[raceId][category] = updated[raceId][category].map((ranking) =>
+              finishStatusUpdates[ranking.id]
+                ? { ...ranking, finishStatus: "DNF", score: 0 }
                 : ranking
             )
           }
@@ -105,25 +117,26 @@ export default function CompetitionDetailPage() {
         try {
           const res = await fetch(`/api/records/${record.id}/sensor-data`)
           if (!res.ok) return null
-          
+
           const sensorData = await res.json()
           let startTime = 0
           let endTime = 0
-          
+
           for (let i = 0; i < sensorData.length; i++) {
-            if (startTime === 0 && sensorData[i].avgCurrent > 0.5) startTime = sensorData[i].timestamp
+            if (startTime === 0 && sensorData[i].avgCurrent > 0.5)
+              startTime = sensorData[i].timestamp
             if (endTime === 0 && sensorData[sensorData.length - 1 - i].avgCurrent > 0.5) {
               endTime = sensorData[sensorData.length - 1 - i].timestamp
             }
           }
-          
+
           return { teamId: record.device.teamId, time: endTime - startTime }
         } catch {
           return null
         }
       })
     )
-    
+
     return results.filter(Boolean) as { teamId: number; time: number }[]
   }
 
@@ -132,7 +145,7 @@ export default function CompetitionDetailPage() {
     try {
       const recordsRes = await fetch("/api/records")
       if (!recordsRes.ok) throw new Error("Failed to fetch records")
-      
+
       const records = await recordsRes.json()
       const eventData = records.filter(
         (r: RaceRecord) => r.competitionId === competition?.id && r.raceId === raceId
@@ -142,21 +155,24 @@ export default function CompetitionDetailPage() {
       raceTimes.sort((a, b) => a.time - b.time)
 
       // Group by vehicle category
-      const grouped = raceTimes.reduce((acc, raceTime) => {
-        const team = competition?.teams.find(t => t.id === raceTime.teamId)
-        if (!team) return acc
-        
-        const category = `${team.vehicleClass} ${team.vehicleType}`
-        if (!acc[category]) acc[category] = []
-        acc[category].push(raceTime)
-        return acc
-      }, {} as Record<string, typeof raceTimes>)
+      const grouped = raceTimes.reduce(
+        (acc, raceTime) => {
+          const team = competition?.teams.find((t) => t.id === raceTime.teamId)
+          if (!team) return acc
+
+          const category = `${team.vehicleClass} ${team.vehicleType}`
+          if (!acc[category]) acc[category] = []
+          acc[category].push(raceTime)
+          return acc
+        },
+        {} as Record<string, typeof raceTimes>
+      )
 
       // Calculate rankings
       const rankings: any[] = []
       for (const [category, times] of Object.entries(grouped)) {
         times.sort((a, b) => a.time - b.time)
-        
+
         const categoryRankings = await Promise.all(
           times.map(async (teamToRace, index) => {
             const score = calculateScore(index + 1, times.length)
@@ -167,10 +183,10 @@ export default function CompetitionDetailPage() {
                 teamId: teamToRace.teamId,
                 raceId,
                 rank: index + 1,
-                score
-              })
+                score,
+              }),
             })
-            
+
             if (res.ok) {
               const newRanking = await res.json()
               return { ...newRanking, vehicleCategory: category }
@@ -178,27 +194,27 @@ export default function CompetitionDetailPage() {
             return null
           })
         )
-        
+
         rankings.push(...categoryRankings.filter(Boolean))
       }
 
       // Update state
-      setRankingsByCategory(prev => {
+      setRankingsByCategory((prev) => {
         const updated = { ...prev }
         if (!updated[raceId]) updated[raceId] = {}
-        
+
         for (const ranking of rankings) {
           if (!updated[raceId][ranking.vehicleCategory]) {
             updated[raceId][ranking.vehicleCategory] = []
           }
           updated[raceId][ranking.vehicleCategory].push(ranking)
         }
-        
+
         // Sort by score
         for (const category in updated[raceId]) {
           updated[raceId][category].sort((a, b) => b.score - a.score)
         }
-        
+
         return updated
       })
 
@@ -206,13 +222,12 @@ export default function CompetitionDetailPage() {
       await fetch(`/api/races/${raceId}`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ completed: true })
+        body: JSON.stringify({ completed: true }),
       })
 
       // Refresh competition data
       const compRes = await fetch(`/api/competitions/${id}`)
       if (compRes.ok) setCompetition(await compRes.json())
-      
     } catch (error) {
       toast.error("Failed to load rankings")
       console.error("Error:", error)
@@ -226,20 +241,20 @@ export default function CompetitionDetailPage() {
 
     const scores: Record<string, { teamId: number; teamName: string; totalScore: number }[]> = {}
 
-    Object.values(rankingsByCategory).forEach(raceRankings => {
+    Object.values(rankingsByCategory).forEach((raceRankings) => {
       Object.entries(raceRankings).forEach(([category, rankings]) => {
         if (!scores[category]) scores[category] = []
-        
-        rankings.forEach(ranking => {
-          const existing = scores[category].find(t => t.teamId === ranking.teamId)
+
+        rankings.forEach((ranking) => {
+          const existing = scores[category].find((t) => t.teamId === ranking.teamId)
           if (existing) {
             existing.totalScore += ranking.score
           } else {
-            const team = teams.find(t => t.id === ranking.teamId)
+            const team = teams.find((t) => t.id === ranking.teamId)
             scores[category].push({
               teamId: ranking.teamId,
               teamName: team?.teamName || "Unknown",
-              totalScore: ranking.score
+              totalScore: ranking.score,
             })
           }
         })
@@ -247,7 +262,7 @@ export default function CompetitionDetailPage() {
     })
 
     // Sort each category
-    Object.values(scores).forEach(category => 
+    Object.values(scores).forEach((category) =>
       category.sort((a, b) => b.totalScore - a.totalScore)
     )
 
@@ -278,12 +293,8 @@ export default function CompetitionDetailPage() {
               </Button>
               <h1 className="text-xl font-bold md:text-2xl">{competition.competitionName}</h1>
             </div>
-            
-            <Button
-              variant="outline"
-              onClick={() => window.location.reload()}
-              disabled={loading}
-            >
+
+            <Button variant="outline" onClick={() => window.location.reload()} disabled={loading}>
               Refresh
             </Button>
           </div>
@@ -305,10 +316,13 @@ export default function CompetitionDetailPage() {
                         <div className="flex flex-col gap-2 md:flex-row md:items-center md:justify-between">
                           <div className="flex items-center gap-2">
                             <h3 className="text-sm font-medium md:text-base">
-                              {events.find(e => e.id === race.eventId)?.eventName}
+                              {events.find((e) => e.id === race.eventId)?.eventName}
                             </h3>
                             {race.completed && (
-                              <Badge variant="outline" className="border-green-200 bg-green-50 text-green-700 text-xs">
+                              <Badge
+                                variant="outline"
+                                className="border-green-200 bg-green-50 text-xs text-green-700"
+                              >
                                 Completed
                               </Badge>
                             )}
@@ -365,15 +379,23 @@ export default function CompetitionDetailPage() {
                                     key={race.id}
                                     className={`text-xs ${isMissing ? "bg-red-50 text-red-700" : "bg-green-50 text-green-700"}`}
                                   >
-                                    {getInitials(events.find(e => e.id === race.eventId)?.eventName || "")}
+                                    {getInitials(
+                                      events.find((e) => e.id === race.eventId)?.eventName || ""
+                                    )}
                                     {isMobile && isMissing ? "!" : ""}
                                   </Badge>
                                 )
                               })}
                             </div>
                           </div>
-                          <Link href={`/monitors/${team.id}/${competitionId}`} className="w-full md:w-auto">
-                            <Button size={isMobile ? "sm" : "default"} className="w-full mt-2 md:mt-0 md:w-auto">
+                          <Link
+                            href={`/monitors/${team.id}/${competitionId}`}
+                            className="w-full md:w-auto"
+                          >
+                            <Button
+                              size={isMobile ? "sm" : "default"}
+                              className="mt-2 w-full md:mt-0 md:w-auto"
+                            >
                               {isMobile ? "Graphs" : "View Graphs"}
                             </Button>
                           </Link>
@@ -397,7 +419,7 @@ export default function CompetitionDetailPage() {
               <option value="overall">Overall Leaderboard</option>
               {competition.races.map((race) => (
                 <option key={race.id} value={`race-${race.id}`}>
-                  {events.find(e => e.id === race.eventId)?.eventName}
+                  {events.find((e) => e.id === race.eventId)?.eventName}
                 </option>
               ))}
             </select>
@@ -419,7 +441,7 @@ export default function CompetitionDetailPage() {
                   <div className="space-y-6">
                     {Object.entries(overallRankings).map(([category, rankings]) => (
                       <div key={category} className="mb-4">
-                        <h3 className="px-4 text-sm font-bold md:text-base md:px-6">{category}</h3>
+                        <h3 className="px-4 text-sm font-bold md:px-6 md:text-base">{category}</h3>
                         <div className="overflow-x-auto">
                           <Table>
                             <TableHeader>
@@ -438,7 +460,9 @@ export default function CompetitionDetailPage() {
                                     {isMobile ? ranking.teamName.split(" ")[0] : ranking.teamName}
                                   </TableCell>
                                   {!isMobile && (
-                                    <TableCell>{teams.find(t => t.id === ranking.teamId)?.vehicleClass}</TableCell>
+                                    <TableCell>
+                                      {teams.find((t) => t.id === ranking.teamId)?.vehicleClass}
+                                    </TableCell>
                                   )}
                                   <TableCell className="text-right">{ranking.totalScore}</TableCell>
                                 </TableRow>
@@ -459,7 +483,7 @@ export default function CompetitionDetailPage() {
                   <CardHeader className={isMobile ? "p-4" : undefined}>
                     <CardTitle className="flex items-center gap-2 text-base md:text-lg">
                       <Trophy className="h-4 w-4" />
-                      {events.find(e => e.id === race.eventId)?.eventName}
+                      {events.find((e) => e.id === race.eventId)?.eventName}
                     </CardTitle>
                   </CardHeader>
                   <CardContent className={isMobile ? "p-0" : undefined}>
@@ -467,7 +491,9 @@ export default function CompetitionDetailPage() {
                       <div className="space-y-6">
                         {Object.entries(rankingsByCategory[race.id]).map(([category, rankings]) => (
                           <div key={category} className="mb-4">
-                            <h3 className="px-4 text-sm font-bold md:text-base md:px-6">{category}</h3>
+                            <h3 className="px-4 text-sm font-bold md:px-6 md:text-base">
+                              {category}
+                            </h3>
                             <div className="overflow-x-auto">
                               <Table>
                                 <TableHeader>
@@ -493,7 +519,7 @@ export default function CompetitionDetailPage() {
                                       )}
                                       <TableCell>{index + 1}</TableCell>
                                       <TableCell>
-                                        {teams.find(t => t.id === ranking.teamId)?.teamName}
+                                        {teams.find((t) => t.id === ranking.teamId)?.teamName}
                                       </TableCell>
                                       {!isMobile && <TableCell>{ranking.score}</TableCell>}
                                     </TableRow>
@@ -505,7 +531,9 @@ export default function CompetitionDetailPage() {
                         ))}
                       </div>
                     ) : (
-                      <p className="p-4 text-sm text-muted-foreground">No rankings available yet.</p>
+                      <p className="p-4 text-sm text-muted-foreground">
+                        No rankings available yet.
+                      </p>
                     )}
                     {race.completed && (
                       <div className="p-4">

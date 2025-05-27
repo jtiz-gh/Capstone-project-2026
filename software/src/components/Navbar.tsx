@@ -38,44 +38,40 @@ export default function Navbar() {
       <NavigationMenu className="hidden md:flex">
         <NavigationMenuList>
           <NavigationMenuItem>
-            <Link href="/" passHref>
-              <NavigationMenuLink
-                className={navigationMenuTriggerStyle()}
-                data-testid="nav-home-link"
-              >
-                Home
-              </NavigationMenuLink>
-            </Link>
+            <NavigationMenuLink
+              href="/"
+              className={navigationMenuTriggerStyle()}
+              data-testid="nav-home-link"
+            >
+              Home
+            </NavigationMenuLink>
           </NavigationMenuItem>
           <NavigationMenuItem>
-            <Link href="/teams" passHref>
-              <NavigationMenuLink
-                className={navigationMenuTriggerStyle()}
-                data-testid="nav-teams-link"
-              >
-                Teams
-              </NavigationMenuLink>
-            </Link>
+            <NavigationMenuLink
+              href="/teams"
+              className={navigationMenuTriggerStyle()}
+              data-testid="nav-teams-link"
+            >
+              Teams
+            </NavigationMenuLink>
           </NavigationMenuItem>
           <NavigationMenuItem>
-            <Link href="/competitions" passHref>
-              <NavigationMenuLink
-                className={navigationMenuTriggerStyle()}
-                data-testid="nav-competitions-link"
-              >
-                Competitions
-              </NavigationMenuLink>
-            </Link>
+            <NavigationMenuLink
+              href="/competitions"
+              className={navigationMenuTriggerStyle()}
+              data-testid="nav-competitions-link"
+            >
+              Competitions
+            </NavigationMenuLink>
           </NavigationMenuItem>
           <NavigationMenuItem>
-            <Link href="/event-types" passHref>
-              <NavigationMenuLink
-                className={navigationMenuTriggerStyle()}
-                data-testid="nav-event-types-link"
-              >
-                Event Types
-              </NavigationMenuLink>
-            </Link>
+            <NavigationMenuLink
+              href="/event-types"
+              className={navigationMenuTriggerStyle()}
+              data-testid="nav-event-types-link"
+            >
+              Event Types
+            </NavigationMenuLink>
           </NavigationMenuItem>
         </NavigationMenuList>
       </NavigationMenu>

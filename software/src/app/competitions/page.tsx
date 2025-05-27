@@ -4,7 +4,14 @@ import { useMediaQuery } from "@/hooks/use-media-query"
 import Navbar from "@/components/Navbar"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardFooter,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card"
 import { ArrowLeft, Trophy, Users } from "lucide-react"
 import Link from "next/link"
 import { useEffect, useState } from "react"
@@ -34,9 +41,9 @@ export default function CompetitionsListPage() {
         const [teamsRes, eventsRes, competitionsRes] = await Promise.all([
           fetch("/api/teams"),
           fetch("/api/events"),
-          fetch("/api/competitions")
+          fetch("/api/competitions"),
         ])
-        
+
         if (teamsRes.ok) setTeams(await teamsRes.json())
         if (eventsRes.ok) setEvents(await eventsRes.json())
         if (competitionsRes.ok) setCompetitions(await competitionsRes.json())
@@ -71,30 +78,29 @@ export default function CompetitionsListPage() {
       return
     }
 
-    
-
     try {
       // Create competition logic
       const raceResponses = await Promise.all(
-        selectedEvents.map(event => 
+        selectedEvents.map((event) =>
           fetch("/api/races", {
             method: "POST",
             headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ eventId: event.id })
+            body: JSON.stringify({ eventId: event.id }),
           })
-      ))
-      
-      const raceIds = await Promise.all(raceResponses.map(res => res.json()))
-      
+        )
+      )
+
+      const raceIds = await Promise.all(raceResponses.map((res) => res.json()))
+
       const response = await fetch("/api/competitions", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           competitionName,
           competitionDate: new Date().toISOString(),
-          teamIds: selectedTeams.map(team => team.id),
-          raceIds: raceIds.map(race => race.id)
-        })
+          teamIds: selectedTeams.map((team) => team.id),
+          raceIds: raceIds.map((race) => race.id),
+        }),
       })
 
       if (response.ok) {
@@ -112,18 +118,16 @@ export default function CompetitionsListPage() {
   }
 
   const toggleEvent = (event: Event) => {
-    setSelectedEvents(prev => 
-      prev.includes(event) 
-        ? prev.filter(e => e !== event) 
-        : [...prev, event]
+    setSelectedEvents((prev) =>
+      prev.includes(event) ? prev.filter((e) => e !== event) : [...prev, event]
     )
   }
 
   const toggleTeam = (teamId: number) => {
-    setSelectedTeams(prev => 
-      prev.some(team => team.id === teamId)
-        ? prev.filter(team => team.id !== teamId)
-        : [...prev, teams.find(team => team.id === teamId)!]
+    setSelectedTeams((prev) =>
+      prev.some((team) => team.id === teamId)
+        ? prev.filter((team) => team.id !== teamId)
+        : [...prev, teams.find((team) => team.id === teamId)!]
     )
   }
 
@@ -164,7 +168,7 @@ export default function CompetitionsListPage() {
           <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
             <div className="flex items-center gap-2">
               <Link href="/">
-                <Button variant="ghost" size={isMobile ? "sm" : "default"}>
+                <Button variant="ghost" size={isMobile ? "sm" : "default"} data-testid="back-button">
                   <ArrowLeft className="h-4 w-4" />
                 </Button>
               </Link>
@@ -182,12 +186,8 @@ export default function CompetitionsListPage() {
 
           <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
             <TabsList className="grid w-full grid-cols-2">
-              <TabsTrigger value="view">
-                {isMobile ? "View" : "View Competitions"}
-              </TabsTrigger>
-              <TabsTrigger value="create">
-                {isMobile ? "Create" : "Create Competition"}
-              </TabsTrigger>
+              <TabsTrigger value="view">{isMobile ? "View" : "View Competitions"}</TabsTrigger>
+              <TabsTrigger value="create">{isMobile ? "Create" : "Create Competition"}</TabsTrigger>
             </TabsList>
 
             <TabsContent value="view" className="mt-4">
@@ -218,7 +218,7 @@ export default function CompetitionsListPage() {
                               variant="outline"
                               className={`text-xs ${race.completed ? "bg-green-50 text-green-700" : ""}`}
                             >
-                               {events.find((e) => e.id === race.eventId)?.eventName?.split(" ")[0]}
+                              {events.find((e) => e.id === race.eventId)?.eventName?.split(" ")[0]}
                               {race.completed && " ✓"}
                             </Badge>
                           ))}
@@ -232,7 +232,9 @@ export default function CompetitionsListPage() {
                             {competition.teams.slice(0, 3).map((team) => (
                               <span key={team.id} className="inline-block">
                                 {isMobile ? team.teamName.split(" ")[0] : team.teamName}
-                                {competition.teams.indexOf(team) < competition.teams.length - 1 ? ", " : ""}
+                                {competition.teams.indexOf(team) < competition.teams.length - 1
+                                  ? ", "
+                                  : ""}
                               </span>
                             ))}
                           </div>
@@ -307,7 +309,6 @@ export default function CompetitionsListPage() {
                       onTeamToggle={toggleTeam}
                       onAddTeam={handleAddTeam}
                       loading={loading}
-
                     />
 
                     <Button
