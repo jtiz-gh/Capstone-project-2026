@@ -69,7 +69,7 @@ async def post_binary_file_streaming(file_path, total_frames):
     try:
         headers = {
             "Content-Type": "application/octet-stream",
-            "Content-Length": str(content_length)
+            "Content-Length": str(content_length),
         }
 
         host = server_ip

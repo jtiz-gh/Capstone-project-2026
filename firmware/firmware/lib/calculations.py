@@ -5,6 +5,7 @@ Helper functions for various calculations.
 # power = 0.0161725x - 19.75297
 POWER_A = 1.105
 
+
 @micropython.native  # type: ignore  # noqa: F821
 def calculate_energy(power_samples, time_interval: float):
     """Calculate energy using the trapezoidal rule for numerical integration.

@@ -122,14 +122,16 @@ def process_data_thread(adc_queue, timestamp_queue, processed_queue):
                 energy = calculate_energy(power_samples, time_interval)
 
                 # If both voltage and current are too low, skip processing
-                if (
-                    avg_voltage < MIN_DETECTABLE_VALUE
-                    or avg_current < MIN_DETECTABLE_VALUE
-                ):
-                    avg_current = 0.0
+                if avg_voltage < MIN_DETECTABLE_VALUE:
                     avg_voltage = 0.0
                     avg_power = 0.0
                     peak_voltage = 0.0
+                    peak_power = 0.0
+                    energy = 0.0
+
+                if avg_current < MIN_DETECTABLE_VALUE:
+                    avg_current = 0.0
+                    avg_power = 0.0
                     peak_current = 0.0
                     peak_power = 0.0
                     energy = 0.0

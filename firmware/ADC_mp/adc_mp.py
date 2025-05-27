@@ -18,50 +18,46 @@ current_index = 0
 # Initialize ADC on Pin 26 (GPIO26)
 adc = ADC(Pin(26))
 
-#initial session id if we want to later think about the different sessions
+# initial session id if we want to later think about the different sessions
 session_id = int(time.ticks_ms())
 
-#calculate CRC32 checksum 
+
+# calculate CRC32 checksum
 def calculate_crc32(json_data):
     return ubinascii.crc32(json_data)
 
-#the function stores adc_value, along with a timestamp in a packet. that packet is then stored
+
+# the function stores adc_value, along with a timestamp in a packet. that packet is then stored
 # with its checksum into a new packet.
 def store_adc_value(adc_value, timestamp):
-
     # populate 1 array
     global current_array, current_index
     adc_data[current_array][current_index] = {
-        "timestamp" : timestamp,
-        "voltage" : round(adc_value, 4)
+        "timestamp": timestamp,
+        "voltage": round(adc_value, 4),
     }
     current_index += 1
 
     # if array is full then create a packet
     if current_index == array_size:
-        packet = {
-            "chunk_id" : current_array,
-            "measurements" : current_array
-        }
+        packet = {"chunk_id": current_array, "measurements": current_array}
 
-        json_str = ujson.dumps(packet) 
+        json_str = ujson.dumps(packet)
         checksum = calculate_crc32(json_str)
 
-        #final packet storing the of packet along with its checksum
-        full_packet = {
-            "data" : packet,
-            "crc32" : checksum
-        }
+        # final packet storing the of packet along with its checksum
+        full_packet = {"data": packet, "crc32": checksum}
         # for value in adc_data[current_array]:
         #     print("{:.4f}".format(value), end=' ')
         # print()
 
-        #simulating sending data (WOULD NEED TO BE UPDATED)
+        # simulating sending data (WOULD NEED TO BE UPDATED)
         print(ujson.dumps(full_packet))
 
         # Move on to the next array to store the data
         current_array = (current_array + 1) % num_array
         current_index = 0
+
 
 def main():
     print("ADC connection secured")
@@ -74,11 +70,14 @@ def main():
         voltage = (adc_raw_V / 65535) * 3.3  # Scale to 3.3V
         timestamp = time.ticks_ms()
 
-        #checking data is being read properly (WOULD NEED TO BE CHANGED IN FINAL IMPLIMENTATION)
-        print("The current voltage is: {:.4f}V at the time: {}".format(voltage, timestamp))
+        # checking data is being read properly (WOULD NEED TO BE CHANGED IN FINAL IMPLIMENTATION)
+        print(
+            "The current voltage is: {:.4f}V at the time: {}".format(voltage, timestamp)
+        )
         store_adc_value(voltage, timestamp)
         adc_index += 1
         time.sleep(sampling_rate)
+
 
 if __name__ == "__main__":
     main()

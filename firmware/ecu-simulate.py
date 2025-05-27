@@ -13,10 +13,11 @@ fastf1.Cache.enable_cache("cache")
 fastf1.set_log_level("WARNING")
 
 print("Loading session...")
+# session = fastf1.get_session(2023, "Silverstone", "Q")
 session = fastf1.get_session(2023, "Monza", "Q")
 session.load()
 
-driver = "VER"
+driver = "VER"  # SAI, VER, HAM, TSU, LEC
 lap = session.laps.pick_driver(driver).pick_fastest()
 
 tel = lap.get_car_data().add_distance()

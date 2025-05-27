@@ -18,14 +18,19 @@ if len(sys.argv) > 1:
             load.write(":INPut OFF")
             load.close()
             sys.exit(1)
-    
+
         load.write(":INPut ON")  # turn on load
         load.write(":FUNCtion RES")  # CR mode
 
-
-        voltage = load.query_ascii_values(":MEASure:VOLTage?", converter="s", separator="\n")[0]
-        current = load.query_ascii_values(":MEASure:CURRent?", converter="s", separator="\n")[0]
-        power = load.query_ascii_values(":MEASure:POWer?", converter="s", separator="\n")[0]
+        voltage = load.query_ascii_values(
+            ":MEASure:VOLTage?", converter="s", separator="\n"
+        )[0]
+        current = load.query_ascii_values(
+            ":MEASure:CURRent?", converter="s", separator="\n"
+        )[0]
+        power = load.query_ascii_values(
+            ":MEASure:POWer?", converter="s", separator="\n"
+        )[0]
         target = float(input_value)
 
         if target < START:

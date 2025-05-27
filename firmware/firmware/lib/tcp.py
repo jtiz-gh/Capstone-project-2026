@@ -96,6 +96,7 @@ async def close_connection(writer):
         except Exception as e:
             print(f"Error closing connection: {e}")
 
+
 async def handle_response(reader, writer):
     # Read response status
     status_code, error = await read_http_response_status(reader, writer)
@@ -125,7 +126,7 @@ async def send_request_with_body(path, host, headers=None, body=None, method="PO
 
     if reader is None or writer is None:
         return False, "Failed to open connection"
-    
+
     if body is not None:
         if not headers:
             headers = {}

@@ -191,7 +191,7 @@ def stream_file_data(filename, chunk_size=None):
                         bytes_read += len(chunk)
 
                         yield chunk
-                        break 
+                        break
                     except MemoryError:
                         # Try a smaller chunk if we run out of memory
                         read_size //= 2

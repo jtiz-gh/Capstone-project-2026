@@ -1,5 +1,6 @@
-import time
 import json
+import sys
+import time
 
 import drivers.flash_storage
 import drivers.wlan
@@ -66,6 +67,12 @@ async def init():
                 if not status:
                     print(f"Failed to send notification: {result}")
                     server_ip = None
+                else:
+                    print(f"Notification sent successfully: {result}")
+                    # Keep LED solid on
+                    pico_led.on()
+                    sys.exit(0)
+
             except Exception as e:
                 print(f"Error sending notification: {e}")
                 server_ip = None
