@@ -2,11 +2,11 @@
 
 import { useEffect, useState } from "react"
 import { Button } from "@/components/ui/button"
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
+import { Card, CardContent } from "@/components/ui/card"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import Link from "next/link"
 import { ArrowLeft, X } from "lucide-react"
-import type { Device, Team } from "@/types/teams"
+import type { Team } from "@/types/teams"
 import { TeamList } from "@/app/teams/team-list"
 import { TeamForm } from "@/app/teams/team-form"
 import Navbar from "@/components/Navbar"
@@ -110,7 +110,7 @@ export default function TeamsPage() {
       } else {
         alert("Failed to fetch devices")
       }
-    } catch (err) {
+    } catch {
       alert("Error fetching devices")
     }
   }
@@ -150,21 +150,21 @@ export default function TeamsPage() {
           return [...prevDevices]
         })
       }
-    } catch (err) {
+    } catch {
       alert("Error assigning device")
     }
   }
 
   const handleUnassignDevice = async (deviceId: number, teamId: number) => {
-    if (!selectedTeamId) return
     try {
       const response = await fetch(`/api/devices/${deviceId}`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ teamId }),
+        body: JSON.stringify({ teamId: null }),
       })
+
       if (response.ok) {
-        await fetch(`/api/teams/${selectedTeamId}`, {
+        await fetch(`/api/teams/${teamId}`, {
           method: "PATCH",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
@@ -176,7 +176,7 @@ export default function TeamsPage() {
 
         setTeams((prevTeams) =>
           prevTeams.map((team) =>
-            team.id === selectedTeamId
+            team.id === teamId
               ? {
                   ...team,
                   devices: team.devices.filter((device) => device.id !== deviceId),
@@ -184,12 +184,17 @@ export default function TeamsPage() {
               : team
           )
         )
-        setDevices((prevDevices) => {
-          prevDevices.find((device) => device.id === deviceId)!.teamId = null
-          return [...prevDevices]
-        })
+
+        setDevices((prevDevices) =>
+          prevDevices.map((device) =>
+            device.id === deviceId ? { ...device, teamId: null } : device
+          )
+        )
+      } else {
+        throw new Error("Failed to unassign device")
       }
     } catch (err) {
+      console.error("Error unassigning device:", err)
       alert("Error unassigning device")
     }
   }

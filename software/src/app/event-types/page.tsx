@@ -3,7 +3,7 @@
 import { Button } from "@/components/ui/button"
 import Link from "next/link"
 import Navbar from "@/components/Navbar"
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
+import { Card, CardContent } from "@/components/ui/card"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { EventTypeList } from "@/app/event-types/event-type-list"
 import { EventTypeForm } from "@/app/event-types/event-type-form"

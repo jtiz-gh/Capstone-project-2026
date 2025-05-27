@@ -40,9 +40,6 @@ export function NotificationsController() {
         } else if (data.type === "NEW_NOTIFICATION" && data.payload) {
           const notification = data.payload
 
-          // Get additional data if available
-          const notificationData = notification.data ? notification.data : {}
-
           // Show toast with message (default content to display)
           toast.success(notification.message, {
             description: `${new Date(notification.createdAt).toLocaleTimeString()}`,

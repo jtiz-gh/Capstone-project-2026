@@ -6,8 +6,6 @@ import { useState, useEffect } from "react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
-import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group"
-import { LineChartIcon as ChartLine } from "lucide-react"
 import type { Event } from "@/types/teams"
 
 interface EventTypeFormProps {
@@ -47,11 +45,6 @@ export function EventTypeForm({
     if (!initialEvent) {
       setEventName("")
     }
-  }
-
-  const handleViewEnergyMonitor = () => {
-    // TODO: Actually need to go to ECU
-    alert("No energy monitors yet :)))))")
   }
 
   return (
