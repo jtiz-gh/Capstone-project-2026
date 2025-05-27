@@ -162,7 +162,7 @@ export default function CompetitionDetailPage() {
       if (!recordsRes.ok) throw new Error("Failed to fetch records")
 
       const records = await recordsRes.json()
-      const eventData = records.filter(
+      const eventData = records.records.filter(
         (r: RaceRecord) => r.competitionId === competition?.id && r.raceId === raceId
       )
 
