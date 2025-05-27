@@ -76,7 +76,11 @@ export default function Navbar() {
         </NavigationMenuList>
       </NavigationMenu>
       <Image src={logo} alt="Logo" width={160} height={70} className="absolute left-5" />
-      <Button className="absolute right-5" onClick={handleSync} disabled={syncing}>
+      <Button
+        className="absolute right-5 hover:cursor-pointer"
+        onClick={handleSync}
+        disabled={syncing}
+      >
         <RefreshCw className={`mr-2 h-4 w-4 ${syncing ? "animate-spin" : ""}`} />
         {syncing ? "Syncing..." : "Sync"}
       </Button>

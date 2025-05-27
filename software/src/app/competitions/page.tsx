@@ -168,7 +168,12 @@ export default function CompetitionsListPage() {
           <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
             <div className="flex items-center gap-2">
               <Link href="/">
-                <Button variant="ghost" size={isMobile ? "sm" : "default"} data-testid="back-button">
+                <Button
+                  variant="ghost"
+                  size={isMobile ? "sm" : "default"}
+                  data-testid="back-button"
+                  className="hover:cursor-pointer"
+                >
                   <ArrowLeft className="h-4 w-4" />
                 </Button>
               </Link>
@@ -179,6 +184,7 @@ export default function CompetitionsListPage() {
               onClick={loadPastCompetitions}
               disabled={loading}
               size={isMobile ? "sm" : "default"}
+              className="hover:cursor-pointer"
             >
               {isMobile ? "Refresh" : "Load Past Competitions"}
             </Button>
@@ -186,8 +192,12 @@ export default function CompetitionsListPage() {
 
           <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
             <TabsList className="grid w-full grid-cols-2">
-              <TabsTrigger value="view">{isMobile ? "View" : "View Competitions"}</TabsTrigger>
-              <TabsTrigger value="create">{isMobile ? "Create" : "Create Competition"}</TabsTrigger>
+              <TabsTrigger value="view" className="hover:cursor-pointer">
+                {isMobile ? "View" : "View Competitions"}
+              </TabsTrigger>
+              <TabsTrigger value="create" className="hover:cursor-pointer">
+                {isMobile ? "Create" : "Create Competition"}
+              </TabsTrigger>
             </TabsList>
 
             <TabsContent value="view" className="mt-4">
@@ -242,7 +252,10 @@ export default function CompetitionsListPage() {
                       </CardContent>
                       <CardFooter className="p-4 md:p-6">
                         <Link href={`/competitions/${competition.id}`} className="w-full">
-                          <Button size={isMobile ? "sm" : "default"} className="w-full">
+                          <Button
+                            size={isMobile ? "sm" : "default"}
+                            className="w-full hover:cursor-pointer"
+                          >
                             View Details
                           </Button>
                         </Link>
@@ -294,8 +307,12 @@ export default function CompetitionsListPage() {
                               checked={selectedEvents.includes(event)}
                               onCheckedChange={() => toggleEvent(event)}
                               disabled={loading}
+                              className="hover:cursor-pointer"
                             />
-                            <Label htmlFor={`event-${event.id}`} className="text-xs md:text-sm">
+                            <Label
+                              htmlFor={`event-${event.id}`}
+                              className="text-xs hover:cursor-pointer md:text-sm"
+                            >
                               {isMobile ? event.eventName.split(" ")[0] : event.eventName}
                             </Label>
                           </div>
@@ -319,7 +336,7 @@ export default function CompetitionsListPage() {
                         selectedTeams.length === 0 ||
                         loading
                       }
-                      className="w-full"
+                      className="w-full hover:cursor-pointer"
                     >
                       {loading ? (
                         <Loader2 className="mr-2 h-4 w-4 animate-spin" />

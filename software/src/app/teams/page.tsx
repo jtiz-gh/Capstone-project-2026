@@ -213,7 +213,7 @@ export default function TeamsPage() {
           <div className="relative z-50 w-full max-w-[95vw] rounded-lg bg-white p-2 shadow-lg sm:max-w-lg sm:p-6">
             <button
               onClick={() => setShowDevicePopup(false)}
-              className="absolute top-2 right-2 rounded-full p-2 text-gray-500 hover:text-gray-700"
+              className="absolute top-2 right-2 rounded-full p-2 text-gray-500 hover:cursor-pointer hover:text-gray-700"
               aria-label="Close"
             >
               <X className="h-5 w-5" />
@@ -309,7 +309,7 @@ export default function TeamsPage() {
                   onEditTeam={handleEditingMode}
                   onConfigureECU={handleConfigureECU}
                 />
-              )}{" "}
+              )}
             </TabsContent>
 
             <TabsContent value="add" className="mt-6">

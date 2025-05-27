@@ -288,13 +288,19 @@ export default function CompetitionDetailPage() {
                 variant="ghost"
                 size={isMobile ? "sm" : "default"}
                 onClick={() => router.push("/competitions")}
+                className="hover:cursor-pointer"
               >
                 <ArrowLeft className="h-4 w-4" />
               </Button>
               <h1 className="text-xl font-bold md:text-2xl">{competition.competitionName}</h1>
             </div>
 
-            <Button variant="outline" onClick={() => window.location.reload()} disabled={loading}>
+            <Button
+              variant="outline"
+              onClick={() => window.location.reload()}
+              disabled={loading}
+              className="hover:cursor-pointer"
+            >
               Refresh
             </Button>
           </div>
@@ -331,7 +337,7 @@ export default function CompetitionDetailPage() {
                           <Button
                             onClick={() => loadRankings(race.id)}
                             size={isMobile ? "sm" : "default"}
-                            className="w-full md:w-auto"
+                            className="w-full hover:cursor-pointer md:w-auto"
                             disabled={loadingRaceId !== null}
                           >
                             {loadingRaceId === race.id ? (
@@ -394,7 +400,7 @@ export default function CompetitionDetailPage() {
                           >
                             <Button
                               size={isMobile ? "sm" : "default"}
-                              className="mt-2 w-full md:mt-0 md:w-auto"
+                              className="mt-2 w-full md:mt-0 md:w-auto hover:cursor-pointer"
                             >
                               {isMobile ? "Graphs" : "View Graphs"}
                             </Button>
@@ -541,7 +547,7 @@ export default function CompetitionDetailPage() {
                           onClick={applyFinishStatus}
                           disabled={loading || Object.keys(finishStatusUpdates).length === 0}
                           size={isMobile ? "sm" : "default"}
-                          className="w-full md:w-auto"
+                          className="w-full md:w-auto hover:cursor-pointer"
                         >
                           {loading ? (
                             <Loader2 className="mr-2 h-4 w-4 animate-spin" />

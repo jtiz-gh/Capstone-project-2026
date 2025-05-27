@@ -78,17 +78,11 @@ export function TeamForm({
       setLoading(false)
     }
 
-    // Reset form if not editing
     if (!initialTeam) {
       setTeamName("")
       setVehicleClass("Open")
       setVehicleType("Kart")
     }
-  }
-
-  const handleViewEnergyMonitor = () => {
-    // TODO: Actually need to go to ECU
-    alert("No energy monitors yet :)))))")
   }
 
   return (
@@ -168,21 +162,6 @@ export function TeamForm({
           </div>
         </RadioGroup>
       </div>
-
-      {initialTeam && (
-        <div>
-          <Button
-            type="button"
-            variant="outline"
-            className="hover:cursor-pointer"
-            disabled={loading}
-            onClick={handleViewEnergyMonitor}
-          >
-            <ChartLine className="mr-2 h-4 w-4" />
-            View Energy Monitor(s)
-          </Button>
-        </div>
-      )}
 
       <div className="flex gap-2">
         <Button type="submit" className="flex-1 hover:cursor-pointer" disabled={loading}>

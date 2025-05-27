@@ -44,8 +44,11 @@ export default function Home() {
             </Button>
           </Link>
           <Link href="/event-types" className="col-span-2">
-            <Button 
-              data-testid="homepage-event-types" variant="outline" className="col-span-2 w-full text-lg">
+            <Button
+              data-testid="homepage-event-types"
+              variant="outline"
+              className="col-span-2 w-full text-lg hover:cursor-pointer"
+            >
               Event Types
             </Button>
           </Link>
