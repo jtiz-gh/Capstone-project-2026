@@ -9,7 +9,7 @@ import Link from "next/link"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
-import { useEffect, useState } from "react"
+import { useEffect, useState, useRef, useCallback } from "react"
 import { Loader2, AlertCircle, Database, Settings } from "lucide-react"
 
 interface SensorDataEntry {
@@ -65,7 +65,6 @@ export default function Monitors() {
   const [teamName, setTeamName] = useState<string>("")
   const [competitionName, setCompetitionName] = useState<string>("")
   const [selectedRecord, setSelectedRecord] = useState<Record | null>(null)
-  const [selectedRecords, setSelectedRecords] = useState<Record[]>([])
   const [isLoading, setIsLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
 
@@ -75,7 +74,11 @@ export default function Monitors() {
   const [isAssigningMode, setIsAssigningMode] = useState(false)
   const [showAdvancedManager, setShowAdvancedManager] = useState(false)
 
-  const fetchSensorDataByRecordId = async (recordId: number) => {
+  const [showNewDataOverlay, setShowNewDataOverlay] = useState(false)
+  const pollingRef = useRef<NodeJS.Timeout | null>(null)
+  const [lastDataCount, setLastDataCount] = useState<number | null>(null)
+
+  const fetchSensorDataByRecordId = useCallback(async (recordId: number) => {
     try {
       const res = await fetch(`/api/sensor-data?recordId=${recordId}`)
       if (!res.ok) {
@@ -100,7 +103,7 @@ export default function Monitors() {
       console.error("Error fetching sensor data:", error)
       setError("Failed to load sensor data")
     }
-  }
+  }, [])
 
   const handleRecordSelection = async (recordIds: number[]) => {
     if (recordIds.length === 1) {
@@ -108,13 +111,11 @@ export default function Monitors() {
       const record = modalRecords.find((r) => r.id === recordIds[0])
       if (record) {
         setSelectedRecord(record)
-        setSelectedRecords([record])
         await fetchSensorDataByRecordId(recordIds[0])
       }
     } else if (recordIds.length > 1) {
       // Multiple records selected - show first one but remember all
       const allSelectedRecords = modalRecords.filter((r) => recordIds.includes(r.id))
-      setSelectedRecords(allSelectedRecords)
       setSelectedRecord(allSelectedRecords[0])
       await fetchSensorDataByRecordId(allSelectedRecords[0].id)
     }
@@ -140,7 +141,6 @@ export default function Monitors() {
       if (response.ok) {
         const newRecord = await response.json()
         setSelectedRecord(newRecord)
-        setSelectedRecords([newRecord])
         await fetchSensorDataByRecordId(newRecordId)
       }
     } catch (error) {
@@ -149,7 +149,7 @@ export default function Monitors() {
     }
   }
 
-  const searchForRecords = async () => {
+  const searchForRecords = useCallback(async () => {
     setIsLoading(true)
     setError(null)
 
@@ -169,7 +169,6 @@ export default function Monitors() {
         if (assignedRecords.length === 1) {
           // Single record found, use it directly
           setSelectedRecord(assignedRecords[0])
-          setSelectedRecords([assignedRecords[0]])
           await fetchSensorDataByRecordId(assignedRecords[0].id)
         } else {
           // Multiple records found, show selection modal
@@ -202,7 +201,6 @@ export default function Monitors() {
               if (assignRes.ok) {
                 const updatedRecord = await assignRes.json()
                 setSelectedRecord(updatedRecord)
-                setSelectedRecords([updatedRecord])
                 await fetchSensorDataByRecordId(updatedRecord.id)
               } else {
                 throw new Error("Failed to auto-assign record")
@@ -226,7 +224,7 @@ export default function Monitors() {
     } finally {
       setIsLoading(false)
     }
-  }
+  }, [teamId, competitionId, fetchSensorDataByRecordId])
 
   useEffect(() => {
     setIsClient(true)
@@ -257,7 +255,35 @@ export default function Monitors() {
 
     fetchTeamAndCompetition()
     searchForRecords()
-  }, [teamId, competitionId])
+  }, [teamId, competitionId, searchForRecords])
+
+  useEffect(() => {
+    if (!selectedRecord) return
+    setShowNewDataOverlay(false)
+    setLastDataCount(mergedData.length)
+    if (pollingRef.current) clearInterval(pollingRef.current)
+    const poll = async () => {
+      try {
+        const res = await fetch(`/api/sensor-data?recordId=${selectedRecord.id}&count=1`)
+        const data = await res.json()
+        if (typeof data.count === "number" && lastDataCount !== null && data.count > lastDataCount) {
+          setShowNewDataOverlay(true)
+        }
+      } catch {}
+    }
+    pollingRef.current = setInterval(poll, 4000)
+    return () => {
+      if (pollingRef.current) clearInterval(pollingRef.current)
+    }
+  }, [selectedRecord, lastDataCount, mergedData.length])
+
+  const handleReloadGraph = async () => {
+    if (selectedRecord) {
+      await fetchSensorDataByRecordId(selectedRecord.id)
+      setShowNewDataOverlay(false)
+      setLastDataCount(mergedData.length)
+    }
+  }
 
   const formatDate = (dateString: string) => {
     return new Date(dateString).toLocaleString()
@@ -399,7 +425,11 @@ export default function Monitors() {
 
         {/* Charts */}
         {isClient && selectedRecord && mergedData.length > 0 && (
-          <SynchronizedCharts chartData={mergedData} />
+          <SynchronizedCharts
+            chartData={mergedData}
+            showNewDataOverlay={showNewDataOverlay}
+            onReloadRequested={handleReloadGraph}
+          />
         )}
 
         {/* No Data State */}

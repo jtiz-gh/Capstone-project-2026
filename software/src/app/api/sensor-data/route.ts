@@ -239,6 +239,15 @@ export async function GET(request: Request) {
   try {
     const url = new URL(request.url)
     const recordId = url.searchParams.get("recordId")
+    const countOnly = url.searchParams.get("count")
+
+    if (recordId && countOnly === "1") {
+      // Return only the count of sensor data for this record
+      const count = await prisma.sensorData.count({
+        where: { recordId: parseInt(recordId) },
+      })
+      return NextResponse.json({ count })
+    }
 
     if (recordId) {
       // Get sensor data for a specific record

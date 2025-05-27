@@ -2,9 +2,10 @@
 
 import { useMemo, useState, useRef, useEffect, useCallback } from "react"
 import UplotReact from "uplot-react"
+import uPlot from "uplot"
 import "uplot/dist/uPlot.min.css"
 import { Button } from "@/components/ui/button"
-import { RefreshCw } from "lucide-react"
+import { RefreshCw, Search } from "lucide-react"
 import { type ChartConfig } from "@/components/ui/chart"
 import Slider from "rc-slider"
 import "rc-slider/assets/index.css"
@@ -42,9 +43,11 @@ interface SensorDataEntry {
 type SynchronizedChartsProps = {
   chartData: SensorDataEntry[]
   deviceId?: string
+  showNewDataOverlay?: boolean
+  onReloadRequested?: () => void
 }
 
-export function SynchronizedCharts({ chartData }: SynchronizedChartsProps) {
+export function SynchronizedCharts({ chartData, showNewDataOverlay, onReloadRequested }: SynchronizedChartsProps) {
   // Filter out rows with missing/invalid timestamp and handle nulls
   const filteredData = useMemo(
     () => chartData.filter((d) => typeof d.timestamp === "number" && !isNaN(d.timestamp)),
@@ -84,25 +87,30 @@ export function SynchronizedCharts({ chartData }: SynchronizedChartsProps) {
     return arr
   }, [filteredData])
 
-  // Shared zoom state for both charts
-  const [zoom, setZoom] = useState<[number, number] | null>(null)
+  // Shared zoom state for both charts (xMin, xMax, yMin, yMax)
+  const [zoom, setZoom] = useState<[number, number, number, number] | null>(null)
 
   // Brush (range slider) state
   const minX = x.length > 0 ? x[0] : 0
   const maxX = x.length > 0 ? x[x.length - 1] : 1
   const [brush, setBrush] = useState<[number, number] | null>(null)
 
-  // Keep brush and zoom in sync
+  // Keep brush and zoom in sync (only x axis for brush)
   useEffect(() => {
-    if (zoom) setBrush(zoom)
+    if (zoom) setBrush([zoom[0], zoom[1]])
     else setBrush([minX, maxX])
   }, [zoom, minX, maxX])
 
-  // When brush changes, update zoom
+  // When brush changes, update zoom (only x axis, keep y from previous zoom)
   const handleBrushChange = useCallback(
     (newBrush: [number, number]) => {
       setBrush(newBrush)
-      setZoom(newBrush[0] === minX && newBrush[1] === maxX ? null : newBrush)
+      setZoom((prevZoom) => {
+        if (newBrush[0] === minX && newBrush[1] === maxX) return null
+        // preserve y zoom if present
+        if (prevZoom) return [newBrush[0], newBrush[1], prevZoom[2], prevZoom[3]]
+        return [newBrush[0], newBrush[1], NaN, NaN]
+      })
     },
     [minX, maxX]
   )
@@ -164,13 +172,20 @@ export function SynchronizedCharts({ chartData }: SynchronizedChartsProps) {
     return rawValue.toFixed(2)
   }
 
-  // uPlot options for metrics chart
+  // Refs to uPlot instances
+  const metricsPlotRef = useRef<uPlot | null>(null)
+  const energyPlotRef = useRef<uPlot | null>(null)
+
+  // uPlot options for metrics chart (allow x and y zoom)
   const metricsOpts = useMemo(
     () => ({
       width: chartWidth,
       height: 500,
       title: "Voltage, Current, Power (Avg/Peak)",
-      scales: { x: { time: false, range: zoom ? () => zoom : undefined }, y: { auto: true } },
+      scales: {
+        x: { time: false, range: zoom ? (() => [zoom[0], zoom[1]] as [number, number]) : undefined },
+        y: { auto: true, range: zoom && !isNaN(zoom[2]) && !isNaN(zoom[3]) ? (() => [zoom[2], zoom[3]] as [number, number]) : undefined },
+      },
       series: [
         { label: "Time (s)", value: formatTime },
         {
@@ -212,20 +227,31 @@ export function SynchronizedCharts({ chartData }: SynchronizedChartsProps) {
       ],
       legend: { show: true },
       cursor: {
-        drag: { x: true, y: true, uni: 30 },
+        drag: { x: true, y: true, uni: 50 },
         focus: { prox: 16 },
       },
       hooks: {
         setSelect: [
           function (u: unknown) {
             const uu = u as {
-              select: { width: number; left: number }
+              select: { width: number; left: number; height: number; top: number }
               posToVal: (px: number, scale: string) => number
             }
-            if (uu.select.width > 0) {
-              const min = uu.posToVal(uu.select.left, "x")
-              const max = uu.posToVal(uu.select.left + uu.select.width, "x")
-              setZoom([min, max])
+            
+            if (uu.select.width > 0 && uu.select.height > 0) {
+              const minX = uu.posToVal(uu.select.left, "x")
+              const maxX = uu.posToVal(uu.select.left + uu.select.width, "x")
+              const minY = uu.posToVal(uu.select.top + uu.select.height, "y")
+              const maxY = uu.posToVal(uu.select.top, "y")
+              setZoom([minX, maxX, minY, maxY])
+            } else if (uu.select.width > 0) {
+              // Only x zoom
+              setZoom((prevZoom) => [
+                uu.posToVal(uu.select.left, "x"),
+                uu.posToVal(uu.select.left + uu.select.width, "x"),
+                prevZoom ? prevZoom[2] : NaN,
+                prevZoom ? prevZoom[3] : NaN,
+              ])
             } else {
               setZoom(null)
             }
@@ -245,13 +271,16 @@ export function SynchronizedCharts({ chartData }: SynchronizedChartsProps) {
     [setZoom, zoom, chartWidth]
   )
 
-  // uPlot options for energy chart
+  // uPlot options for energy chart (x axis zoom only)
   const energyOpts = useMemo(
     () => ({
       width: chartWidth,
       height: 500,
       title: `Energy (Total in view: ${zoomedEnergy.toFixed(3)} J)`,
-      scales: { x: { time: false, range: zoom ? () => zoom : undefined }, y: { auto: true } },
+      scales: {
+        x: { time: false, range: zoom ? (() => [zoom[0], zoom[1]] as [number, number]) : undefined },
+        y: { auto: true },
+      },
       series: [
         { label: "Time (s)", value: formatTime },
         {
@@ -277,7 +306,7 @@ export function SynchronizedCharts({ chartData }: SynchronizedChartsProps) {
       ],
       legend: { show: true },
       cursor: {
-        drag: { x: true, y: true, uni: 30 },
+        drag: { x: true, y: false, uni: 50 }, // Only allow x drag
         focus: { prox: 16 },
       },
       hooks: {
@@ -287,10 +316,14 @@ export function SynchronizedCharts({ chartData }: SynchronizedChartsProps) {
               select: { width: number; left: number }
               posToVal: (px: number, scale: string) => number
             }
+            // Only sync x axis zoom, ignore y
             if (uu.select.width > 0) {
-              const min = uu.posToVal(uu.select.left, "x")
-              const max = uu.posToVal(uu.select.left + uu.select.width, "x")
-              setZoom([min, max])
+              setZoom((prevZoom) => [
+                uu.posToVal(uu.select.left, "x"),
+                uu.posToVal(uu.select.left + uu.select.width, "x"),
+                prevZoom ? prevZoom[2] : NaN,
+                prevZoom ? prevZoom[3] : NaN,
+              ])
             } else {
               setZoom(null)
             }
@@ -317,23 +350,23 @@ export function SynchronizedCharts({ chartData }: SynchronizedChartsProps) {
   const energyData = useMemo(() => [x, energy], [x, energy])
 
   return (
-    <div ref={containerRef} className="w-full max-w-full space-y-6 px-1 sm:px-2 md:px-4">
+    <div ref={containerRef} className="w-full max-w-full space-y-6 px-1 sm:px-2 md:px-4 relative">
       <div className="mb-2 text-xs font-semibold text-muted-foreground">
         Device ID: <span className="text-foreground">{filteredData[0]?.deviceId ?? "N/A"}</span>
       </div>
       <div className="flex flex-col items-center gap-6">
         <div className="flex w-full justify-center overflow-x-auto rounded bg-white p-1 shadow sm:p-2 dark:bg-black">
-          <UplotReact options={metricsOpts} data={metricsData} />
+          <UplotReact options={metricsOpts} data={metricsData} onCreate={chart => { metricsPlotRef.current = chart }} />
         </div>
 
         <div className="mb-2 flex w-full flex-col items-center justify-center overflow-x-auto rounded bg-white p-1 shadow sm:p-2 dark:bg-black">
           <div className="mt-1 mb-2 max-w-full text-center text-xs text-muted-foreground">
-            <b>Tip:</b> Drag the handles to zoom time axis. Alternatively, drag along one axis of
-            the graph to zoom that axis or drag diagonally to zoom into a rectangle. Double-click to
-            reset zoom.
+            <b>Tip:</b> Drag along one axis of the graph to zoom that axis or drag diagonally to zoom into a rectangle. Double-click to reset zoom.
           </div>
-          <div className="flex w-full items-center justify-center pb-4">
-            <div style={{ width: "100%", maxWidth: chartWidth, margin: "0 24px" }}>
+          <div
+            className="flex w-full flex-col-reverse items-center justify-center pb-4 gap-2 sm:flex-row sm:flex-nowrap"
+          >
+            <div style={{ width: "100%", maxWidth: chartWidth, margin: "12px 24px 16px" }}>
               <Slider
                 range
                 min={minX}
@@ -345,43 +378,62 @@ export function SynchronizedCharts({ chartData }: SynchronizedChartsProps) {
                   const arr = Array.isArray(vals) ? vals : [minX, maxX]
                   handleBrushChange([Number(arr[0]), Number(arr[1])])
                 }}
-                trackStyle={[{ backgroundColor: "#000000", height: 18 }]}
+                trackStyle={[{ backgroundColor: "#000000", height: 12 }]}
                 handleStyle={[
                   {
                     borderColor: "#000000",
                     backgroundColor: "#fff",
-                    height: 28,
-                    width: 28,
-                    marginTop: -5.25,
+                    height: 22,
+                    width: 22,
+                    marginTop: -6,
                     opacity: 1,
                   },
                   {
                     borderColor: "#000000",
                     backgroundColor: "#ffffff",
-                    height: 28,
-                    width: 28,
-                    marginTop: -5.25,
+                    height: 22,
+                    width: 22,
+                    marginTop: -6,
                     opacity: 1,
                   },
                 ]}
-                railStyle={{ backgroundColor: "#e5e7eb", height: 20, borderRadius: 8 }}
+                dotStyle={{  display: "none" }}
+                activeDotStyle={{ display: "none" }}
+                marks={{
+                  [minX]: { label: formatTime(null, minX), style: { color: "#000", marginTop: 5 } },
+                  [maxX]: { label: formatTime(null, maxX), style: { color: "#000", marginTop: 5 } },
+                }}
+                railStyle={{ backgroundColor: "#e5e7eb", height: 12, borderRadius: 8 }}
               />
             </div>
-
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => setZoom(null)}
-              style={{ marginTop: 13.5 }}
-              className="ml-2"
-            >
-              <RefreshCw className="mr-1 h-3 w-3" />
-              <span className="text-xs font-semibold">Reset Zoom</span>
-            </Button>
+            <div className="flex flex-row gap-2 mt-2 md:mb-0">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setZoom(null)}
+                className="ml-2"
+                aria-label="Reset Zoom"
+              >
+                <Search className="mr-1 h-3 w-3" />
+                <span className="text-xs font-semibold">Reset Zoom</span>
+              </Button>
+              <Button
+                variant={showNewDataOverlay ? "default" : "outline"}
+                size="sm"
+                onClick={onReloadRequested}
+                className="ml-2"
+                aria-label={showNewDataOverlay ? "Reload graph with new data" : "New data available"}
+              >
+                <RefreshCw className="mr-1 h-3 w-3" />
+                <span className="text-xs font-semibold">
+                  {showNewDataOverlay ? "Reload for New Data" : "Reload Graphs"}
+                </span>
+              </Button>
+            </div>
           </div>
         </div>
         <div className="mb-6 flex w-full justify-center overflow-x-auto rounded bg-white p-1 shadow sm:p-2 dark:bg-black">
-          <UplotReact options={energyOpts} data={energyData} />
+          <UplotReact options={energyOpts} data={energyData} onCreate={chart => { energyPlotRef.current = chart }} />
         </div>
       </div>
     </div>
