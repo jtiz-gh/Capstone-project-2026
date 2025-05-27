@@ -1,11 +1,11 @@
 import type { NextConfig } from "next"
 
 const nextConfig: NextConfig = {
-  output: "standalone",
+  output: process.env.GITHUB_ACTIONS === "true" ? "standalone" : undefined,
   eslint: { ignoreDuringBuilds: true },
   typescript: { ignoreBuildErrors: true },
   outputFileTracingIncludes: {
-    '*': ['public/**/*', '.next/static/**/*'],
+    "*": ["public/**/*", ".next/static/**/*"],
   },
 }
 
