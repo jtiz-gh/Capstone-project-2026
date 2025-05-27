@@ -1,7 +1,23 @@
 // prisma/seed.ts
-
 import { PrismaClient } from "@prisma/client"
+import fs from "fs"
+import path from "path"
+
 const prisma = new PrismaClient()
+
+// Map driver codes to device/session assignments
+const driverDeviceSession = [
+  { driver: "SAI", deviceSerial: "1001", sessionId: 1 },
+  { driver: "VER", deviceSerial: "1002", sessionId: 2 },
+  { driver: "HAM", deviceSerial: "1003", sessionId: 3 },
+  { driver: "TSU", deviceSerial: "1004", sessionId: 4 },
+  { driver: "LEC", deviceSerial: "1005", sessionId: 5 },
+  { driver: "VER", deviceSerial: "1006", sessionId: 6 },
+  { driver: "SAI", deviceSerial: "1007", sessionId: 7 },
+  { driver: "TSU", deviceSerial: "1008", sessionId: 8 },
+  { driver: "VER", deviceSerial: "1009", sessionId: 9 },
+  { driver: "LEC", deviceSerial: "1010", sessionId: 10 },
+]
 
 async function main() {
   // 1. Create some teams
@@ -53,6 +69,38 @@ async function main() {
     },
   })
 
+  const team7 = await prisma.team.create({
+    data: {
+      teamName: "D",
+      vehicleType: "Kart",
+      vehicleClass: "Standard",
+    },
+  })
+
+  const team8 = await prisma.team.create({
+    data: {
+      teamName: "E",
+      vehicleType: "Kart",
+      vehicleClass: "Standard",
+    },
+  })
+
+  const team9 = await prisma.team.create({
+    data: {
+      teamName: "F",
+      vehicleType: "Kart",
+      vehicleClass: "Standard",
+    },
+  })
+
+  const team10 = await prisma.team.create({
+    data: {
+      teamName: "G",
+      vehicleType: "Kart",
+      vehicleClass: "Standard",
+    },
+  })
+
   // 2. Add devices for teams
   const device1 = await prisma.device.create({
     data: {
@@ -96,6 +144,34 @@ async function main() {
     },
   })
 
+  const device7 = await prisma.device.create({
+    data: {
+      serialNo: "1007",
+      teamId: team7.id,
+    },
+  })
+
+  const device8 = await prisma.device.create({
+    data: {
+      serialNo: "1008",
+      teamId: team8.id,
+    },
+  })
+
+  const device9 = await prisma.device.create({
+    data: {
+      serialNo: "1009",
+      teamId: team9.id,
+    },
+  })
+
+  const device10 = await prisma.device.create({
+    data: {
+      serialNo: "1010",
+      teamId: team10.id,
+    },
+  })
+
   // 3. Add device configs
   await prisma.deviceConfig.createMany({
     data: [
@@ -128,6 +204,26 @@ async function main() {
         deviceId: device6.id,
         settings: { maxSpeed: 45, throttleCap: 90 },
         configName: "Aggressive Config",
+      },
+      {
+        deviceId: device7.id,
+        settings: { maxSpeed: 35, throttleCap: 70 },
+        configName: "Conservative Config",
+      },
+      {
+        deviceId: device8.id,
+        settings: { maxSpeed: 35, throttleCap: 70 },
+        configName: "Conservative Config",
+      },
+      {
+        deviceId: device9.id,
+        settings: { maxSpeed: 35, throttleCap: 70 },
+        configName: "Conservative Config",
+      },
+      {
+        deviceId: device10.id,
+        settings: { maxSpeed: 35, throttleCap: 70 },
+        configName: "Conservative Config",
       },
     ],
   })
@@ -195,6 +291,10 @@ async function main() {
           { id: team4.id },
           { id: team5.id },
           { id: team6.id },
+          { id: team7.id },
+          { id: team8.id },
+          { id: team9.id },
+          { id: team10.id },
         ],
       },
       races: {
@@ -203,224 +303,49 @@ async function main() {
     },
   })
 
-  // 6. Create records and sensor data for each device
-  const timestamp = 1746575178121
-  let offset = 1000
-  for (const [device, sessionId] of [
-    [device1, 1],
-    [device2, 2],
-    [device3, 3],
-    [device4, 4],
-    [device5, 5],
-    [device6, 6],
-  ] as const) {
-    const record = await prisma.record.create({
-      data: {
-        deviceId: device.id,
-        raceId: race1.id,
-        competitionId: comp.id,
-        avgVoltage: 13 + Math.random(),
-        avgCurrent: 1.8 + Math.random(),
-        energy: 14 + Math.random(),
-        stopTime: new Date(),
-      },
-    })
-
-    await prisma.sensorData.createMany({
-      data: [
-        {
-          timestamp: timestamp + offset,
-          sessionId,
-          recordId: record.id,
+  // 6. Use JSON files for race data records and sensorData
+  const devices = [device1, device2, device3, device4, device5, device6, device7, device8, device9, device10]
+  const races = [race1, race2, race3]
+  for (let i = 0; i < driverDeviceSession.length; i++) {
+    const { driver, deviceSerial, sessionId } = driverDeviceSession[i]
+    const device = devices.find(d => d.serialNo === deviceSerial)
+    if (!device) {
+      console.warn(`Device with serial ${deviceSerial} not found, skipping ${driver}`)
+      continue
+    }
+    // Loop through all races
+    for (let r = 0; r < races.length; r++) {
+      const race = races[r]
+      // Create a record for this device/race/competition
+      const record = await prisma.record.create({
+        data: {
           deviceId: device.id,
-          measurementId: Math.random(),
-          avgPower: Math.random() * 10,
+          raceId: race.id,
+          competitionId: comp.id,
           avgVoltage: 13 + Math.random(),
-          avgCurrent: 1 + Math.random(),
-          peakPower: 20 + Math.random(),
-          peakVoltage: 14 + Math.random(),
-          peakCurrent: 2.5 + Math.random(),
-          energy: 50 + Math.random(),
+          avgCurrent: 1.8 + Math.random(),
+          energy: 14 + Math.random(),
+          stopTime: new Date(),
         },
-        {
-          timestamp: timestamp + offset * 2,
-          sessionId,
-          recordId: record.id,
-          deviceId: device.id,
-          measurementId: Math.random(),
-          avgPower: Math.random() * 10,
-          avgVoltage: 13 + Math.random(),
-          avgCurrent: 1 + Math.random(),
-          peakPower: 20 + Math.random(),
-          peakVoltage: 14 + Math.random(),
-          peakCurrent: 2.5 + Math.random(),
-          energy: 50 + Math.random(),
-        },
-        {
-          timestamp: timestamp + offset * 3,
-          sessionId,
-          recordId: record.id,
-          deviceId: device.id,
-          measurementId: Math.random(),
-          avgPower: Math.random() * 10,
-          avgVoltage: 13 + Math.random(),
-          avgCurrent: 1 + Math.random(),
-          peakPower: 20 + Math.random(),
-          peakVoltage: 14 + Math.random(),
-          peakCurrent: 2.5 + Math.random(),
-          energy: 50 + Math.random(),
-        },
-      ],
-    })
-    offset *= 3
+      })
+      // Read JSON data
+      const jsonPath = path.join(__dirname, "seed-data", `simdata_${driver}.json`)
+      if (!fs.existsSync(jsonPath)) {
+        console.warn(`No JSON for driver ${driver} at ${jsonPath}`)
+        continue
+      }
+      const jsonData = JSON.parse(fs.readFileSync(jsonPath, "utf-8"))
+      // Patch deviceId and recordId
+      for (const entry of jsonData) {
+        entry.deviceId = device.id
+        entry.recordId = record.id
+        entry.sessionId = sessionId
+      }
+      // Insert sensor data
+      await prisma.sensorData.createMany({ data: jsonData })
+      console.log(`Seeded ${jsonData.length} sensorData for ${driver} in race ${race.id}`)
+    }
   }
-
-  for (const [device, sessionId] of [
-    [device1, 1],
-    [device2, 2],
-    [device3, 3],
-    [device4, 4],
-    [device5, 5],
-    [device6, 6],
-  ] as const) {
-    const record = await prisma.record.create({
-      data: {
-        deviceId: device.id,
-        raceId: race2.id,
-        competitionId: comp.id,
-        avgVoltage: 13 + Math.random(),
-        avgCurrent: 1.8 + Math.random(),
-        energy: 14 + Math.random(),
-        stopTime: new Date(),
-      },
-    })
-
-    await prisma.sensorData.createMany({
-      data: [
-        {
-          timestamp: timestamp + offset,
-          sessionId,
-          recordId: record.id,
-          deviceId: device.id,
-          measurementId: Math.random(),
-          avgPower: Math.random() * 10,
-          avgVoltage: 13 + Math.random(),
-          avgCurrent: 1 + Math.random(),
-          peakPower: 20 + Math.random(),
-          peakVoltage: 14 + Math.random(),
-          peakCurrent: 2.5 + Math.random(),
-          energy: 50 + Math.random(),
-        },
-        {
-          timestamp: timestamp + offset * 2,
-          sessionId,
-          recordId: record.id,
-          deviceId: device.id,
-          measurementId: Math.random(),
-          avgPower: Math.random() * 10,
-          avgVoltage: 13 + Math.random(),
-          avgCurrent: 1 + Math.random(),
-          peakPower: 20 + Math.random(),
-          peakVoltage: 14 + Math.random(),
-          peakCurrent: 2.5 + Math.random(),
-          energy: 50 + Math.random(),
-        },
-        {
-          timestamp: timestamp + offset * 3,
-          sessionId,
-          recordId: record.id,
-          deviceId: device.id,
-          measurementId: Math.random(),
-          avgPower: Math.random() * 10,
-          avgVoltage: 13 + Math.random(),
-          avgCurrent: 1 + Math.random(),
-          peakPower: 20 + Math.random(),
-          peakVoltage: 14 + Math.random(),
-          peakCurrent: 2.5 + Math.random(),
-          energy: 50 + Math.random(),
-        },
-      ],
-    })
-    offset *= 3
-  }
-
-  for (const [device, sessionId] of [
-    [device1, 1],
-    [device2, 2],
-    [device3, 3],
-    [device4, 4],
-    [device5, 5],
-    [device6, 6],
-  ] as const) {
-    const record = await prisma.record.create({
-      data: {
-        deviceId: device.id,
-        raceId: race3.id,
-        competitionId: comp.id,
-        avgVoltage: 13 + Math.random(),
-        avgCurrent: 1.8 + Math.random(),
-        energy: 14 + Math.random(),
-        stopTime: new Date(),
-      },
-    })
-
-    await prisma.sensorData.createMany({
-      data: [
-        {
-          timestamp: timestamp + offset,
-          sessionId,
-          recordId: record.id,
-          deviceId: device.id,
-          measurementId: Math.random(),
-          avgPower: Math.random() * 10,
-          avgVoltage: 13 + Math.random(),
-          avgCurrent: 1 + Math.random(),
-          peakPower: 20 + Math.random(),
-          peakVoltage: 14 + Math.random(),
-          peakCurrent: 2.5 + Math.random(),
-          energy: 50 + Math.random(),
-        },
-        {
-          timestamp: timestamp + offset * 2,
-          sessionId,
-          recordId: record.id,
-          deviceId: device.id,
-          measurementId: Math.random(),
-          avgPower: Math.random() * 10,
-          avgVoltage: 13 + Math.random(),
-          avgCurrent: 1 + Math.random(),
-          peakPower: 20 + Math.random(),
-          peakVoltage: 14 + Math.random(),
-          peakCurrent: 2.5 + Math.random(),
-          energy: 50 + Math.random(),
-        },
-        {
-          timestamp: timestamp + offset * 3,
-          sessionId,
-          recordId: record.id,
-          deviceId: device.id,
-          measurementId: Math.random(),
-          avgPower: Math.random() * 10,
-          avgVoltage: 13 + Math.random(),
-          avgCurrent: 1 + Math.random(),
-          peakPower: 20 + Math.random(),
-          peakVoltage: 14 + Math.random(),
-          peakCurrent: 2.5 + Math.random(),
-          energy: 50 + Math.random(),
-        },
-      ],
-    })
-    offset *= 3
-  }
-
-  // 7. Add rankings
-  // await prisma.ranking.createMany({
-  //   data: [
-  //     { eventId: event1.id, teamId: team1.id, rank: 1 },
-  //     { eventId: event1.id, teamId: team2.id, rank: 2 },
-  //     { eventId: event1.id, teamId: team3.id, rank: 3 },
-  //   ]
-  // })
 }
 
 main()
