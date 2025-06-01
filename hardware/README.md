@@ -1,52 +1,88 @@
 # Hardware Directory
 
-> `TODO`: Review and update all sections based on project requirements and component selections
-
 This directory contains the hardware design files for the EVolocity Control Unit (ECU) wireless data collection module.
 
 ## Documentation
 
 The following documentation is available:
+
 - [Component Selection](docs/COMPONENT_SELECTION.md) - Bill of materials and component justifications
-- [Design Constraints](docs/DESIGN_CONSTRAINTS.md) - Physical and electrical requirements
-- [Assembly Guide](docs/ASSEMBLY_GUIDE.md) - PCB assembly and testing instructions
-- [Testing Procedures](docs/TESTING_PROCEDURES.md) - Hardware validation procedures
-- [Enclosure](docs/ENCLOSURE.md) - Enclosure design and assembly instructions
 
 ## Project Structure
-```
+
+```md
 hardware/
-├── pcb/              # PCB design files
-│   ├── main/         # Main board designs
-│   └── modules/      # Optional module designs
-├── schematics/       # Circuit schematics
-├── docs/             # Documentation files
-├── models/           # 3D models and enclosure designs
-├── production/       # Manufacturing files
-│   ├── gerber/      # Gerber files for PCB fabrication
-│   └── bom/         # Bill of Materials
-└── CHANGELOG.md      # Hardware revision history
+├── pcb/                    # PCB design files and libraries
+│   ├── capstone_pcb/      # Main PCB design files
+│   ├── SC0918/           # RPi Pico W library files
+│   └── *.IntLib          # Component libraries
+├── implementation/        # Circuit implementation files
+│   ├── energy_monitor.asc # Main circuit schematic
+│   └── LM324.lib         # Op-amp library
+├── testing/              # Testing and validation files
+│   ├── ORingSim.asc      # ORing circuit simulation
+│   ├── programmable_load.py    # Load testing script
+│   ├── real_load_test.py       # Real load testing
+│   └── requirements.txt        # Python dependencies
+├── docs/                 # Documentation files
+├── CHANGELOG.md          # Hardware revision history
+└── .gitignore           # Git ignore rules
 ```
 
 ## Design Requirements
-- Input voltage: TBD
-- Operating temperature: TBD
-- Form factor: TBD
-- Connectivity: USB and Wireless
-- Mounting: TBD
+
+- Input voltage: 12V (Vehicle power)
+- Operating voltage: 5V (regulated)
+- ADC range: 0-3.3V
+- Operating temperature: -40°C to +85°C
+- Form factor: PCB with enclosure
+- Connectivity:
+  - USB (for programming and debugging)
+  - Wireless (RPi Pico W built-in)
+- Mounting: Vehicle mounting bracket
+
+## Circuit Design Overview
+
+The ECU hardware includes:
+
+- Current and voltage sensing circuits
+- Signal conditioning with operational amplifier
+- Power regulation and protection
+- Debug indicators
+- Test points for validation
 
 ## Manufacturing
-> `TODO`: Add manufacturing partner requirements and guidelines
+
+- PCB Fabrication: PCBWay
+- Component Suppliers:
+  - DigiKey (primary)
+  - Element14 (secondary)
+- Batch size: 50 units
+- Lead time: 2-3 weeks
 
 ## Assembly
-> `TODO`: Add assembly instructions and testing procedures
+
+- Surface mount components (SMT)
+- Through-hole components (THT)
+- Manual assembly with reflow soldering
+- Visual inspection required
+- Functional testing after assembly
 
 ## Testing
-> `TODO`: Add testing requirements and validation procedures
+
+- Power supply validation
+- Current sensing accuracy
+- Voltage regulation stability
+- Wireless connectivity
+- Environmental testing
+- EMC/EMI compliance
 
 ## Safety Considerations
+
 - All designs must comply with NZ electrical safety standards
 - Proper isolation for vehicle electrical system
 - Protection against reverse polarity
 - EMI/EMC considerations
-- Thermal management 
+- Thermal management
+- Overcurrent protection
+- Voltage regulation stability

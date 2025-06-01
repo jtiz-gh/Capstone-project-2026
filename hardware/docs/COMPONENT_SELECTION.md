@@ -1,82 +1,119 @@
 # Component Selection
 
-> `TODO`: Update with actual component selections and justifications
+## Circuit Design Overview
+
+The circuit design includes:
+
+- Current and voltage sensing
+- Amplifier for current sensing signal
+- LED for debugging
+- Linear voltage regulator
+- Voltage divider for ADC reference
+
+### Key Design Requirements
+
+- Voltage and current sensing for EVolocity power monitoring
+- ADC range limited to 0-3.3V (RPi Pico W requirement)
+- 5V supply requirement for RPi Pico W system
+- Input voltage regulation from 12V to 5V
 
 ## Core Components
 
-### Microcontroller (Raspberry Pi Pico)
-- **Selected**: Raspberry Pi Pico
+### Microcontroller (Raspberry Pi Pico W)
+
+- **Selected**: Raspberry Pi Pico W
 - **Key Features**:
   - Dual-core ARM Cortex M0+
   - 264KB RAM
   - USB 1.1 controller
-- **Justification**: Project requirement
+  - ADC range: 0-3.3V
+- **Justification**: Project requirement for wireless connectivity and processing capabilities
 
-### Wireless Module
-- **Selected**: TBD
-- **Requirements**:
-  - Operating voltage: 3.3V compatible
-  - Range: Minimum 10m
-  - Protocol: NZ ISM band compliant
-  - Interface: UART/SPI
-- **Options Under Consideration**:
-  1. Option 1
-  2. Option 2
+### Operational Amplifier
 
-## Power Management
+- **Selected**: LM324
+- **Key Features**:
+  - Unity-gain bandwidth: 1.2MHz
+  - Slew rate: 0.5 V/μs
+- **Justification**:
+  - Cost-effective compared to alternatives (LM324: $179.40 for 50 units vs LT6221: $386.12)
+  - Sufficient performance for 200Hz sampling frequency
+  - Meets amplification requirements for current sensing signal
 
-### Voltage Regulator
-- **Selected**: TBD
-- **Requirements**:
-  - Input: Vehicle power (12V)
-  - Output: 3.3V and 5V
-  - Current: TBD
-- **Options Under Consideration**:
-  1. Option 1
-  2. Option 2
+### Linear Voltage Regulator
 
-### Protection Circuits
-- **Selected**: TBD
-- **Requirements**:
-  - Reverse polarity protection
-  - Overvoltage protection
-  - Current limiting
+- **Selected**: L78L05
+- **Key Features**:
+  - Output voltage range: 4.6V to 5.4V
+  - Dropout voltage: 2V
+- **Justification**:
+  - More cost-effective than LD1117V50 ($14.92 vs $21.06 for 50 units)
+  - Meets voltage regulation requirements
+  - Suitable for 12V to 5V conversion
 
-## Connectors
+### Current Sensing Components
 
-### USB Connector
-- **Selected**: TBD
-- **Requirements**:
-  - Type: USB-C preferred
-  - Mounting: Through-hole for durability
-  - Current rating: TBD
+- **Shunt Resistors**:
+  - Value: 0.1 Ω
+  - Power rating: 3W
+  - Justification: Allows maximum current flow while maintaining accuracy
 
-### Vehicle Interface
-- **Selected**: TBD
-- **Requirements**:
-  - Voltage rating: >12V
-  - Environmental protection
-  - Secure connection method
+### Capacitors
 
-## Bill of Materials Template
+- **Electrolytic Capacitor**:
+  - Purpose: Output voltage storage for linear regulator
+  - Range: Microfarad
+- **Ceramic Capacitors**:
+  - Purpose: Decoupling
+  - Range: Nanofarad
+  - Justification: Lower equivalent inductance and resistance
 
-| Component | Description | Package | Quantity | Supplier | Part Number | Unit Cost | Notes |
-|-----------|-------------|----------|-----------|-----------|--------------|------------|--------|
-| RPi Pico  | Microcontroller | THT | 1 | | | | Required |
-| | | | | | | | |
+### Protection Components
+
+- **Schottky Diode**:
+  - Purpose: Prevents excessive current before 5V supply
+- **LED**:
+  - Purpose: Debug indicator for 5V power supply
+
+## Bill of Materials
+
+Prices are quoted for a batch order of 50 units. Last updated **25/05/2025**
+
+| Item No. | Component  | Part Number | Quantity | Supplier | Unit Cost (excl GST) |
+|----------|------------|-------------|----------|----------|-----------|
+| 1 | Raspberry Pi Pico W | SC0918 | 1 | DigiKey | $7.65 |
+| 2 | Op-Amp | LM324DR2G | 1 | DigiKey | $0.1744 |
+| 3 | Shunt Resistor | ER74R10KT | 2 | DigiKey | $0.6399 |
+| 4 | Linear Regulator | L78L05 | 1 | DigiKey | $0.1524 |
+| 5 | LED | LTST-C191KRKT | 1 | DigiKey |$0.100 |
+| 6 | Test points | 5003 | 5 | DigiKey |$0.2223 |
+| 7 | Electrolytic Capacitors | TH | 1 | DigiKey | $0.1426 |
+| 8 | Ceramic Capacitors | 0805 SMT | 5 | DigiKey | $0.0072 |
+| 9 | Resistors | 0805 SMT | 11 | DigiKey |$0.0199 |
+| 10 | Female Header Pins | 20 positions | 2 | DigiKey |$3.0143 |
+| 11 | Schottky Diode | SP304 | 1 | Element14 |$0.923 |
+| 12 | PCB | - | 1 | PCBWay | $5.00 |
+| | | |  |**Total** | **$21.06** |
 
 ## Supplier Information
-- Supplier 1: [Link]
-- Supplier 2: [Link]
+
+- [Element14](https://nz.element14.com/)
+- [DigiKey](https://www.digikey.co.nz/)
+- [PCBWay](https://www.pcbway.com/)
 
 ## Design Considerations
+
 - Component availability
 - Cost constraints
 - Assembly requirements
 - Environmental conditions
 - Reliability requirements
+- Noise reduction through kilo-ohm range resistors
+- Power dissipation in current sensing components
+- ADC compatibility and signal conditioning
 
 ## References
+
 - [Raspberry Pi Pico Datasheet]
 - [NZ Radio Equipment Standards]
-- [Vehicle Electrical Standards] 
+- [Vehicle Electrical Standards]

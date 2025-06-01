@@ -5,9 +5,8 @@ We follow a structured branching strategy to ensure smooth development and deplo
 > **⚠️ IMPORTANT**
 > 
 > - **NEVER** commit or push directly to the `main` branch
-> - **DO NOT** delete branches on the remote repository
 > - **ALWAYS** create a feature, bugfix, hardware, or docs branch for your work
-> - **NEVER** merge your own pull requests without review
+> - Delete branches after merging unless they are long-term feature branches or hardware branches
 
 ### Main Branch (`main`)
 - The `main` branch contains the production-ready code.
