@@ -1,0 +1,76 @@
+// app/api/competitions/route.ts
+
+import { NextResponse } from "next/server"
+import { prisma } from "@/lib/prisma"
+
+// GET /api/competitions
+export async function GET() {
+  try {
+    const competitions = await prisma.competition.findMany({
+      include: {
+        records: true,
+        teams: true,
+        races: {
+          include: { event: true, rankings: true, records: true },
+        },
+      }, // Include related records if needed
+    })
+    return NextResponse.json(competitions)
+  } catch (error) {
+    console.error("Error fetching competitions:", error)
+    return NextResponse.json({ error: "Error fetching competitions" }, { status: 500 })
+  }
+}
+
+// POST /api/competitions
+export async function POST(request: Request) {
+  try {
+    const body = await request.json()
+    const { competitionName, competitionDate, teamIds, raceIds } = body
+
+    if (!competitionName || !competitionDate) {
+      return NextResponse.json(
+        { error: "Missing competitionName or competitionDate" },
+        { status: 400 }
+      )
+    }
+
+    // Check for existing competition with the same name
+    const existingCompetition = await prisma.competition.findFirst({
+      where: {
+        competitionName: {
+          equals: competitionName,
+        },
+      },
+    })
+
+    if (existingCompetition) {
+      return NextResponse.json(
+        { error: "A competition with this name already exists" },
+        { status: 400 }
+      )
+    }
+
+    const newCompetition = await prisma.competition.create({
+      data: {
+        competitionName: competitionName,
+        competitionDate: new Date(competitionDate),
+        teams: {
+          connect: teamIds.map((id: number) => ({ id })),
+        },
+        races: {
+          connect: raceIds.map((id: number) => ({ id })),
+        },
+      },
+      include: {
+        teams: true,
+        races: true,
+      },
+    })
+
+    return NextResponse.json(newCompetition, { status: 201 })
+  } catch (error) {
+    console.error("Error creating competition:", error)
+    return NextResponse.json({ error: "Error creating competition" }, { status: 500 })
+  }
+}
