@@ -1,1 +1,0 @@
-"""Threadsafe queue implementation for MicroPython."""

@@ -1,139 +1,110 @@
-# Capstone Project 2025 - Team 19
+# Software
+capstone-project-2025-team_19
+This directory contains the web application built with React, Tailwind CSS, Prisma, and SQLite.
 
-## Project Overview
+## Tech Stack
 
-This project implements a wireless data acquisition system for EVolocity's electric vehicle competitions. The system enables real-time wireless transmission of ECU data, eliminating the need for manual retrieval via USB-C connections. It improves collection accuracy, speed, and scalability while supporting EVolocity's educational mission.
+- **Frontend**: React with Tailwind CSS
+- **Database**: SQLite
+- **ORM**: Prisma
 
-Key features:
+## Prerequisites
 
-- Custom ECU with accurate voltage and current sensing
-- Real-time wireless data transmission
-- Web-based interface for competition management
-- Offline-capable operation with cloud sync
-- Mobile-friendly design for race day use
+- Node.js (v18 or higher recommended)
+- npm or yarn
+- Git
 
-Project brief can be found on [Google Drive](https://docs.google.com/document/d/1vH7OvMVSJteDKoSW-FQfeeVJb95oDqaqZ6kooqCCcWs/edit?usp=sharing)
+## Getting Started
 
-## Repository Structure
-
-```md
-.
-├── software/          # Web application code
-│   ├── src/           # Source code
-│   │   ├── app/       # Next.js app router pages
-│   │   ├── components/# React components
-│   │   ├── lib/       # Utility functions and services
-│   │   ├── hooks/     # Custom React hooks
-│   │   ├── types/     # TypeScript type definitions
-│   │   └── assets/    # Static assets
-│   ├── prisma/        # Database schema and migrations
-│   ├── cypress/       # End-to-end tests
-│   ├── __test__/      # Unit tests
-│   ├── public/        # Public static files
-│   ├── docs/          # Documentation
-│   └── local-supabase-project/ # Local development database
-├── firmware/          # Embedded system firmware
-│   ├── firmware/      # Core MicroPython source code
-│   │   ├── drivers/   # Hardware drivers for peripherals
-│   │   ├── lib/       # Utility libraries and modules
-│   │   └── tasks/     # Task management
-│   ├── docs/          # Firmware documentation
-│   ├── initial-experiments/ # Early ADC testing code
-│   ├── ecu-simulate.py     # ECU simulation script
-│   ├── load-control.py     # Programmable load control
-│   └── mock-server.js      # Mock backend server
-├── hardware/          # PCB and hardware designs
-│   ├── pcb/           # PCB design files and libraries
-│   ├── implementation/# Circuit implementation files
-│   ├── testing/       # Testing and validation files
-│   └── docs/          # Documentation files
-└── CONTRIBUTING.md    # Development guidelines
-```
-
-## Quick Start
-
-1. Clone the repository
+1. Install dependencies:
 
    ```bash
-   git clone git@github.com:ECSECapstone/capstone-project-2025-team_19.git
-   cd capstone-project-2025-team_19
+   npm install
    ```
 
-2. Follow setup instructions in respective directories:
-   - [Software Setup](software/README.md)
-   - [Firmware Setup](firmware/README.md)
-   - [Hardware Setup](hardware/README.md)
+2. Set up environment variables:
 
-## Development Workflow
+   ```bash
+   cp .env.example .env
+   ```
 
-- Read [CONTRIBUTING.md](CONTRIBUTING.md) before starting development
-- Create feature/bugfix branches from `main`
-- Keep branches up to date with `main`
-- Submit pull requests for review
-- For hardware changes update `CHANGELOG.md` file
+   Update the following in your `.env`:
+   - `DATABASE_URL="file:C:/path/to/your/database.db"` (replace with your desired SQLite database path)
 
-## Team Members
+3. Initialize and seed the database:
 
-- Project Lead
-  - **Pulasthi Lenaduwa**
-- Software Team
-  - **Chulshin Kim** - Software Lead
-  - Chris Valenzuela
-  - Jackson Schofield
-  - Zhiyu He
-- Firmware Team
-  - **Tai Wei Loh** - Firmware Lead
-  - Saarthak Negi
-- Hardware Team
-  - **Jin Shim** - Hardware Lead
-  - Aldonza Watt
-  - Vinayak Verma
+   ```bash
+   npm run prisma:generate
+   npm run prisma:seed
+   ```
 
-## Project Status
+> NOTE: For a **fresh** database do NOT run `npm run prism:seed`
 
-Current project phase and milestones:
+4. Build and start the application:
 
-- [x] Initial Setup
-- [x] Hardware Design
-  - [x] Circuit design and simulation
-  - [x] PCB layout and manufacturing
-  - [x] Component testing and validation
-- [x] Firmware Development
-  - [x] Sensor data acquisition
-  - [x] Wireless transmission
-  - [x] Data storage and processing
-- [x] Software Development
-  - [x] Web interface
-  - [x] Database management
-  - [x] Competition management features
-- [x] Integration Testing
-- [x] Final Documentation
+   ```bash
+   npm run build
+   npm run start
+   ```
+
+## Development Guidelines
+
+- Follow React best practices and hooks guidelines
+- Use Tailwind CSS for styling
+- Keep components small and reusable
+- Document API integrations
+- Update CHANGELOG.md for significant changes
+
+## Project Structure
+
+```md
+software/
+├── src/             # Source code
+│   ├── app/         # Next.js app router pages
+│   ├── components/  # React components
+│   ├── lib/         # Utility functions and services
+│   ├── hooks/       # Custom React hooks
+│   ├── types/       # TypeScript type definitions
+│   └── assets/      # Static assets
+├── prisma/          # Database schema and migrations
+├── cypress/         # End-to-end tests
+├── __test__/        # Unit tests
+├── public/          # Public static files
+├── docs/            # Documentation
+└── CHANGELOG.md     # Software changes log
+```
+
+## Useful Commands
+
+```bash
+# Development
+npm run dev         # Start development server
+
+npm run build
+npm run dev
+
+# Database
+npx prisma studio   # Open Prisma database UI
+npx prisma generate # Generate Prisma client
+npx prisma db push  # Push schema changes to database
+
+# Building
+npm run build       # Create production build
+npm run start       # Start production server
+```
 
 ## Documentation
 
-### Firmware Documentation (`firmware/docs/`)
+Key documentation will be maintained in the `docs/` directory:
 
-- [Firmware Architecture](firmware/docs/FIRMWARE_ARCHITECTURE.md) - System design and data flow
-- [ECU Protocol](firmware/docs/ECU_PROTOCOL.md) - Communication protocol specifications
-- [Pin Mapping](firmware/docs/PIN_MAPPING.md) - Hardware interface and pin configurations
-- [Toolchain Setup](firmware/docs/TOOLCHAIN_SETUP.md) - Development environment setup
-- [Future Work](firmware/docs/FUTURE_WORK.md) - Planned improvements and optimizations
-- Testing and validation procedures
-- ADC calibration procedures
-- Hardware interface documentation
+- API endpoints and usage
+- Database schema
+- Component documentation
+- Setup troubleshooting
 
-### Hardware Documentation (`hardware/docs/`)
+## Additional Resources
 
-- [Component Selection](hardware/docs/COMPONENT_SELECTION.md) - Detailed component specifications and selection rationale
-
-### Project Documentation (Google Drive)
-
-Project management documentation stored in Google Drive:
-
-- [Project brief](https://docs.google.com/document/d/1vH7OvMVSJteDKoSW-FQfeeVJb95oDqaqZ6kooqCCcWs/edit?usp=sharing)
-- [Meeting minutes](https://drive.google.com/drive/folders/1z7YsXZboZKT3bY4RvGdQBiedCJfJxP-C?usp=sharing)
-- [Logbooks](https://drive.google.com/drive/folders/1cl1ZUcF_Y9H9Y0-6AfLaIR1GfmjoznK_?usp=sharing)
-- Assessment documents can be found in the [docs directory](docs/)
-- [Presentation slides](https://docs.google.com/presentation/d/1s20KIIMT4N6qa7-0XX3COPQOuuCE7ozxVFRD11GFjZc/edit?usp=sharing)
-
-Development guidelines are in [CONTRIBUTING.md](CONTRIBUTING.md)
+- [React Documentation](https://react.dev/)
+- [Tailwind CSS Documentation](https://tailwindcss.com/docs)
+- [Prisma Documentation](https://www.prisma.io/docs)
+- [Next.js Documentation](https://nextjs.org/docs)
