@@ -1,0 +1,5 @@
+SE Captone project tasks
+
+
+- descide on the tech stack
+- git workflow
