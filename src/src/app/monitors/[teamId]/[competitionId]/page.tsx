@@ -13,6 +13,7 @@ import { useEffect, useState, useRef, useCallback } from "react"
 import { Loader2, AlertCircle, Database, Settings } from "lucide-react"
 
 interface SensorDataEntry {
+  id: number
   measurementId: number
   deviceId: number
   timestamp: number
@@ -76,15 +77,50 @@ export default function Monitors() {
 
   const [showNewDataOverlay, setShowNewDataOverlay] = useState(false)
   const pollingRef = useRef<NodeJS.Timeout | null>(null)
-  const [lastDataCount, setLastDataCount] = useState<number | null>(null)
+  const [minId, setMinId] = useState<number | null>(null)
+  const [lastMaxId, setLastMaxId] = useState<number>(0)
 
-  const fetchSensorDataByRecordId = useCallback(async (recordId: number) => {
+  const fetchSensorDataByRecordId = useCallback(async (recordId: number, resetCutoff = false) => {
     try {
-      const res = await fetch(`/api/sensor-data?recordId=${recordId}`)
+      let newMinId = minId
+
+      // If resetting cutoff, get the latest database ID first
+      if (resetCutoff) {
+        const latestRes = await fetch(`/api/sensor-data?recordId=${recordId}`)
+        if (latestRes.ok) {
+          const allData: SensorDataEntry[] = await latestRes.json()
+          if (allData.length > 0) {
+            const maxId = Math.max(...allData.map(d => d.id))
+            newMinId = maxId + 1
+            setMinId(newMinId)
+            setLastMaxId(maxId)
+            console.log(`Reset cutoff: will show data from ID ${newMinId} onwards`)
+          } else {
+            // No existing data, start from 0
+            newMinId = 0
+            setMinId(0)
+            setLastMaxId(0)
+            console.log('No existing data, will show all new data')
+          }
+        }
+        // Always clear data when resetting
+        setMergedData([])
+        return
+      }
+
+      // Build URL with optional minId filter
+      let url = `/api/sensor-data?recordId=${recordId}`
+      if (newMinId !== null && newMinId > 0) {
+        url += `&minId=${newMinId}`
+      }
+
+      console.log('Fetching sensor data:', url)
+      const res = await fetch(url)
       if (!res.ok) {
         throw new Error("Failed to fetch sensor data")
       }
       const rawData: SensorDataEntry[] = await res.json()
+      console.log(`Received ${rawData.length} data points`)
 
       if (!Array.isArray(rawData) || rawData.length === 0) {
         setMergedData([])
@@ -99,11 +135,16 @@ export default function Monitors() {
       }))
 
       setMergedData(mutatedData)
+      
+      // Track the max database ID we've seen
+      const maxId = Math.max(...rawData.map(d => d.id))
+      setLastMaxId(maxId)
+      console.log(`Updated lastMaxId to ${maxId}`)
     } catch (error) {
       console.error("Error fetching sensor data:", error)
       setError("Failed to load sensor data")
     }
-  }, [])
+  }, [minId])
 
   const handleRecordSelection = async (recordIds: number[]) => {
     if (recordIds.length === 1) {
@@ -111,13 +152,13 @@ export default function Monitors() {
       const record = modalRecords.find((r) => r.id === recordIds[0])
       if (record) {
         setSelectedRecord(record)
-        await fetchSensorDataByRecordId(recordIds[0])
+        await fetchSensorDataByRecordId(recordIds[0], true)
       }
     } else if (recordIds.length > 1) {
       // Multiple records selected - show first one but remember all
       const allSelectedRecords = modalRecords.filter((r) => recordIds.includes(r.id))
       setSelectedRecord(allSelectedRecords[0])
-      await fetchSensorDataByRecordId(allSelectedRecords[0].id)
+      await fetchSensorDataByRecordId(allSelectedRecords[0].id, true)
     }
   }
 
@@ -141,7 +182,7 @@ export default function Monitors() {
       if (response.ok) {
         const newRecord = await response.json()
         setSelectedRecord(newRecord)
-        await fetchSensorDataByRecordId(newRecordId)
+        await fetchSensorDataByRecordId(newRecordId, false)
       }
     } catch (error) {
       console.error("Error fetching merged record:", error)
@@ -169,7 +210,7 @@ export default function Monitors() {
         if (assignedRecords.length === 1) {
           // Single record found, use it directly
           setSelectedRecord(assignedRecords[0])
-          await fetchSensorDataByRecordId(assignedRecords[0].id)
+          await fetchSensorDataByRecordId(assignedRecords[0].id, true)
         } else {
           // Multiple records found, show selection modal
           showRecordSelectionModal(assignedRecords, false)
@@ -201,7 +242,7 @@ export default function Monitors() {
               if (assignRes.ok) {
                 const updatedRecord = await assignRes.json()
                 setSelectedRecord(updatedRecord)
-                await fetchSensorDataByRecordId(updatedRecord.id)
+                await fetchSensorDataByRecordId(updatedRecord.id, true)
               } else {
                 throw new Error("Failed to auto-assign record")
               }
@@ -260,28 +301,46 @@ export default function Monitors() {
   useEffect(() => {
     if (!selectedRecord) return
     setShowNewDataOverlay(false)
-    setLastDataCount(mergedData.length)
     if (pollingRef.current) clearInterval(pollingRef.current)
     const poll = async () => {
       try {
-        const res = await fetch(`/api/sensor-data?recordId=${selectedRecord.id}&count=1`)
-        const data = await res.json()
-        if (typeof data.count === "number" && lastDataCount !== null && data.count > lastDataCount) {
-          setShowNewDataOverlay(true)
+        // Check if there's any data with ID greater than what we've seen
+        const checkId = Math.max(
+          minId || 0,
+          lastMaxId + 1
+        )
+        
+        let checkUrl = `/api/sensor-data?recordId=${selectedRecord.id}`
+        if (checkId > 0) {
+          checkUrl += `&minId=${checkId}`
         }
-      } catch {}
+        
+        console.log('Polling for new data:', checkUrl, 'checkId:', checkId)
+        const res = await fetch(checkUrl)
+        if (res.ok) {
+          const newData = await res.json()
+          console.log(`Poll found ${newData.length} new data points`)
+          if (newData.length > 0) {
+            // New data arrived, refresh the display
+            console.log('New data detected, refreshing display')
+            await fetchSensorDataByRecordId(selectedRecord.id, false)
+          }
+        }
+      } catch (err) {
+        console.error('Polling error:', err)
+      }
     }
     pollingRef.current = setInterval(poll, 4000)
     return () => {
       if (pollingRef.current) clearInterval(pollingRef.current)
     }
-  }, [selectedRecord, lastDataCount, mergedData.length])
+  }, [selectedRecord, minId, lastMaxId, fetchSensorDataByRecordId])
 
   const handleReloadGraph = async () => {
     if (selectedRecord) {
-      await fetchSensorDataByRecordId(selectedRecord.id)
+      setLastMaxId(0)
+      await fetchSensorDataByRecordId(selectedRecord.id, true)
       setShowNewDataOverlay(false)
-      setLastDataCount(mergedData.length)
     }
   }
 
@@ -389,6 +448,9 @@ export default function Monitors() {
                       <Settings className="h-3 w-3" />
                       Advanced
                     </Button>
+                    <Button variant="outline" size="sm" onClick={handleReloadGraph}>
+                      Reset Graph
+                    </Button>
                     <Button variant="outline" size="sm" onClick={searchForRecords}>
                       Change Record
                     </Button>
@@ -424,22 +486,29 @@ export default function Monitors() {
         )}
 
         {/* Charts */}
-        {isClient && selectedRecord && mergedData.length > 0 && (
-          <SynchronizedCharts
-            chartData={mergedData}
-            showNewDataOverlay={showNewDataOverlay}
-            onReloadRequested={handleReloadGraph}
-          />
+        {isClient && selectedRecord && (
+          <>
+            <SynchronizedCharts
+              chartData={mergedData}
+              showNewDataOverlay={showNewDataOverlay}
+              onReloadRequested={handleReloadGraph}
+            />
+            {mergedData.length === 0 && (
+              <div className="mt-4 flex w-full items-center justify-center">
+                <div className="text-center">
+                  <p className="text-sm text-muted-foreground">
+                    Waiting for new sensor data...
+                  </p>
+                  <p className="mt-1 text-xs text-muted-foreground">
+                    Charts will update automatically when data is received
+                  </p>
+                </div>
+              </div>
+            )}
+          </>
         )}
 
-        {/* No Data State */}
-        {isClient && selectedRecord && mergedData.length === 0 && !isLoading && !error && (
-          <div className="flex min-h-[200px] w-full items-center justify-center">
-            <div className="text-center">
-              <p className="text-muted-foreground">No sensor data found for this record.</p>
-            </div>
-          </div>
-        )}
+        {/* No Data State - removed as we handle this above */}
       </div>
 
       {/* Advanced Record Manager */}

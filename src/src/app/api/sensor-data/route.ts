@@ -240,6 +240,7 @@ export async function GET(request: Request) {
     const url = new URL(request.url)
     const recordId = url.searchParams.get("recordId")
     const countOnly = url.searchParams.get("count")
+    const minId = url.searchParams.get("minId")
 
     if (recordId && countOnly === "1") {
       // Return only the count of sensor data for this record
@@ -250,9 +251,15 @@ export async function GET(request: Request) {
     }
 
     if (recordId) {
+      // Build where clause with optional id filter
+      const whereClause: any = { recordId: parseInt(recordId) }
+      if (minId) {
+        whereClause.id = { gte: parseInt(minId) }
+      }
+
       // Get sensor data for a specific record
       const sensorData = await prisma.sensorData.findMany({
-        where: { recordId: parseInt(recordId) },
+        where: whereClause,
         orderBy: { timestamp: "asc" },
       })
       return NextResponse.json(sensorData)
