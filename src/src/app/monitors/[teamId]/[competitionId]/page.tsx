@@ -330,7 +330,7 @@ export default function Monitors() {
         console.error('Polling error:', err)
       }
     }
-    pollingRef.current = setInterval(poll, 4000)
+    pollingRef.current = setInterval(poll, 1000)
     return () => {
       if (pollingRef.current) clearInterval(pollingRef.current)
     }
