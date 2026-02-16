@@ -24,10 +24,10 @@ function unpackProcessedFloatDataToDict(frameData: Buffer): DecodedMeasurements 
   const measurementId = frameData.readUInt32LE(8)
 
   // Read 7 float values (4 bytes each)
-  const avgVoltage = frameData.readFloatLE(12)
+  const avgVoltage = frameData.readFloatLE(12) / 1000 // Convert mV to V
   const avgCurrent = frameData.readFloatLE(16)
   const avgPower = frameData.readFloatLE(20)
-  const peakVoltage = frameData.readFloatLE(24)
+  const peakVoltage = frameData.readFloatLE(24) / 1000 // Convert mV to V
   const peakCurrent = frameData.readFloatLE(28)
   const peakPower = frameData.readFloatLE(32)
   const energy = frameData.readFloatLE(36)
@@ -50,6 +50,8 @@ export async function POST(request: Request) {
   try {
     const buffer = Buffer.from(await request.arrayBuffer())
     const serialNo = request.headers.get("Pico-ID")
+
+    console.log(`\n🔔 POST REQUEST RECEIVED - Pico-ID: ${serialNo}, Buffer size: ${buffer.length} bytes`)
 
     if (!serialNo) {
       console.error("Missing required header: Pico-ID")
@@ -88,6 +90,40 @@ export async function POST(request: Request) {
       }
 
       if (decodedPackets.length > 0) {
+        // Print sensor data with headers
+        console.log("\n" + "=".repeat(150))
+        console.log(`📊 SENSOR DATA RECEIVED - Device: ${serialNo} - Count: ${decodedPackets.length} packets`)
+        console.log("=".repeat(150))
+        console.log(
+          "Timestamp".padEnd(12) +
+          "SessionID".padEnd(11) +
+          "MeasID".padEnd(9) +
+          "AvgV(V)".padEnd(10) +
+          "AvgI(A)".padEnd(10) +
+          "AvgP(W)".padEnd(10) +
+          "PeakV(V)".padEnd(10) +
+          "PeakI(A)".padEnd(10) +
+          "PeakP(W)".padEnd(10) +
+          "Energy(Wh)"
+        )
+        console.log("-".repeat(150))
+        
+        decodedPackets.forEach((packet) => {
+          console.log(
+            packet.timestamp.toString().padEnd(12) +
+            packet.sessionId.toString().padEnd(11) +
+            packet.measurementId.toString().padEnd(9) +
+            packet.avgVoltage.toFixed(2).padEnd(10) +
+            packet.avgCurrent.toFixed(3).padEnd(10) +
+            packet.avgPower.toFixed(2).padEnd(10) +
+            packet.peakVoltage.toFixed(2).padEnd(10) +
+            packet.peakCurrent.toFixed(3).padEnd(10) +
+            packet.peakPower.toFixed(2).padEnd(10) +
+            packet.energy.toFixed(4)
+          )
+        })
+        console.log("=".repeat(150) + "\n")
+
         // Create a cache map for handling sessionId and deviceId combinations
         const recordCache: { [key: string]: number } = {}
 
@@ -207,7 +243,7 @@ export async function POST(request: Request) {
         )
 
         console.log(
-          `Uploaded ${decodedPackets.length} sensor data packets for device ${serialNo}. Record IDs: ${Object.values(recordCache).join(", ")}`
+          `✅ Uploaded ${decodedPackets.length} sensor data packets for device ${serialNo}. Record IDs: ${Object.values(recordCache).join(", ")}`
         )
       } else {
         console.warn("No valid packets found in the data")

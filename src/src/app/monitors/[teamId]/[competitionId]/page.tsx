@@ -134,6 +134,16 @@ export default function Monitors() {
         timestamp: entry.timestamp - firstTimestamp,
       }))
 
+      console.log('=== DATA RECEIVED FOR UI ===')
+      console.log('First 3 data points:', mutatedData.slice(0, 3))
+      console.log('Data structure:', {
+        totalPoints: mutatedData.length,
+        firstTimestamp: mutatedData[0]?.timestamp,
+        lastTimestamp: mutatedData[mutatedData.length - 1]?.timestamp,
+        sampleVoltage: mutatedData[0]?.avgVoltage,
+        sampleCurrent: mutatedData[0]?.avgCurrent,
+        sampleEnergy: mutatedData[0]?.energy,
+      })
       setMergedData(mutatedData)
       
       // Track the max database ID we've seen
