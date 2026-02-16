@@ -38,15 +38,6 @@ export default function Navbar() {
         <NavigationMenuList>
           <NavigationMenuItem>
             <NavigationMenuLink
-              href="/"
-              className={navigationMenuTriggerStyle()}
-              data-testid="nav-home-link"
-            >
-              Home
-            </NavigationMenuLink>
-          </NavigationMenuItem>
-          <NavigationMenuItem>
-            <NavigationMenuLink
               href="/teams"
               className={navigationMenuTriggerStyle()}
               data-testid="nav-teams-link"
@@ -74,7 +65,9 @@ export default function Navbar() {
           </NavigationMenuItem>
         </NavigationMenuList>
       </NavigationMenu>
-      <Image src={logo} alt="Logo" width={160} height={70} className="absolute left-5" />
+      <Link href="/" aria-label="Home" className="absolute left-5">
+        <Image src={logo} alt="Logo" width={160} height={70} />
+      </Link>
       <Button
         className="absolute right-5 hidden md:flex hover:cursor-pointer"
         onClick={handleSync}
@@ -94,9 +87,6 @@ export default function Navbar() {
         </SheetTrigger>
         <SheetContent side="right" className="w-[300px] sm:w-[400px]">
           <nav className="mt-8 flex flex-col gap-4">
-            <Link href="/" className="text-lg font-medium hover:text-gray-600">
-              Home
-            </Link>
             <Link href="/teams" className="text-lg font-medium hover:text-gray-600">
               Teams
             </Link>
@@ -114,7 +104,9 @@ export default function Navbar() {
         </SheetContent>
       </Sheet>
 
-      <Image src={logo} alt="Logo" width={160} height={70} className="absolute left-5" />
+      <Link href="/" aria-label="Home" className="absolute left-5">
+        <Image src={logo} alt="Logo" width={160} height={70} />
+      </Link>
     </div>
   )
 }
