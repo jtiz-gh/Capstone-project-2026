@@ -1,5 +1,5 @@
 # Software
-capstone-project-2025-team_19
+Capstone-project-2025-team_19
 This directory contains the web application built with React, Tailwind CSS, Prisma, and SQLite.
 
 ## Tech Stack
